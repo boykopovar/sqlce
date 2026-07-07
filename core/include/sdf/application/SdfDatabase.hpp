@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "sdf/application/ColumnSchema.hpp"
+#include "sdf/domain/IPageCipher.hpp"
 #include "sdf/domain/IPageStorage.hpp"
 #include "sdf/domain/Row.hpp"
 #include "sdf/domain/TableDef.hpp"
@@ -22,6 +23,7 @@ class SdfDatabase
 {
 public:
     explicit SdfDatabase(const std::string& path);
+    SdfDatabase(const std::string& path, const std::string& password);
 
     std::vector<std::string> ListTables() const;
     std::vector<ColumnSchema> TableSchema(const std::string& tableName) const;
@@ -35,6 +37,10 @@ private:
     std::shared_ptr<parsing::IRowDecoder> _rowDecoder;
 
     std::map<std::string, domain::TableDef> _tables;
+
+    explicit SdfDatabase(std::unique_ptr<domain::IPageStorage> storage);
+
+    static std::unique_ptr<domain::IPageStorage> OpenStorage(const std::string& path, const std::string& password);
 
     void AssignDataPages();
     const domain::TableDef& RequireTable(const std::string& tableName) const;

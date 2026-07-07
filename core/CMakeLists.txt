@@ -18,15 +18,19 @@ add_library(libsdf
         src/domain/NumericValue.cpp
         src/domain/Row.cpp
         src/domain/TableDef.cpp
+        src/infrastructure/AesCbc.cpp
         src/infrastructure/BinaryReader.cpp
         src/infrastructure/FileStorage.cpp
         src/infrastructure/PageView.cpp
+        src/infrastructure/Sha256.cpp
+        src/infrastructure/Sha512.cpp
         src/parsing/CatalogPageScanner.cpp
         src/parsing/CatalogRow.cpp
         src/parsing/CatalogRowDecoder.cpp
         src/parsing/CatalogSchema.cpp
         src/parsing/LobChainRegistry.cpp
         src/parsing/RowDecoder.cpp
+        src/parsing/SdfPageCipher.cpp
         src/parsing/TableCatalogBuilder.cpp
         src/parsing/TextDecoder.cpp
         src/application/SdfDatabase.cpp

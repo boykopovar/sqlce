@@ -14,6 +14,14 @@ constexpr std::size_t LobPageHeaderLength = 16;
 constexpr std::size_t SlotArrayBaseIndex = 1017;
 constexpr std::size_t RowHeaderLength = 28;
 
+constexpr std::size_t PlaintextHeaderLength = 16;
+constexpr std::size_t Page0ModeOffset = 184;
+constexpr std::size_t Page0VerifierOffset = 76;
+constexpr std::size_t Page0VerifierLength = 96;
+constexpr std::size_t Page0KeyParamOffset = 188;
+constexpr std::size_t Page0KeyParamLength = 4;
+constexpr std::size_t MaxPasswordLength = 40;
+
 }
 
 #endif

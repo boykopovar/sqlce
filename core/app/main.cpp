@@ -1,9 +1,11 @@
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #include "sdf/application/SdfDatabase.hpp"
+#include "sdf/domain/EncryptionMode.hpp"
 
 namespace
 {
@@ -71,12 +73,28 @@ void PrintTableRows(const std::vector<std::string>& columnNames, const std::vect
     }
 }
 
-void DumpFile(const std::filesystem::path& sdfPath)
+void DumpFile(const std::filesystem::path& sdfPath, const std::string& password)
 {
     std::cout << "\n" << sdfPath.filename().string() << "\n";
 
-    sdf::application::SdfDatabase db(sdfPath.string());
-    std::vector<std::string> tableNames = db.ListTables();
+    std::unique_ptr<sdf::application::SdfDatabase> db;
+    try
+    {
+        db = password.empty() ? std::make_unique<sdf::application::SdfDatabase>(sdfPath.string())
+                               : std::make_unique<sdf::application::SdfDatabase>(sdfPath.string(), password);
+    }
+    catch (const sdf::domain::UnsupportedEncryptionModeException& error)
+    {
+        std::cout << "skipped: " << error.what() << "\n";
+        return;
+    }
+    catch (const sdf::domain::InvalidPasswordException& error)
+    {
+        std::cout << "skipped: " << error.what() << "\n";
+        return;
+    }
+
+    std::vector<std::string> tableNames = db->ListTables();
 
     if (tableNames.empty())
     {
@@ -88,7 +106,7 @@ void DumpFile(const std::filesystem::path& sdfPath)
     {
         std::cout << "\ntable: " << tableName << "\n";
 
-        for (const sdf::application::ColumnSchema& column : db.TableSchema(tableName))
+        for (const sdf::application::ColumnSchema& column : db->TableSchema(tableName))
         {
             std::cout << "  " << column.ordinal << ". " << column.name << " " << column.typeName
                        << " size=" << column.declaredSize;
@@ -100,7 +118,7 @@ void DumpFile(const std::filesystem::path& sdfPath)
             std::cout << "\n";
         }
 
-        const std::vector<sdf::domain::Row> rows = db.ReadTable(tableName);
+        const std::vector<sdf::domain::Row> rows = db->ReadTable(tableName);
         if (rows.empty())
         {
             std::cout << "  (no rows)\n";
@@ -120,36 +138,58 @@ void DumpFile(const std::filesystem::path& sdfPath)
 
 int main(int argc, char** argv)
 {
-    const std::filesystem::path directory = argc > 1 ? std::filesystem::path(argv[1]) : std::filesystem::path("research/raw/examples");
+    std::filesystem::path directory("research/raw/examples");
+    std::string password;
 
-    std::cout << "current working directory: " << std::filesystem::current_path() << "\n";
-    std::cout << "looking for: " << std::filesystem::absolute(directory) << "\n";
-
-    if (!std::filesystem::is_directory(directory))
+    for (int i = 1; i < argc; ++i)
     {
-        std::cerr << "directory not found: " << directory << "\n";
-        return 1;
-    }
-
-    std::vector<std::filesystem::path> sdfFiles;
-    for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(directory))
-    {
-        if (entry.path().extension() == ".sdf")
+        const std::string argument = argv[i];
+        if (argument == "--password" && i + 1 < argc)
         {
-            sdfFiles.push_back(entry.path());
+            password = argv[++i];
+        }
+        else
+        {
+            directory = std::filesystem::path(argument);
         }
     }
-    std::sort(sdfFiles.begin(), sdfFiles.end());
 
-    if (sdfFiles.empty())
-    {
-        std::cout << "no .sdf files found in " << directory << "\n";
-        return 0;
-    }
+    std::cout << "current working directory: " << std::filesystem::current_path() << "\n";
 
-    for (const std::filesystem::path& sdfFile : sdfFiles)
+    std::vector<std::pair<std::filesystem::path, std::string>> directoriesToScan;
+    directoriesToScan.emplace_back(directory, password);
+    directoriesToScan.emplace_back(directory / "protected", password.empty() ? "secret123" : password);
+
+    for (const auto& [scanDirectory, scanPassword] : directoriesToScan)
     {
-        DumpFile(sdfFile);
+        std::cout << "looking for: " << std::filesystem::absolute(scanDirectory) << "\n";
+
+        if (!std::filesystem::is_directory(scanDirectory))
+        {
+            std::cerr << "directory not found: " << scanDirectory << "\n";
+            continue;
+        }
+
+        std::vector<std::filesystem::path> sdfFiles;
+        for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(scanDirectory))
+        {
+            if (entry.path().extension() == ".sdf")
+            {
+                sdfFiles.push_back(entry.path());
+            }
+        }
+        std::sort(sdfFiles.begin(), sdfFiles.end());
+
+        if (sdfFiles.empty())
+        {
+            std::cout << "no .sdf files found in " << scanDirectory << "\n";
+            continue;
+        }
+
+        for (const std::filesystem::path& sdfFile : sdfFiles)
+        {
+            DumpFile(sdfFile, scanPassword);
+        }
     }
 
     return 0;

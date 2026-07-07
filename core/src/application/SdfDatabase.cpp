@@ -8,13 +8,34 @@
 #include "sdf/parsing/CatalogRowDecoder.hpp"
 #include "sdf/parsing/LobChainRegistry.hpp"
 #include "sdf/parsing/RowDecoder.hpp"
+#include "sdf/parsing/SdfPageCipher.hpp"
 #include "sdf/parsing/TableCatalogBuilder.hpp"
 
 namespace sdf::application
 {
 
-SdfDatabase::SdfDatabase(const std::string& path)
-    : _storage(std::make_unique<infrastructure::FileStorage>(path))
+SdfDatabase::SdfDatabase(const std::string& path) : SdfDatabase(OpenStorage(path, std::string()))
+{
+}
+
+SdfDatabase::SdfDatabase(const std::string& path, const std::string& password) : SdfDatabase(OpenStorage(path, password))
+{
+}
+
+std::unique_ptr<domain::IPageStorage> SdfDatabase::OpenStorage(const std::string& path, const std::string& password)
+{
+    if (password.empty())
+    {
+        return std::make_unique<infrastructure::FileStorage>(path);
+    }
+
+    const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
+    const parsing::SdfPageCipher cipher(firstPage, password);
+    return std::make_unique<infrastructure::FileStorage>(path, cipher);
+}
+
+SdfDatabase::SdfDatabase(std::unique_ptr<domain::IPageStorage> storage)
+    : _storage(std::move(storage))
     , _pageScanner(std::make_shared<parsing::CatalogPageScanner>())
     , _tableCatalogBuilder(
           std::make_shared<parsing::TableCatalogBuilder>(_pageScanner, std::make_shared<parsing::CatalogRowDecoder>()))
