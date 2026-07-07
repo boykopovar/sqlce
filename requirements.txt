@@ -1,2 +1,2 @@
-pybind11
-scikit-build-core
+pybind11>=2.12
+scikit-build-core>=0.10

@@ -22,7 +22,7 @@
 `dataclasses`, `uuid`, `datetime`, плюс `argparse`/`json` для CLI).
 Read-only; не поддерживает зашифрованные файлы, запись, обход b-tree/
 индексов.
-`main.py` в корне проекта автоматически импортирует `sdf_reader.py`, ожидая найти `.sdf` файлы в `research/raw/examples`
+`main.py` в корне проекта использует c++ реализацию, ожидая найти `.sdf` файлы в `research/raw/examples`
 
 ```python
 from sdf_reader import open_sdf
