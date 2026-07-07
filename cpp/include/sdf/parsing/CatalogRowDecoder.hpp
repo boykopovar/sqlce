@@ -12,7 +12,7 @@ public:
     std::optional<CatalogRow> Decode(std::span<const std::uint8_t> rowBytes) const override;
 
 private:
-    static bool IsFieldPresent(std::span<const std::uint8_t> presence, std::uint8_t columnId);
+    static bool IsFieldNull(std::span<const std::uint8_t> presence, std::uint8_t columnId);
 };
 
 }
