@@ -21,6 +21,7 @@ public:
     std::uint8_t Precision() const;
     std::uint8_t Scale() const;
     bool IsPositive() const;
+    std::string UnscaledDigits() const;
 
     std::string ToString() const;
 

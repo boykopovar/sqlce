@@ -7,11 +7,22 @@
 namespace sdf::domain
 {
 
+struct CalendarDate
+{
+    int year;
+    int month;
+    int day;
+};
+
 class DateTimeValue
 {
 public:
     DateTimeValue();
     DateTimeValue(std::uint32_t millisecondsSinceMidnight, std::uint32_t daysSinceEpoch);
+
+    std::uint32_t MillisecondsSinceMidnight() const;
+    std::uint32_t DaysSinceEpoch() const;
+    CalendarDate Date() const;
 
     std::string ToString() const;
 

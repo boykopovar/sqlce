@@ -1,0 +1,13 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "sdf"
+version = "0.1.0"
+description = "Reader for SQL Server Compact (.sdf) database files."
+requires-python = ">=3.8"
+
+[tool.scikit-build]
+cmake.args = ["-DSDF_BUILD_PYTHON_BINDINGS=ON"]
+wheel.packages = ["python/sdf"]
