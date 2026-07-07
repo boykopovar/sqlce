@@ -3,7 +3,7 @@ requires = ["scikit-build-core>=0.10", "pybind11>=2.12"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "sdf_parser"
+name = "sqlce"
 version = "0.1.0"
 description = "Cross-platform lib for reading SQL Server CE (.sdf)"
 readme = "README.md"
@@ -29,12 +29,12 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/boykopovar/sdf-parser"
-Issues = "https://github.com/boykopovar/sdf-parser/issues"
+Homepage = "https://github.com/boykopovar/sqlce"
+Issues = "https://github.com/boykopovar/sqlce/issues"
 
 [tool.scikit-build]
 cmake.args = ["-DSDF_BUILD_PYTHON_BINDINGS=ON"]
-wheel.packages = ["python/sdf_parser"]
+wheel.packages = ["python/sqlce"]
 
 [tool.cibuildwheel]
 build = "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-*"
