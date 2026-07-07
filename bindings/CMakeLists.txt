@@ -1,3 +1,7 @@
+if(POLICY CMP0148)
+    cmake_policy(SET CMP0148 NEW)
+endif()
+
 find_package(pybind11 CONFIG REQUIRED)
 
 pybind11_add_module(_sdf_native
