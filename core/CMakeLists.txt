@@ -32,7 +32,8 @@ add_library(libsdf
         src/application/SdfDatabase.cpp
 )
 
-set_target_properties(libsdf PROPERTIES PREFIX "" OUTPUT_NAME "libsdf")
+set_target_properties(libsdf PROPERTIES PREFIX "" OUTPUT_NAME "libsdf" POSITION_INDEPENDENT_CODE ON)
+
 target_include_directories(libsdf PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(MSVC)
