@@ -37,7 +37,14 @@ cmake.args = ["-DSDF_BUILD_PYTHON_BINDINGS=ON"]
 wheel.packages = ["python/sqlce"]
 
 [tool.cibuildwheel]
-build = "cp311-*"
+build = [
+    "cp38-*",
+    "cp39-*",
+    "cp310-*",
+    "cp311-*",
+    "cp312-*",
+    "cp313-*",
+]
 skip = ["*-musllinux*", "*-manylinux_i686", "pp*"]
 
 [tool.cibuildwheel.linux]
