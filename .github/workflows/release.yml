@@ -16,8 +16,6 @@ jobs:
         uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_ARCHS_LINUX: x86_64
-          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-*"
-          CIBW_SKIP: "*-musllinux_i686 *-manylinux_i686 pp*"
           CIBW_BUILD_VERBOSITY: 1
 
       - name: Build sdist
@@ -25,12 +23,16 @@ jobs:
           python -m pip install --upgrade pip build
           python -m build --sdist
 
+      - name: Collect wheels and sdist into one flat folder
+        run: |
+          mkdir -p collected
+          cp wheelhouse/*.whl collected/
+          cp dist/*.tar.gz collected/
+
       - uses: actions/upload-artifact@v4
         with:
           name: dist-linux
-          path: |
-            wheelhouse/*.whl
-            dist/*.tar.gz
+          path: collected/*
 
   build-windows:
     name: Build wheel (Windows)
