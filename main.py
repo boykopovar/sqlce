@@ -1,8 +1,7 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
-from research.sdf_reader import open_sdf
+from sdf import SdfDatabase
 
 DEFAULT_DIR = Path("research/raw/examples")
 MAX_LEN = 20
@@ -31,20 +30,21 @@ def print_table_rows(cols, rows):
 
 def dump_file(sdf_path: Path):
     print(f"\n{sdf_path.name}")
-    db = open_sdf(str(sdf_path))
+    db = SdfDatabase(str(sdf_path))
 
-    if not db.tables:
+    table_names = db.list_tables()
+    if not table_names:
         print("Таблиц не найдено.")
         return
 
-    for table_name in db.list_tables():
+    for table_name in table_names:
         print(f"\nТаблица: {table_name}")
 
         for col in db.table_schema(table_name):
             extra = ""
-            if col["precision"] is not None:
-                extra = f", precision={col['precision']}, scale={col['scale']}"
-            print(f"  {col['ordinal']:2d}. {col['name']:20s} {col['type']:20s} size={col['size']}{extra}")
+            if col.precision is not None:
+                extra = f", precision={col.precision}, scale={col.scale}"
+            print(f"  {col.ordinal:2d}. {col.name:20s} {col.type_name:20s} size={col.declared_size}{extra}")
 
         rows = db.read_table(table_name)
 
