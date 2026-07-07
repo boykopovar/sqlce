@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+endif()
+
 add_library(sdf_parser
     src/domain/ColumnDef.cpp
     src/domain/ColumnType.cpp
@@ -30,8 +34,22 @@ add_library(sdf_parser
 
 target_include_directories(sdf_parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+if(MSVC)
+    target_compile_options(sdf_parser PRIVATE /W4 /utf-8 /permissive-)
+    target_compile_definitions(sdf_parser PRIVATE NOMINMAX _CRT_SECURE_NO_WARNINGS)
+else()
+    target_compile_options(sdf_parser PRIVATE -Wall -Wextra)
+endif()
+
 add_executable(sdf_dump app/main.cpp)
 target_link_libraries(sdf_dump PRIVATE sdf_parser)
+
+if(MSVC)
+    target_compile_options(sdf_dump PRIVATE /W4 /utf-8 /permissive-)
+    target_compile_definitions(sdf_dump PRIVATE NOMINMAX _CRT_SECURE_NO_WARNINGS)
+else()
+    target_compile_options(sdf_dump PRIVATE -Wall -Wextra)
+endif()
 
 enable_testing()
 add_subdirectory(tests)

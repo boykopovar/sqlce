@@ -120,7 +120,10 @@ void DumpFile(const std::filesystem::path& sdfPath)
 
 int main(int argc, char** argv)
 {
-    std::filesystem::path directory = argc > 1 ? std::filesystem::path(argv[1]) : std::filesystem::path("examples");
+    const std::filesystem::path directory = argc > 1 ? std::filesystem::path(argv[1]) : std::filesystem::path("research/raw/examples");
+
+    std::cout << "current working directory: " << std::filesystem::current_path() << "\n";
+    std::cout << "looking for: " << std::filesystem::absolute(directory) << "\n";
 
     if (!std::filesystem::is_directory(directory))
     {
