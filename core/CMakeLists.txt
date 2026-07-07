@@ -18,7 +18,6 @@ add_library(libsdf
         src/domain/NumericValue.cpp
         src/domain/Row.cpp
         src/domain/TableDef.cpp
-
         src/infrastructure/BinaryReader.cpp
         src/infrastructure/FileStorage.cpp
         src/infrastructure/PageView.cpp

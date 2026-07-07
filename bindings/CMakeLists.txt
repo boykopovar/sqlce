@@ -25,5 +25,4 @@ else()
     target_compile_options(_sdf_native PRIVATE -Wall -Wextra)
 endif()
 
-
 install(TARGETS _sdf_native LIBRARY DESTINATION sdf_parser)
