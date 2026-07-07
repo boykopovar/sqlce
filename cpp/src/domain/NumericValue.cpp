@@ -5,10 +5,7 @@
 namespace sdf::domain
 {
 
-namespace
-{
-
-std::string ToDecimalDigits(std::array<std::uint8_t, 16> littleEndianMagnitude)
+static std::string ToDecimalDigits(std::array<std::uint8_t, 16> littleEndianMagnitude)
 {
     std::string digits;
     bool allZero = std::all_of(
@@ -33,8 +30,6 @@ std::string ToDecimalDigits(std::array<std::uint8_t, 16> littleEndianMagnitude)
 
     std::reverse(digits.begin(), digits.end());
     return digits;
-}
-
 }
 
 NumericValue::NumericValue() : _precision(0), _scale(0), _isPositive(true), _unscaledLittleEndian{}
@@ -68,9 +63,14 @@ bool NumericValue::IsPositive() const
     return _isPositive;
 }
 
+std::string NumericValue::UnscaledDigits() const
+{
+    return ToDecimalDigits(_unscaledLittleEndian);
+}
+
 std::string NumericValue::ToString() const
 {
-    std::string digits = ToDecimalDigits(_unscaledLittleEndian);
+    std::string digits = UnscaledDigits();
 
     if (_scale > 0)
     {

@@ -27,13 +27,6 @@ int DaysInMonth(int year, int month)
     return daysByMonth[month - 1];
 }
 
-struct CalendarDate
-{
-    int year;
-    int month;
-    int day;
-};
-
 CalendarDate AddDays(int year, int month, int day, std::uint32_t daysToAdd)
 {
     std::uint32_t remaining = daysToAdd;
@@ -71,9 +64,24 @@ DateTimeValue::DateTimeValue(std::uint32_t millisecondsSinceMidnight, std::uint3
 {
 }
 
+std::uint32_t DateTimeValue::MillisecondsSinceMidnight() const
+{
+    return _millisecondsSinceMidnight;
+}
+
+std::uint32_t DateTimeValue::DaysSinceEpoch() const
+{
+    return _daysSinceEpoch;
+}
+
+CalendarDate DateTimeValue::Date() const
+{
+    return AddDays(EpochYear, EpochMonth, EpochDay, _daysSinceEpoch);
+}
+
 std::string DateTimeValue::ToString() const
 {
-    const CalendarDate date = AddDays(EpochYear, EpochMonth, EpochDay, _daysSinceEpoch);
+    const CalendarDate date = Date();
 
     const std::uint32_t totalSeconds = _millisecondsSinceMidnight / 1000;
     const std::uint32_t milliseconds = _millisecondsSinceMidnight % 1000;
