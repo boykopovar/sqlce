@@ -5,6 +5,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+from typing import overload
 
 ColumnValue = Union[
     None,
@@ -19,6 +20,14 @@ ColumnValue = Union[
 ]
 
 Row = Dict[str, ColumnValue]
+
+
+class UnsupportedEncryptionModeError(ValueError):
+    ...
+
+
+class InvalidPasswordError(ValueError):
+    ...
 
 
 class ColumnSchema:
@@ -42,7 +51,11 @@ class ColumnSchema:
 
 
 class SdfDatabase:
+    @overload
     def __init__(self, path: str) -> None: ...
+
+    @overload
+    def __init__(self, path: str, password: str) -> None: ...
 
     def list_tables(self) -> List[str]: ...
 

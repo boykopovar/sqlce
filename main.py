@@ -1,9 +1,14 @@
 import sys
 from pathlib import Path
+from typing import List
+from typing import Tuple
 
+from sqlce import InvalidPasswordError
 from sqlce import SdfDatabase
+from sqlce import UnsupportedEncryptionModeError
 
 DEFAULT_DIR = Path("research/raw/examples")
+DEFAULT_PROTECTED_PASSWORD = "secret123"
 MAX_LEN = 20
 
 
@@ -28,17 +33,22 @@ def print_table_rows(cols, rows):
         print("  " + line)
 
 
-def dump_file(sdf_path: Path):
+def dump_file(sdf_path: Path, password: str) -> None:
     print(f"\n{sdf_path.name}")
-    db = SdfDatabase(str(sdf_path))
+
+    try:
+        db = SdfDatabase(str(sdf_path), password) if password else SdfDatabase(str(sdf_path))
+    except (UnsupportedEncryptionModeError, InvalidPasswordError) as error:
+        print(f"skipped: {error}")
+        return
 
     table_names = db.list_tables()
     if not table_names:
-        print("Таблиц не найдено.")
+        print("no tables found")
         return
 
     for table_name in table_names:
-        print(f"\nТаблица: {table_name}")
+        print(f"\ntable: {table_name}")
 
         for col in db.table_schema(table_name):
             extra = ""
@@ -49,27 +59,53 @@ def dump_file(sdf_path: Path):
         rows = db.read_table(table_name)
 
         if not rows:
-            print("  (нет строк)")
+            print("  (no rows)")
             continue
 
         cols = list(rows[0].keys())
         print_table_rows(cols, rows)
 
 
-def main():
-    directory = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_DIR
+def scan_directory(directory: Path, password: str) -> None:
+    print(f"looking for: {directory.resolve()}")
 
     if not directory.is_dir():
-        print(f"Не найдена директория: {directory.resolve()}")
-        sys.exit(1)
+        print(f"directory not found: {directory}", file=sys.stderr)
+        return
 
     sdf_files = sorted(directory.glob("*.sdf"))
     if not sdf_files:
-        print(f"В {directory.resolve()} не найдено .sdf файлов")
-        sys.exit(0)
+        print(f"no .sdf files found in {directory}")
+        return
 
     for sdf_file in sdf_files:
-        dump_file(sdf_file)
+        dump_file(sdf_file, password)
+
+
+def main() -> None:
+    directory = DEFAULT_DIR
+    password = ""
+
+    args: List[str] = sys.argv[1:]
+    i = 0
+    while i < len(args):
+        argument = args[i]
+        if argument == "--password" and i + 1 < len(args):
+            password = args[i + 1]
+            i += 2
+        else:
+            directory = Path(argument)
+            i += 1
+
+    print(f"current working directory: {Path.cwd()}")
+
+    directories_to_scan: List[Tuple[Path, str]] = [
+        (directory, password),
+        (directory / "protected", password if password else DEFAULT_PROTECTED_PASSWORD),
+    ]
+
+    for scan_directory_path, scan_password in directories_to_scan:
+        scan_directory(scan_directory_path, scan_password)
 
 
 if __name__ == "__main__":

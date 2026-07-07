@@ -9,6 +9,7 @@
 
 #include "sdf/application/ColumnSchema.hpp"
 #include "sdf/application/SdfDatabase.hpp"
+#include "sdf/domain/EncryptionMode.hpp"
 #include "sdf/domain/Row.hpp"
 
 #include "value_convert.hpp"
@@ -26,7 +27,9 @@ constexpr char ModuleDoc[] = "Native reader for SQL Server Compact (.sdf) databa
 constexpr char DatabaseClassName[] = "SdfDatabase";
 constexpr char DatabaseDoc[] = "Reads tables, schemas and rows from a .sdf database file.";
 constexpr char InitDoc[] = "Open a .sdf file at the given path.";
+constexpr char InitWithPasswordDoc[] = "Open a password-protected .sdf file, auto-detecting its encryption mode.";
 constexpr char PathArgName[] = "path";
+constexpr char PasswordArgName[] = "password";
 constexpr char ListTablesName[] = "list_tables";
 constexpr char ListTablesDoc[] = "Return the names of all tables in the database.";
 constexpr char TableSchemaName[] = "table_schema";
@@ -43,6 +46,9 @@ constexpr char TypeNameAttrName[] = "type_name";
 constexpr char DeclaredSizeAttrName[] = "declared_size";
 constexpr char PrecisionAttrName[] = "precision";
 constexpr char ScaleAttrName[] = "scale";
+
+constexpr char UnsupportedEncryptionModeErrorName[] = "UnsupportedEncryptionModeError";
+constexpr char InvalidPasswordErrorName[] = "InvalidPasswordError";
 
 py::dict RowToDict(const domain::Row& row)
 {
@@ -75,11 +81,39 @@ std::optional<int> OptionalByteToInt(std::optional<std::uint8_t> value)
     return static_cast<int>(*value);
 }
 
+void RegisterExceptions(py::module_& module)
+{
+    static const py::exception<domain::UnsupportedEncryptionModeException> unsupportedModeError(
+        module, UnsupportedEncryptionModeErrorName, PyExc_ValueError);
+    static const py::exception<domain::InvalidPasswordException> invalidPasswordError(
+        module, InvalidPasswordErrorName, PyExc_ValueError);
+
+    py::register_exception_translator([](std::exception_ptr lastException) {
+        try
+        {
+            if (lastException)
+            {
+                std::rethrow_exception(lastException);
+            }
+        }
+        catch (const domain::UnsupportedEncryptionModeException& error)
+        {
+            PyErr_SetString(unsupportedModeError.ptr(), error.what());
+        }
+        catch (const domain::InvalidPasswordException& error)
+        {
+            PyErr_SetString(invalidPasswordError.ptr(), error.what());
+        }
+    });
+}
+
 }
 
 PYBIND11_MODULE(_sdf_native, module)
 {
     module.doc() = ModuleDoc;
+
+    RegisterExceptions(module);
 
     py::class_<application::ColumnSchema>(module, SchemaClassName, SchemaDoc)
         .def_property_readonly(
@@ -103,6 +137,11 @@ PYBIND11_MODULE(_sdf_native, module)
 
     py::class_<application::SdfDatabase>(module, DatabaseClassName, DatabaseDoc)
         .def(py::init<const std::string&>(), py::arg(PathArgName), InitDoc)
+        .def(
+            py::init<const std::string&, const std::string&>(),
+            py::arg(PathArgName),
+            py::arg(PasswordArgName),
+            InitWithPasswordDoc)
         .def(ListTablesName, &application::SdfDatabase::ListTables, ListTablesDoc)
         .def(
             TableSchemaName,
