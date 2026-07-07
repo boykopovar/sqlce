@@ -11,6 +11,11 @@
 - `python/sdf_parser/` - Python API
 - `research/` - Экспериментальные скрипты
 
+## Установка
+
+```bash
+pip install sdf_parser
+```
 
 [Документирование формата](docs/4.0/ru/00-overview.md)
 
