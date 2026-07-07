@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 
-#include "sdf/application/SdfDatabase.hpp"
-#include "sdf/domain/EncryptionMode.hpp"
+#include "include/sdf/application/SdfDatabase.hpp"
+#include "include/sdf/domain/EncryptionMode.hpp"
 
 namespace
 {

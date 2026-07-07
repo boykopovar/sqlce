@@ -49,7 +49,7 @@ else()
     target_compile_options(libsdf PRIVATE -Wall -Wextra)
 endif()
 
-add_executable(sdf_dump app/main.cpp)
+add_executable(sdf_dump main.cpp)
 target_link_libraries(sdf_dump PRIVATE libsdf)
 
 if(MSVC)
