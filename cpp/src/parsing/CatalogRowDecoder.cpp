@@ -82,13 +82,13 @@ std::string DecodeNarrowFromWide(std::span<const std::uint8_t> chunk)
 
 }
 
-bool CatalogRowDecoder::IsFieldPresent(std::span<const std::uint8_t> presence, std::uint8_t columnId)
+bool CatalogRowDecoder::IsFieldNull(std::span<const std::uint8_t> presence, std::uint8_t columnId)
 {
     const std::size_t byteIndex = columnId / 8;
     const std::size_t bitIndex = columnId % 8;
     if (byteIndex >= presence.size())
     {
-        return false;
+        return true;
     }
     return ((presence[byteIndex] >> bitIndex) & 0x01u) != 0;
 }
@@ -101,7 +101,7 @@ std::optional<CatalogRow> CatalogRowDecoder::Decode(std::span<const std::uint8_t
     }
 
     const std::span<const std::uint8_t> presence = rowBytes.subspan(HeaderLength, CatalogPresenceBytes);
-    const bool sysObjectTypeIsNull = !IsFieldPresent(presence, 0);
+    const bool sysObjectTypeIsNull = IsFieldNull(presence, 0);
     if (sysObjectTypeIsNull)
     {
         return std::nullopt;
@@ -161,7 +161,7 @@ std::optional<CatalogRow> CatalogRowDecoder::Decode(std::span<const std::uint8_t
             return std::nullopt;
         }
 
-        if (!IsFieldPresent(presence, field.columnId))
+        if (IsFieldNull(presence, field.columnId))
         {
             offset += fieldSize;
             continue;
@@ -240,7 +240,7 @@ std::optional<CatalogRow> CatalogRowDecoder::Decode(std::span<const std::uint8_t
         }
 
         const bool applicable = field.tableId == CatalogTableIdCommon || field.tableId == applicableTableId;
-        const bool present = applicable && IsFieldPresent(presence, field.columnId);
+        const bool present = applicable && !IsFieldNull(presence, field.columnId);
 
         if (!present)
         {
