@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from sdf import SdfDatabase
+from sdf_parser import SdfDatabase
 
 DEFAULT_DIR = Path("research/raw/examples")
 MAX_LEN = 20
