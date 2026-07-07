@@ -33,7 +33,6 @@ add_library(libsdf
 )
 
 set_target_properties(libsdf PROPERTIES PREFIX "" OUTPUT_NAME "libsdf")
-
 target_include_directories(libsdf PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(MSVC)

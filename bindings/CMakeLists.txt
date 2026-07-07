@@ -3,7 +3,6 @@ if(POLICY CMP0148)
 endif()
 
 find_package(pybind11 CONFIG REQUIRED)
-
 pybind11_add_module(_sdf_native
         src/module.cpp
         src/value_convert.cpp
@@ -25,4 +24,4 @@ else()
     target_compile_options(_sdf_native PRIVATE -Wall -Wextra)
 endif()
 
-install(TARGETS _sdf_native LIBRARY DESTINATION sdf_parser)
+install(TARGETS _sdf_native LIBRARY DESTINATION sqlce)
