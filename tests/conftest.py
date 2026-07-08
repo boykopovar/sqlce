@@ -24,11 +24,15 @@ PLATFORM_DEFAULT_PASSWORD = "P1atform!Default"
 ENGINE_DEFAULT_PASSWORD = "Eng1ne-Default"
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _clean_sdf_dir_at_session_start() -> None:
+    cleanup_sdf_dir(BASE_DIR)
+
 @pytest.fixture
 def sdf_dir() -> Iterator[Path]:
     directory = get_sdf_dir(BASE_DIR)
     yield directory
-    #cleanup_sdf_dir(BASE_DIR)
+    cleanup_sdf_dir(BASE_DIR)
 
 
 @dataclass(frozen=True)
