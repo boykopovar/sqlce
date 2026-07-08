@@ -15,6 +15,16 @@
 pip install sqlce
 ```
 
+```python
+from sqlce import SdfDatabase
+
+db = SdfDatabase("example.sdf", password="secret123")
+
+for table_name in db.list_tables():
+    print(table_name, db.table_schema(table_name))
+    for row in db.read_table(table_name):
+        print(row)
+```
 
 Текущая [реализация](main.py) поддерживает чтение (поддерживается передача пароля) списка таблиц, структуры таблиц, содержимого записей. Использует c++.
 
