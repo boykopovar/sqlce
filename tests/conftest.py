@@ -28,7 +28,7 @@ ENGINE_DEFAULT_PASSWORD = "Eng1ne-Default"
 def sdf_dir() -> Iterator[Path]:
     directory = get_sdf_dir(BASE_DIR)
     yield directory
-    cleanup_sdf_dir(BASE_DIR)
+    #cleanup_sdf_dir(BASE_DIR)
 
 
 @dataclass(frozen=True)

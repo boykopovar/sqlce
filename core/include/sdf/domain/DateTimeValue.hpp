@@ -7,29 +7,29 @@
 namespace sdf::domain
 {
 
-struct CalendarDate
-{
-    int year;
-    int month;
-    int day;
-};
+    struct CalendarDate
+    {
+        int year;
+        int month;
+        int day;
+    };
 
-class DateTimeValue
-{
-public:
-    DateTimeValue();
-    DateTimeValue(std::uint32_t millisecondsSinceMidnight, std::uint32_t daysSinceEpoch);
+    class DateTimeValue
+    {
+    public:
+        DateTimeValue();
+        DateTimeValue(std::int32_t daysSinceEpoch, std::uint32_t ticksSinceMidnight);
 
-    std::uint32_t MillisecondsSinceMidnight() const;
-    std::uint32_t DaysSinceEpoch() const;
-    CalendarDate Date() const;
+        std::uint32_t MillisecondsSinceMidnight() const;
+        std::int32_t DaysSinceEpoch() const;
+        CalendarDate Date() const;
 
-    std::string ToString() const;
+        std::string ToString() const;
 
-private:
-    std::uint32_t _millisecondsSinceMidnight;
-    std::uint32_t _daysSinceEpoch;
-};
+    private:
+        std::int32_t _daysSinceEpoch;
+        std::uint32_t _ticksSinceMidnight;
+    };
 
 }
 

@@ -27,26 +27,53 @@ int DaysInMonth(int year, int month)
     return daysByMonth[month - 1];
 }
 
-CalendarDate AddDays(int year, int month, int day, std::uint32_t daysToAdd)
+CalendarDate AddDays(int year, int month, int day, std::int32_t daysToAdd)
 {
-    std::uint32_t remaining = daysToAdd;
-    while (remaining > 0)
+    if (daysToAdd >= 0)
     {
-        const int daysLeftInMonth = DaysInMonth(year, month) - day;
-        if (static_cast<std::uint32_t>(daysLeftInMonth) >= remaining)
+        std::uint32_t remaining = static_cast<std::uint32_t>(daysToAdd);
+        while (remaining > 0)
         {
-            day += static_cast<int>(remaining);
-            remaining = 0;
-        }
-        else
-        {
-            remaining -= static_cast<std::uint32_t>(daysLeftInMonth) + 1;
-            day = 1;
-            month += 1;
-            if (month > 12)
+            const int daysLeftInMonth = DaysInMonth(year, month) - day;
+            if (static_cast<std::uint32_t>(daysLeftInMonth) >= remaining)
             {
-                month = 1;
-                year += 1;
+                day += static_cast<int>(remaining);
+                remaining = 0;
+            }
+            else
+            {
+                remaining -= static_cast<std::uint32_t>(daysLeftInMonth) + 1;
+                day = 1;
+                month += 1;
+                if (month > 12)
+                {
+                    month = 1;
+                    year += 1;
+                }
+            }
+        }
+    }
+    else
+    {
+        std::uint32_t remaining = static_cast<std::uint32_t>(-daysToAdd);
+        while (remaining > 0)
+        {
+            const int daysIntoMonth = day - 1;
+            if (static_cast<std::uint32_t>(daysIntoMonth) >= remaining)
+            {
+                day -= static_cast<int>(remaining);
+                remaining = 0;
+            }
+            else
+            {
+                remaining -= static_cast<std::uint32_t>(daysIntoMonth) + 1;
+                month -= 1;
+                if (month < 1)
+                {
+                    month = 12;
+                    year -= 1;
+                }
+                day = DaysInMonth(year, month);
             }
         }
     }
@@ -55,21 +82,21 @@ CalendarDate AddDays(int year, int month, int day, std::uint32_t daysToAdd)
 
 }
 
-DateTimeValue::DateTimeValue() : _millisecondsSinceMidnight(0), _daysSinceEpoch(0)
+DateTimeValue::DateTimeValue() : _daysSinceEpoch(0), _ticksSinceMidnight(0)
 {
 }
 
-DateTimeValue::DateTimeValue(std::uint32_t millisecondsSinceMidnight, std::uint32_t daysSinceEpoch)
-    : _millisecondsSinceMidnight(millisecondsSinceMidnight), _daysSinceEpoch(daysSinceEpoch)
+DateTimeValue::DateTimeValue(std::int32_t daysSinceEpoch, std::uint32_t ticksSinceMidnight)
+    : _daysSinceEpoch(daysSinceEpoch), _ticksSinceMidnight(ticksSinceMidnight)
 {
 }
 
 std::uint32_t DateTimeValue::MillisecondsSinceMidnight() const
 {
-    return _millisecondsSinceMidnight;
+    return static_cast<std::uint32_t>((static_cast<std::uint64_t>(_ticksSinceMidnight) * 10ULL + 1ULL) / 3ULL);
 }
 
-std::uint32_t DateTimeValue::DaysSinceEpoch() const
+std::int32_t DateTimeValue::DaysSinceEpoch() const
 {
     return _daysSinceEpoch;
 }
@@ -83,8 +110,9 @@ std::string DateTimeValue::ToString() const
 {
     const CalendarDate date = Date();
 
-    const std::uint32_t totalSeconds = _millisecondsSinceMidnight / 1000;
-    const std::uint32_t milliseconds = _millisecondsSinceMidnight % 1000;
+    const std::uint32_t milliseconds = MillisecondsSinceMidnight();
+    const std::uint32_t totalSeconds = milliseconds / 1000;
+    const std::uint32_t ms = milliseconds % 1000;
     const std::uint32_t hours = (totalSeconds / 3600) % 24;
     const std::uint32_t minutes = (totalSeconds / 60) % 60;
     const std::uint32_t seconds = totalSeconds % 60;
@@ -100,7 +128,7 @@ std::string DateTimeValue::ToString() const
         hours,
         minutes,
         seconds,
-        milliseconds);
+        ms);
     return std::string(buffer);
 }
 

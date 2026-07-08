@@ -232,9 +232,9 @@ domain::ColumnValue RowDecoder::DecodeFixed(const domain::ColumnDef& column, std
 
         case domain::ColumnType::DateTime:
         {
-            const std::uint32_t milliseconds = infrastructure::ReadUInt32LE(chunk, 0);
-            const std::uint32_t days = infrastructure::ReadUInt32LE(chunk, 4);
-            return domain::ColumnValue(domain::ColumnValueStorage(domain::DateTimeValue(milliseconds, days)));
+            const std::uint32_t ticks = infrastructure::ReadUInt32LE(chunk, 0);
+            const std::int32_t days = infrastructure::ReadInt32LE(chunk, 4);
+            return domain::ColumnValue(domain::ColumnValueStorage(domain::DateTimeValue(days, ticks)));
         }
 
         case domain::ColumnType::Money:
