@@ -60,4 +60,10 @@ dev = [
     "build",
     "twine",
     "pytest",
+    "pytest-cov",
+    "pythonnet"
 ]
+
+[tool.pytest.ini_options]
+addopts = "--cov=sqlce --cov-report=term-missing"
+testpaths = ["tests"]

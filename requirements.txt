@@ -3,3 +3,5 @@ scikit-build-core>=0.10
 twine
 build
 pytest
+pytest-cov
+pythonnet
