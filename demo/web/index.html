@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sqlce - просмотр .sdf в браузере</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">sdf</span>
+      <span class="brand-name">sqlce viewer</span>
+    </div>
+    <p class="tagline">Файл не покидает вкладку браузера. Разбор идёт локально, в WebAssembly.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel intake" id="intakePanel">
+      <h2 class="panel-title">01 - Файл</h2>
+      <label class="dropzone" id="dropzone" for="fileInput">
+        <span class="dropzone-hint" id="dropzoneHint">Выберите .sdf файл или перетащите его сюда</span>
+        <input type="file" id="fileInput" accept=".sdf" hidden>
+      </label>
+
+      <div class="password-row" id="passwordRow" hidden>
+        <label class="field-label" for="passwordInput">Пароль базы</label>
+        <input type="password" id="passwordInput" placeholder="если база зашифрована">
+        <button class="btn btn-primary" id="unlockBtn">Открыть</button>
+      </div>
+
+      <p class="status" id="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel tables" id="tablesPanel" hidden>
+      <h2 class="panel-title">02 - Таблицы</h2>
+      <ul class="table-list" id="tableList"></ul>
+    </section>
+
+    <section class="panel data" id="dataPanel" hidden>
+      <div class="data-header">
+        <h2 class="panel-title" id="dataTitle">03 - Данные</h2>
+        <button class="btn btn-ghost" id="exportBtn">Export CSV</button>
+      </div>
+      <div class="table-scroll">
+        <table id="dataTable">
+          <thead id="dataThead"></thead>
+          <tbody id="dataTbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>sqlce · разбор SQL Server Compact (.sdf) на WebAssembly</span>
+  </footer>
+</div>
+
+<script src="sqlce_wasm.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
