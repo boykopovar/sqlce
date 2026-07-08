@@ -2,3 +2,4 @@ pybind11>=2.12
 scikit-build-core>=0.10
 twine
 build
+pytest

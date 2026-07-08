@@ -1,10 +1,9 @@
-name: Build and publish
+name: Build and release
 
 on:
   push:
     tags:
       - "v*"
-
 jobs:
   build-linux:
     name: Build wheel (Linux)
@@ -40,23 +39,83 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install build tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install build
-
-      - name: Build wheel
-        run: |
-          python -m build --wheel -C cmake.args="-DSDF_BUILD_PYTHON_BINDINGS=ON"
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21.3
+        env:
+          CIBW_ARCHS_WINDOWS: AMD64
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_CMAKE_ARGS: "-DSDF_BUILD_PYTHON_BINDINGS=ON"
 
       - uses: actions/upload-artifact@v4
         with:
           name: dist-windows
-          path: dist/*
+          path: wheelhouse/*
+
+  build-cpp-linux:
+    name: Build C++ library (Linux, ${{ matrix.link }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        link: [static, shared]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=${{ matrix.link == 'shared' && 'ON' || 'OFF' }}
+
+      - name: Build libsdf
+        run: cmake --build build --target libsdf -j
+
+      - name: Package library + headers
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          pkg="libsdf-${version}-linux-x86_64-${{ matrix.link }}"
+          mkdir -p "$pkg/lib" "$pkg/include"
+          cp build/dist/lib/libsdf.* "$pkg/lib/"
+          cp -r core/include/. "$pkg/include/"
+          tar -czf "${pkg}.tar.gz" "$pkg"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cpp-linux-${{ matrix.link }}
+          path: libsdf-*.tar.gz
+
+  build-cpp-windows:
+    name: Build C++ library (Windows, ${{ matrix.link }})
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        link: [static, shared]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        shell: pwsh
+        run: |
+          $shared = if ("${{ matrix.link }}" -eq "shared") { "ON" } else { "OFF" }
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=$shared
+
+      - name: Build libsdf
+        run: cmake --build build --target libsdf --config Release -j
+
+      - name: Package library + headers
+        shell: pwsh
+        run: |
+          $version = "${env:GITHUB_REF_NAME}" -replace '^v', ''
+          $pkg = "libsdf-$version-windows-x86_64-${{ matrix.link }}"
+          New-Item -ItemType Directory -Force -Path "$pkg/lib" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$pkg/include" | Out-Null
+          Copy-Item "build/dist/lib/libsdf.*" "$pkg/lib/"
+          Copy-Item -Recurse "core/include/*" "$pkg/include/"
+          Compress-Archive -Path $pkg -DestinationPath "$pkg.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cpp-windows-${{ matrix.link }}
+          path: libsdf-*.zip
 
   publish:
     name: Publish to PyPI
@@ -76,3 +135,28 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-cpp-linux, build-cpp-windows, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cpp-*
+          path: release-assets
+          merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          generate_release_notes: true

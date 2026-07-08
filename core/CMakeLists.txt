@@ -36,7 +36,14 @@ add_library(libsdf
         src/application/SdfDatabase.cpp
 )
 
-set_target_properties(libsdf PROPERTIES PREFIX "" OUTPUT_NAME "libsdf" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(libsdf PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME "libsdf"
+        POSITION_INDEPENDENT_CODE ON
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/dist/lib"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/dist/lib"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/dist/lib"
+)
 
 target_include_directories(libsdf PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
