@@ -57,6 +57,14 @@ if(MSVC)
     target_compile_definitions(sdf_dump PRIVATE NOMINMAX _CRT_SECURE_NO_WARNINGS)
 else()
     target_compile_options(sdf_dump PRIVATE -Wall -Wextra)
+    if(MINGW)
+        target_link_options(sdf_dump PRIVATE
+                -static
+                -static-libgcc
+                -static-libstdc++
+                -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,--no-whole-archive
+        )
+    endif()
 endif()
 
 enable_testing()
