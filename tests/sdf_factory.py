@@ -2,7 +2,9 @@ import os
 import shutil
 import uuid
 from pathlib import Path
+from typing import Any
 from typing import Optional
+from typing import Sequence
 
 import clr
 
@@ -108,6 +110,110 @@ def execute_non_query(connection, command_text: str) -> None:
     command = connection.CreateCommand()
     command.CommandText = command_text
     command.ExecuteNonQuery()
+
+
+def execute_parameterized_non_query(
+    connection,
+    command_text: str,
+    parameter_columns: Sequence[Any],
+    parameter_names: Sequence[str],
+    parameter_values: Sequence[Any],
+) -> None:
+    sqlserverce = _load_sqlserverce()
+
+    command = connection.CreateCommand()
+    command.CommandText = command_text
+    for column, name, value in zip(parameter_columns, parameter_names, parameter_values):
+        parameter = sqlserverce.SqlCeParameter(name, _sql_db_type_for(column.sql_type))
+        variable_length_size = _variable_length_size(column.sql_type, value)
+        if variable_length_size is not None:
+            parameter.Size = variable_length_size
+        parameter.Value = _to_clr_value(value, column.sql_type)
+        command.Parameters.Add(parameter)
+    command.ExecuteNonQuery()
+
+
+def _variable_length_size(sql_type: str, value: Any) -> Optional[int]:
+    base_type = _base_sql_type(sql_type)
+    variable_length_types = ("nvarchar", "nchar", "ntext", "varbinary", "binary", "image")
+    if base_type not in variable_length_types:
+        return None
+    if value is None:
+        return 1
+    return max(len(value), 1)
+
+
+def _base_sql_type(sql_type: str) -> str:
+    return sql_type.split("(", 1)[0].strip().lower()
+
+
+def _sql_db_type_for(sql_type: str):
+    import System
+    import System.Data
+
+    mapping = {
+        "tinyint": System.Data.SqlDbType.TinyInt,
+        "smallint": System.Data.SqlDbType.SmallInt,
+        "int": System.Data.SqlDbType.Int,
+        "bigint": System.Data.SqlDbType.BigInt,
+        "float": System.Data.SqlDbType.Float,
+        "real": System.Data.SqlDbType.Real,
+        "money": System.Data.SqlDbType.Money,
+        "bit": System.Data.SqlDbType.Bit,
+        "datetime": System.Data.SqlDbType.DateTime,
+        "uniqueidentifier": System.Data.SqlDbType.UniqueIdentifier,
+        "nvarchar": System.Data.SqlDbType.NVarChar,
+        "nchar": System.Data.SqlDbType.NChar,
+        "ntext": System.Data.SqlDbType.NText,
+        "varbinary": System.Data.SqlDbType.VarBinary,
+        "binary": System.Data.SqlDbType.Binary,
+        "image": System.Data.SqlDbType.Image,
+    }
+    base_type = _base_sql_type(sql_type)
+    if base_type not in mapping:
+        raise TypeError(f"unsupported sql_type for parameterized insert: {sql_type!r}")
+    return mapping[base_type]
+
+
+def _to_clr_value(value: Any, sql_type: str) -> Any:
+    import System
+
+    if value is None:
+        return System.DBNull.Value
+
+    base_type = _base_sql_type(sql_type)
+
+    if isinstance(value, (bytes, bytearray)):
+        return System.Array[System.Byte](value)
+    if base_type == "tinyint":
+        return System.Byte(value)
+    if base_type == "smallint":
+        return System.Int16(value)
+    if base_type == "int":
+        return System.Int32(value)
+    if base_type == "bigint":
+        return System.Int64(value)
+    if base_type in ("float", "money"):
+        return System.Double(value)
+    if base_type == "real":
+        return System.Single(value)
+    if base_type == "datetime":
+        return System.DateTime(
+            value.year,
+            value.month,
+            value.day,
+            value.hour,
+            value.minute,
+            value.second,
+            value.microsecond // 1000,
+        )
+    if base_type == "bit":
+        return System.Boolean(value)
+    if base_type == "uniqueidentifier":
+        return System.Guid(str(value))
+    if base_type in ("nvarchar", "nchar", "ntext"):
+        return System.String(value)
+    return value
 
 
 def create_plain_database(sdf_dir: Path, prefix: str = "plain40") -> Path:

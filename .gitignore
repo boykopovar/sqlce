@@ -41,6 +41,7 @@ install_manifest.txt
 compile_commands.json
 vcpkg_installed/
 Testing/
+tests/sdf/
 .cache/
 
 .idea/
