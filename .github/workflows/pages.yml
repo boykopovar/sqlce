@@ -1,0 +1,58 @@
+name: Build WASM demo and deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+
+      - name: Configure (Emscripten + CMake)
+        run: emcmake cmake -B build-wasm -DSDF_BUILD_WASM=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build sqlce_wasm + copy into demo/web
+        run: cmake --build build-wasm --target sqlce_wasm --parallel
+
+      - name: Sanity check demo assets
+        run: |
+          test -f demo/web/index.html
+          test -f demo/web/sqlce_wasm.js
+          test -f demo/web/sqlce_wasm.wasm
+          touch demo/web/.nojekyll
+          echo "demo/web is ready:"
+          ls -la demo/web
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: demo/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -44,6 +44,8 @@ Testing/
 tests/sdf/
 .cache/
 
+sqlce_wasm.js
+
 .idea/
 .vscode/
 
