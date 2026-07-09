@@ -79,6 +79,8 @@ downloads/
 *.tar.gz
 *.zip
 *.whl
+*.env
+*.sdf
 
 *.bat
 *.jpg

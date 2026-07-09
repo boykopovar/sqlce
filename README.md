@@ -38,6 +38,8 @@ for table_name in db.list_tables():
 
 The current implementation supports reading the list of tables, table schemas, and table contents (including password-protected databases). It is implemented in C++.
 
+> Reading encrypted .sdf version 3.5 files is not currently supported (unencrypted files are supported).
+
 ### Testing
 
 ```bash
