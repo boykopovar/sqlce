@@ -29,22 +29,23 @@ jobs:
       - name: Configure (Emscripten + CMake)
         run: emcmake cmake -B build-wasm -DSDF_BUILD_WASM=ON -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build sqlce_wasm + copy into demo/web
+      - name: Build sqlce_wasm
         run: cmake --build build-wasm --target sqlce_wasm --parallel
 
-      - name: Sanity check demo assets
+      - name: Assemble demo site
         run: |
-          test -f demo/web/index.html
-          test -f demo/web/sqlce_wasm.js
-          test -f demo/web/sqlce_wasm.wasm
-          touch demo/web/.nojekyll
-          echo "demo/web is ready:"
-          ls -la demo/web
+          mkdir -p site
+          cp demo/web/index.html demo/web/app.js demo/web/app.css site/
+          cp build-wasm/bindings/wasm/sqlce_wasm.js site/
+          cp build-wasm/bindings/wasm/sqlce_wasm.wasm site/
+          touch site/.nojekyll
+          echo "site/ is ready:"
+          ls -la site
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: demo/web
+          path: site
 
   deploy:
     needs: build

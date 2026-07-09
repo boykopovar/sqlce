@@ -12,6 +12,5 @@ endif()
 
 if(SDF_BUILD_WASM)
     add_subdirectory(bindings/wasm)
-    add_subdirectory(demo)
 endif()
 

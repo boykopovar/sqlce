@@ -156,7 +156,7 @@ function columnNamesFromSchema(schema, rows) {
 function renderTable(schema, rows, tableName) {
   const columnNames = columnNamesFromSchema(schema, rows);
 
-  el.dataTitle.textContent = "03 — Данные: " + tableName;
+  el.dataTitle.textContent = "Данные: " + tableName;
   el.dataThead.innerHTML = "";
   const headRow = document.createElement("tr");
   for (const columnName of columnNames) {
