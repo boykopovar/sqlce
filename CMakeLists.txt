@@ -7,10 +7,11 @@ option(SDF_BUILD_WASM "Build the Emscripten wasm module" OFF)
 add_subdirectory(core)
 
 if(SDF_BUILD_PYTHON_BINDINGS)
-    add_subdirectory(bindings)
+    add_subdirectory(bindings/python)
 endif()
 
 if(SDF_BUILD_WASM)
-    add_subdirectory(wasm)
+    add_subdirectory(bindings/wasm)
+    add_subdirectory(demo)
 endif()
 
