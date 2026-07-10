@@ -3,6 +3,8 @@ import shutil
 import uuid
 from pathlib import Path
 from typing import Any
+from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 
@@ -12,27 +14,36 @@ ASSEMBLY_NAME = "System.Data.SqlServerCe"
 ASSEMBLY_FILE_NAME = f"{ASSEMBLY_NAME}.dll"
 
 PROGRAM_FILES_DIRS = [r"C:\Program Files", r"C:\Program Files (x86)"]
-ASSEMBLY_RELATIVE_PARTS = ("Microsoft SQL Server Compact Edition", "v4.0", "Desktop", ASSEMBLY_FILE_NAME)
 
-SQLCE_ASSEMBLY_CANDIDATES = [
-    os.path.join(program_files_dir, *ASSEMBLY_RELATIVE_PARTS) for program_files_dir in PROGRAM_FILES_DIRS
-]
+SDF_VERSION_35 = "3.5"
+SDF_VERSION_40 = "4.0"
+
+ASSEMBLY_RELATIVE_PARTS_BY_VERSION = {
+    SDF_VERSION_35: ("Microsoft SQL Server Compact Edition", "v3.5", "Desktop", ASSEMBLY_FILE_NAME),
+    SDF_VERSION_40: ("Microsoft SQL Server Compact Edition", "v4.0", "Desktop", ASSEMBLY_FILE_NAME),
+}
 
 ENCRYPTION_MODE_PLATFORM_DEFAULT = "Platform Default"
 ENCRYPTION_MODE_ENGINE_DEFAULT = "Engine Default"
 
 SDF_DIR_NAME = "sdf"
 
-_sqlserverce = None
+_sqlserverce_by_version: Dict[str, Any] = {}
 
 
-def _load_sqlserverce():
-    global _sqlserverce
-    if _sqlserverce is not None:
-        return _sqlserverce
+def _assembly_candidates(version: str) -> List[str]:
+    relative_parts = ASSEMBLY_RELATIVE_PARTS_BY_VERSION[version]
+    return [
+        os.path.join(program_files_dir, *relative_parts) for program_files_dir in PROGRAM_FILES_DIRS
+    ]
+
+
+def _load_sqlserverce(version: str = SDF_VERSION_40):
+    if version in _sqlserverce_by_version:
+        return _sqlserverce_by_version[version]
 
     last_error: Optional[Exception] = None
-    for candidate in [*SQLCE_ASSEMBLY_CANDIDATES, ASSEMBLY_NAME]:
+    for candidate in [*_assembly_candidates(version), ASSEMBLY_NAME]:
         try:
             clr.AddReference(candidate)
             break
@@ -40,13 +51,13 @@ def _load_sqlserverce():
             last_error = error
     else:
         raise RuntimeError(
-            f"{ASSEMBLY_NAME} 4.0 assembly not found, install SQL Server Compact 4.0"
+            f"{ASSEMBLY_NAME} {version} assembly not found, install SQL Server Compact {version}"
         ) from last_error
 
     import System.Data.SqlServerCe as sqlserverce
 
-    _sqlserverce = sqlserverce
-    return _sqlserverce
+    _sqlserverce_by_version[version] = sqlserverce
+    return sqlserverce
 
 
 def get_sdf_dir(base_dir: Path) -> Path:
@@ -83,8 +94,9 @@ def create_sdf_database(
     path: Path,
     password: Optional[str] = None,
     encryption_mode: Optional[str] = None,
+    version: str = SDF_VERSION_40,
 ) -> Path:
-    sqlserverce = _load_sqlserverce()
+    sqlserverce = _load_sqlserverce(version)
 
     connection_string = build_connection_string(path, password, encryption_mode)
 
@@ -97,8 +109,8 @@ def create_sdf_database(
     return path
 
 
-def open_connection(path: Path, password: Optional[str] = None):
-    sqlserverce = _load_sqlserverce()
+def open_connection(path: Path, password: Optional[str] = None, version: str = SDF_VERSION_40):
+    sqlserverce = _load_sqlserverce(version)
 
     connection_string = build_connection_string(path, password)
     connection = sqlserverce.SqlCeConnection(connection_string)
@@ -118,8 +130,9 @@ def execute_parameterized_non_query(
     parameter_columns: Sequence[Any],
     parameter_names: Sequence[str],
     parameter_values: Sequence[Any],
+    version: str = SDF_VERSION_40,
 ) -> None:
-    sqlserverce = _load_sqlserverce()
+    sqlserverce = _load_sqlserverce(version)
 
     command = connection.CreateCommand()
     command.CommandText = command_text
@@ -216,9 +229,9 @@ def _to_clr_value(value: Any, sql_type: str) -> Any:
     return value
 
 
-def create_plain_database(sdf_dir: Path, prefix: str = "plain40") -> Path:
+def create_plain_database(sdf_dir: Path, prefix: str = "plain", version: str = SDF_VERSION_40) -> Path:
     path = make_sdf_path(sdf_dir, prefix)
-    create_sdf_database(path)
+    create_sdf_database(path, version=version)
     return path
 
 

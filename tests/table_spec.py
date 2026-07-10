@@ -119,7 +119,7 @@ def _literal_key_value(value: Any) -> str:
     raise TypeError(f"unsupported key value type for literal update: {type(value)!r}")
 
 
-def build_table(connection, spec: TableSpec) -> None:
+def build_table(connection, spec: TableSpec, version: str = "4.0") -> None:
     from tests.sdf_factory import execute_non_query
     from tests.sdf_factory import execute_parameterized_non_query
 
@@ -135,6 +135,7 @@ def build_table(connection, spec: TableSpec) -> None:
                 plan.parameter_columns,
                 plan.parameter_names,
                 plan.parameter_values,
+                version,
             )
             for statement in plan.literal_update_sql_statements(key_column, row[0]):
                 execute_non_query(connection, statement)

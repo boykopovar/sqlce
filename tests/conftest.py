@@ -7,6 +7,8 @@ from typing import Optional
 
 import pytest
 
+from tests.sdf_factory import SDF_VERSION_35
+from tests.sdf_factory import SDF_VERSION_40
 from tests.sdf_factory import cleanup_sdf_dir
 from tests.sdf_factory import create_engine_default_encrypted_database
 from tests.sdf_factory import create_platform_default_encrypted_database
@@ -16,7 +18,8 @@ from tests.sdf_factory import open_connection as sdf_open_connection
 
 BASE_DIR = Path(__file__).parent
 
-SCENARIO_PLAIN = "plain40"
+SCENARIO_PLAIN_35 = "plain35"
+SCENARIO_PLAIN_40 = "plain40"
 SCENARIO_PLATFORM_DEFAULT = "platform_default40"
 SCENARIO_ENGINE_DEFAULT = "engine_default40"
 
@@ -40,9 +43,10 @@ class SdfScenario:
     name: str
     path: Path
     password: Optional[str]
+    version: str = SDF_VERSION_40
 
     def open_connection(self):
-        return sdf_open_connection(self.path, self.password)
+        return sdf_open_connection(self.path, self.password, self.version)
 
     def open_database(self):
         from sqlce import SdfDatabase
@@ -52,9 +56,14 @@ class SdfScenario:
         return SdfDatabase(str(self.path), self.password)
 
 
-def _build_plain_scenario(sdf_dir: Path) -> SdfScenario:
-    path = create_plain_database(sdf_dir)
-    return SdfScenario(name=SCENARIO_PLAIN, path=path, password=None)
+def _build_plain_35_scenario(sdf_dir: Path) -> SdfScenario:
+    path = create_plain_database(sdf_dir, prefix=SCENARIO_PLAIN_35, version=SDF_VERSION_35)
+    return SdfScenario(name=SCENARIO_PLAIN_35, path=path, password=None, version=SDF_VERSION_35)
+
+
+def _build_plain_40_scenario(sdf_dir: Path) -> SdfScenario:
+    path = create_plain_database(sdf_dir, prefix=SCENARIO_PLAIN_40, version=SDF_VERSION_40)
+    return SdfScenario(name=SCENARIO_PLAIN_40, path=path, password=None, version=SDF_VERSION_40)
 
 
 def _build_platform_default_scenario(sdf_dir: Path) -> SdfScenario:
@@ -68,13 +77,16 @@ def _build_engine_default_scenario(sdf_dir: Path) -> SdfScenario:
 
 
 _SCENARIO_BUILDERS: Dict[str, Callable[[Path], SdfScenario]] = {
-    SCENARIO_PLAIN: _build_plain_scenario,
+    SCENARIO_PLAIN_35: _build_plain_35_scenario,
+    SCENARIO_PLAIN_40: _build_plain_40_scenario,
     SCENARIO_PLATFORM_DEFAULT: _build_platform_default_scenario,
     SCENARIO_ENGINE_DEFAULT: _build_engine_default_scenario,
 }
 
 
-@pytest.fixture(params=[SCENARIO_PLAIN, SCENARIO_PLATFORM_DEFAULT, SCENARIO_ENGINE_DEFAULT])
+@pytest.fixture(
+    params=[SCENARIO_PLAIN_35, SCENARIO_PLAIN_40, SCENARIO_PLATFORM_DEFAULT, SCENARIO_ENGINE_DEFAULT]
+)
 def sdf_scenario(request, sdf_dir: Path) -> SdfScenario:
     builder = _SCENARIO_BUILDERS[request.param]
     return builder(sdf_dir)
