@@ -100,7 +100,7 @@ a {
 
 .hero h1 {
   margin: 0;
-  font-size: clamp(24px, 4.2vw, 34px);
+  font-size: clamp(18px, 3vw, 26px);
   font-weight: 700;
   color: var(--ink);
 }
