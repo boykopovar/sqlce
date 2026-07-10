@@ -15,10 +15,8 @@ const el = {
   passwordInput: document.getElementById("passwordInput"),
   unlockBtn: document.getElementById("unlockBtn"),
   status: document.getElementById("status"),
-  tablesPanel: document.getElementById("tablesPanel"),
-  tableList: document.getElementById("tableList"),
   dataPanel: document.getElementById("dataPanel"),
-  dataTitle: document.getElementById("dataTitle"),
+  tableSelect: document.getElementById("tableSelect"),
   dataThead: document.getElementById("dataThead"),
   dataTbody: document.getElementById("dataTbody"),
   exportBtn: document.getElementById("exportBtn"),
@@ -30,9 +28,8 @@ function setStatus(message, isError) {
 }
 
 function resetResultPanels() {
-  el.tablesPanel.hidden = true;
   el.dataPanel.hidden = true;
-  el.tableList.innerHTML = "";
+  el.tableSelect.innerHTML = "";
   el.dataThead.innerHTML = "";
   el.dataTbody.innerHTML = "";
   state.tables = [];
@@ -100,30 +97,23 @@ async function loadTableList() {
   state.tables = parseDataResult(rawJson);
 }
 
-function renderTableList() {
-  el.tableList.innerHTML = "";
+function renderTableSelect() {
+  el.tableSelect.innerHTML = "";
   for (const tableName of state.tables) {
-    const li = document.createElement("li");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = tableName;
-    button.addEventListener("click", () => selectTable(tableName));
-    li.appendChild(button);
-    el.tableList.appendChild(li);
+    const option = document.createElement("option");
+    option.value = tableName;
+    option.textContent = tableName;
+    el.tableSelect.appendChild(option);
   }
-  el.tablesPanel.hidden = state.tables.length === 0;
-}
-
-function markActiveTableButton(tableName) {
-  const buttons = el.tableList.querySelectorAll("button");
-  buttons.forEach((button) => {
-    button.classList.toggle("is-active", button.textContent === tableName);
-  });
+  if (state.tables.length > 0) {
+    el.tableSelect.value = state.tables[0];
+    selectTable(state.tables[0]);
+  }
 }
 
 async function selectTable(tableName) {
   try {
-    markActiveTableButton(tableName);
+    el.tableSelect.value = tableName;
     setStatus("Чтение таблицы " + tableName + "…", false);
     const rawSchemaJson = state.module.SdfDatabase.tableSchemaJson(state.handle, tableName);
     const schema = parseDataResult(rawSchemaJson);
@@ -153,7 +143,6 @@ function columnNamesFromSchema(schema, rows) {
 function renderTable(schema, rows, tableName) {
   const columnNames = columnNamesFromSchema(schema, rows);
 
-  el.dataTitle.textContent = "Данные: " + tableName;
   el.dataThead.innerHTML = "";
   const headRow = document.createElement("tr");
   for (const columnName of columnNames) {
@@ -242,7 +231,7 @@ async function handleFile(file) {
     state.module = module;
     state.handle = handle;
     await loadTableList();
-    renderTableList();
+    renderTableSelect();
     setStatus("Готово. Таблиц: " + state.tables.length + ".", false);
   } catch (error) {
     if (String(error.message || "").toLowerCase().includes("password")) {
@@ -266,7 +255,7 @@ async function handleUnlock() {
     state.module = module;
     state.handle = handle;
     await loadTableList();
-    renderTableList();
+    renderTableSelect();
     setStatus("Готово. Таблиц: " + state.tables.length + ".", false);
   } catch (error) {
     setStatus(String(error.message || error), true);
@@ -296,6 +285,10 @@ el.dropzone.addEventListener("drop", (event) => {
   if (file) {
     handleFile(file);
   }
+});
+
+el.tableSelect.addEventListener("change", (event) => {
+  selectTable(event.target.value);
 });
 
 el.unlockBtn.addEventListener("click", handleUnlock);

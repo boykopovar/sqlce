@@ -261,13 +261,6 @@ a {
   margin-top: clamp(20px, 4vw, 32px);
 }
 
-.results-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(14px, 2.5vw, 20px);
-  align-items: flex-start;
-}
-
 .panel {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -277,51 +270,11 @@ a {
   min-width: 0;
 }
 
-.tables {
-  flex: 1 1 220px;
-}
-
-.data {
-  flex: 3 1 480px;
-}
-
 .panel-title {
   font-weight: 700;
   font-size: 15px;
   color: var(--ink);
-  margin: 0 0 12px;
-}
-
-.table-list {
-  list-style: none;
   margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.table-list button {
-  width: 100%;
-  text-align: left;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 10px;
-  background: transparent;
-  font-family: var(--font-display);
-  font-size: 14px;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.table-list button:hover {
-  background: var(--bg);
-}
-
-.table-list button.is-active {
-  background: var(--accent-soft);
-  color: var(--accent-dark);
-  font-weight: 700;
 }
 
 .data-header {
@@ -331,6 +284,30 @@ a {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.data-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.table-select {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.table-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .table-scroll {

@@ -51,23 +51,19 @@
   <p class="trust-line">Ограничений по размеру нет, но в <a href="https://github.com/boykopovar/sqlce/tree/main/core" target="_blank" rel="noopener">текущей реализации</a> файл попадает целиком в оперативную память. Так что если файл уж слишком большой, браузер может зависнуть.</p>
 
   <section class="results" id="resultsSection">
-    <div class="results-grid">
-      <aside class="panel tables" id="tablesPanel" hidden>
-        <h2 class="panel-title">Таблицы</h2>
-        <ul class="table-list" id="tableList"></ul>
-      </aside>
-
-      <div class="panel data" id="dataPanel" hidden>
-        <div class="data-header">
-          <h2 class="panel-title" id="dataTitle">Данные</h2>
-          <button class="btn btn-outline" id="exportBtn">Скачать CSV</button>
+    <div class="panel data" id="dataPanel" hidden>
+      <div class="data-header">
+        <div class="data-header-left">
+          <label class="panel-title" for="tableSelect">Таблица:</label>
+          <select class="table-select" id="tableSelect"></select>
         </div>
-        <div class="table-scroll">
-          <table id="dataTable">
-            <thead id="dataThead"></thead>
-            <tbody id="dataTbody"></tbody>
-          </table>
-        </div>
+        <button class="btn btn-outline" id="exportBtn">Скачать CSV</button>
+      </div>
+      <div class="table-scroll">
+        <table id="dataTable">
+          <thead id="dataThead"></thead>
+          <tbody id="dataTbody"></tbody>
+        </table>
       </div>
     </div>
   </section>
