@@ -14,6 +14,7 @@ target_link_options(sqlce_wasm PRIVATE
         "-sEXPORTED_RUNTIME_METHODS=[FS,ccall,cwrap]"
         "-sFORCE_FILESYSTEM=1"
         "-sALLOW_MEMORY_GROWTH=1"
+        "-sGROWABLE_ARRAYBUFFERS=0"
         "-sENVIRONMENT=web"
 )
 
