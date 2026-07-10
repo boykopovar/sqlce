@@ -37,6 +37,17 @@ constexpr char TableSchemaDoc[] = "Return the column schema of a table.";
 constexpr char ReadTableName[] = "read_table";
 constexpr char ReadTableDoc[] = "Return every row of a table as a list of column-name -> value mappings.";
 constexpr char TableNameArgName[] = "table_name";
+constexpr char GetEncryptionModeName[] = "get_encryption_mode";
+constexpr char GetEncryptionModeDoc[] = "Return the encryption mode the database file was opened with.";
+constexpr char GetEncryptionModeStaticDoc[] = "Return the encryption mode of a .sdf file without opening it.";
+
+constexpr char EncryptionModeClassName[] = "EncryptionMode";
+constexpr char EncryptionModeDoc[] = "Encryption mode of a .sdf database file.";
+constexpr char EncryptionModeNoneName[] = "NONE";
+constexpr char EncryptionModeRc4Sha1Name[] = "RC4_SHA1";
+constexpr char EncryptionModeAes128Sha1Name[] = "AES128_SHA1";
+constexpr char EncryptionModeAes128Sha256Name[] = "AES128_SHA256";
+constexpr char EncryptionModeAes256Sha512Name[] = "AES256_SHA512";
 
 constexpr char SchemaClassName[] = "ColumnSchema";
 constexpr char SchemaDoc[] = "Describes a single column of a table.";
@@ -115,6 +126,13 @@ PYBIND11_MODULE(_sdf_native, module)
 
     RegisterExceptions(module);
 
+    py::enum_<domain::EncryptionMode>(module, EncryptionModeClassName, EncryptionModeDoc)
+        .value(EncryptionModeNoneName, domain::EncryptionMode::None)
+        .value(EncryptionModeRc4Sha1Name, domain::EncryptionMode::Rc4Sha1)
+        .value(EncryptionModeAes128Sha1Name, domain::EncryptionMode::Aes128Sha1)
+        .value(EncryptionModeAes128Sha256Name, domain::EncryptionMode::Aes128Sha256)
+        .value(EncryptionModeAes256Sha512Name, domain::EncryptionMode::Aes256Sha512);
+
     py::class_<application::ColumnSchema>(module, SchemaClassName, SchemaDoc)
         .def_property_readonly(
             OrdinalAttrName,
@@ -148,7 +166,16 @@ PYBIND11_MODULE(_sdf_native, module)
             &application::SdfDatabase::TableSchema,
             py::arg(TableNameArgName),
             TableSchemaDoc)
-        .def(ReadTableName, &ReadTableAsDicts, py::arg(TableNameArgName), ReadTableDoc);
+        .def(ReadTableName, &ReadTableAsDicts, py::arg(TableNameArgName), ReadTableDoc)
+        .def(
+            GetEncryptionModeName,
+            py::overload_cast<>(&application::SdfDatabase::GetEncryptionMode, py::const_),
+            GetEncryptionModeDoc)
+        .def_static(
+            GetEncryptionModeName,
+            py::overload_cast<const std::string&>(&application::SdfDatabase::GetEncryptionMode),
+            py::arg(PathArgName),
+            GetEncryptionModeStaticDoc);
 }
 
 }

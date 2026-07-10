@@ -1,5 +1,6 @@
 import datetime
 import decimal
+import enum
 import uuid
 from typing import Dict
 from typing import List
@@ -20,6 +21,14 @@ ColumnValue = Union[
 ]
 
 Row = Dict[str, ColumnValue]
+
+
+class EncryptionMode(enum.Enum):
+    NONE = ...
+    RC4_SHA1 = ...
+    AES128_SHA1 = ...
+    AES128_SHA256 = ...
+    AES256_SHA512 = ...
 
 
 class UnsupportedEncryptionModeError(ValueError):
@@ -62,3 +71,10 @@ class SdfDatabase:
     def table_schema(self, table_name: str) -> List[ColumnSchema]: ...
 
     def read_table(self, table_name: str) -> List[Row]: ...
+
+    @overload
+    def get_encryption_mode(self) -> EncryptionMode: ...
+
+    @overload
+    @staticmethod
+    def get_encryption_mode(path: str) -> EncryptionMode: ...

@@ -14,18 +14,18 @@
 namespace sdf::application
 {
 
-SdfDatabase::SdfDatabase(const std::string& path) : SdfDatabase(OpenStorage(path, std::string()))
+SdfDatabase::SdfDatabase(const std::string& path) : SdfDatabase(Open(path, std::string()))
 {
 }
 
-SdfDatabase::SdfDatabase(const std::string& path, const std::string& password) : SdfDatabase(OpenStorage(path, password))
+SdfDatabase::SdfDatabase(const std::string& path, const std::string& password) : SdfDatabase(Open(path, password))
 {
 }
 
-std::unique_ptr<domain::IPageStorage> SdfDatabase::OpenStorage(const std::string& path, const std::string& password)
+SdfDatabase::OpenResult SdfDatabase::Open(const std::string& path, const std::string& password)
 {
     const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
-    const domain::EncryptionMode mode = parsing::SdfPageCipher::ReadMode(firstPage);
+    const domain::EncryptionMode mode = GetEncryptionMode(path);
 
     if (password.empty())
     {
@@ -33,15 +33,16 @@ std::unique_ptr<domain::IPageStorage> SdfDatabase::OpenStorage(const std::string
         {
             throw std::runtime_error("file is password-protected, password required");
         }
-        return std::make_unique<infrastructure::FileStorage>(path);
+        return OpenResult{std::make_unique<infrastructure::FileStorage>(path), mode};
     }
 
     const parsing::SdfPageCipher cipher(firstPage, password);
-    return std::make_unique<infrastructure::FileStorage>(path, cipher);
+    return OpenResult{std::make_unique<infrastructure::FileStorage>(path, cipher), mode};
 }
 
-SdfDatabase::SdfDatabase(std::unique_ptr<domain::IPageStorage> storage)
-    : _storage(std::move(storage))
+SdfDatabase::SdfDatabase(OpenResult opened)
+    : _encryptionMode(opened.encryptionMode)
+    , _storage(std::move(opened.storage))
     , _pageScanner(std::make_shared<parsing::CatalogPageScanner>())
     , _tableCatalogBuilder(
           std::make_shared<parsing::TableCatalogBuilder>(_pageScanner, std::make_shared<parsing::CatalogRowDecoder>()))
@@ -144,6 +145,17 @@ std::vector<domain::Row> SdfDatabase::ReadTable(const std::string& tableName) co
     }
 
     return rows;
+}
+
+domain::EncryptionMode SdfDatabase::GetEncryptionMode() const
+{
+    return _encryptionMode;
+}
+
+domain::EncryptionMode SdfDatabase::GetEncryptionMode(const std::string& path)
+{
+    const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
+    return parsing::SdfPageCipher::ReadMode(firstPage);
 }
 
 }

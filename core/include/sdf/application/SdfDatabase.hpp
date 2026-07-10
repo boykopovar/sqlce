@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "sdf/application/ColumnSchema.hpp"
+#include "sdf/domain/EncryptionMode.hpp"
 #include "sdf/domain/IPageCipher.hpp"
 #include "sdf/domain/IPageStorage.hpp"
 #include "sdf/domain/Row.hpp"
@@ -25,11 +26,14 @@ public:
     explicit SdfDatabase(const std::string& path);
     SdfDatabase(const std::string& path, const std::string& password);
 
-    std::vector<std::string> ListTables() const;
-    std::vector<ColumnSchema> TableSchema(const std::string& tableName) const;
-    std::vector<domain::Row> ReadTable(const std::string& tableName) const;
+    [[nodiscard]] std::vector<std::string> ListTables() const;
+    [[nodiscard]] std::vector<ColumnSchema> TableSchema(const std::string& tableName) const;
+    [[nodiscard]] std::vector<domain::Row> ReadTable(const std::string& tableName) const;
+    [[nodiscard]] domain::EncryptionMode GetEncryptionMode() const;
+    [[nodiscard]] static domain::EncryptionMode GetEncryptionMode(const std::string& path);
 
 private:
+    domain::EncryptionMode _encryptionMode;
     std::unique_ptr<domain::IPageStorage> _storage;
     std::shared_ptr<parsing::ICatalogPageScanner> _pageScanner;
     std::shared_ptr<parsing::ITableCatalogBuilder> _tableCatalogBuilder;
@@ -38,12 +42,17 @@ private:
 
     std::map<std::string, domain::TableDef> _tables;
 
-    explicit SdfDatabase(std::unique_ptr<domain::IPageStorage> storage);
+    struct OpenResult
+    {
+        std::unique_ptr<domain::IPageStorage> storage;
+        domain::EncryptionMode encryptionMode;
+    };
 
-    static std::unique_ptr<domain::IPageStorage> OpenStorage(const std::string& path, const std::string& password);
+    static OpenResult Open(const std::string& path, const std::string& password);
+    explicit SdfDatabase(OpenResult opened);
 
     void AssignDataPages();
-    const domain::TableDef& RequireTable(const std::string& tableName) const;
+    [[nodiscard]] const domain::TableDef& RequireTable(const std::string& tableName) const;
 };
 
 }
