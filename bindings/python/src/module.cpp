@@ -39,6 +39,7 @@ constexpr char ReadTableDoc[] = "Return every row of a table as a list of column
 constexpr char TableNameArgName[] = "table_name";
 constexpr char GetEncryptionModeName[] = "get_encryption_mode";
 constexpr char GetEncryptionModeDoc[] = "Return the encryption mode the database file was opened with.";
+constexpr char GetEncryptionModeStaticName[] = "get_encryption_mode_from_file";
 constexpr char GetEncryptionModeStaticDoc[] = "Return the encryption mode of a .sdf file without opening it.";
 
 constexpr char EncryptionModeClassName[] = "EncryptionMode";
@@ -172,7 +173,7 @@ PYBIND11_MODULE(_sdf_native, module)
             py::overload_cast<>(&application::SdfDatabase::GetEncryptionMode, py::const_),
             GetEncryptionModeDoc)
         .def_static(
-            GetEncryptionModeName,
+            GetEncryptionModeStaticName,
             py::overload_cast<const std::string&>(&application::SdfDatabase::GetEncryptionMode),
             py::arg(PathArgName),
             GetEncryptionModeStaticDoc);
