@@ -91,22 +91,40 @@ a {
 .lang-switch {
   display: flex;
   align-items: center;
-  gap: 2px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 2px;
+  gap: 6px;
+  font-family: var(--font-display);
+}
+
+.lang-sep {
+  color: var(--line);
+  font-size: 12px;
+  user-select: none;
 }
 
 .lang-btn {
+  position: relative;
   border: none;
   background: transparent;
   color: var(--ink-soft);
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: calc(var(--radius) - 3px);
+  letter-spacing: 0.02em;
+  padding: 2px 1px 5px;
   cursor: pointer;
+}
+
+.lang-btn::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 150ms ease;
 }
 
 .lang-btn:hover {
@@ -114,8 +132,11 @@ a {
 }
 
 .lang-btn.is-active {
-  background: var(--accent-soft);
-  color: var(--accent-dark);
+  color: var(--ink);
+}
+
+.lang-btn.is-active::after {
+  transform: scaleX(1);
 }
 
 .github-icon {

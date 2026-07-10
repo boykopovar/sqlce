@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -16,6 +18,8 @@ concurrency:
 
 jobs:
   build:
+    if: startsWith(github.ref, 'refs/tags/') || contains(join(github.event.commits.*.modified, github.event.commits.*.added, github.event.commits.*.removed), 'demo/')
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
