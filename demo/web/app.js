@@ -111,22 +111,10 @@ function renderTableSelect() {
   }
 }
 
-function pluralize(count, one, few, many) {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod10 === 1 && mod100 !== 11) {
-    return one;
-  }
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
-    return few;
-  }
-  return many;
-}
-
 async function selectTable(tableName) {
   try {
     el.tableSelect.value = tableName;
-    setStatus("Чтение таблицы " + tableName + "…", false);
+    setStatus(t("status.readingTable", { tableName }), false);
     const rawSchemaJson = state.module.SdfDatabase.tableSchemaJson(state.handle, tableName);
     const schema = parseDataResult(rawSchemaJson);
 
@@ -136,7 +124,7 @@ async function selectTable(tableName) {
     state.activeTable = tableName;
     state.activeRows = rows;
     renderTable(schema, rows, tableName);
-    setStatus("Таблица " + tableName + ": " + rows.length + " " + pluralize(rows.length, "строка", "строки", "строк") + ".", false);
+    setStatus(t("status.tableRows", { tableName, count: rows.length, rowWord: pluralize(rows.length, "row") }), false);
   } catch (error) {
     setStatus(String(error.message || error), true);
   }
@@ -238,18 +226,18 @@ async function handleFile(file) {
   const bytes = new Uint8Array(arrayBuffer);
 
   try {
-    setStatus("Открытие " + file.name + "…", false);
+    setStatus(t("status.opening", { fileName: file.name }), false);
     const { module, handle } = await openDatabase(bytes, null);
     state.module = module;
     state.handle = handle;
     await loadTableList();
     renderTableSelect();
-    setStatus("Готово. Найдено " + state.tables.length + " " + pluralize(state.tables.length, "таблица", "таблицы", "таблиц") + ".", false);
+    setStatus(t("status.done", { count: state.tables.length, tableWord: pluralize(state.tables.length, "table") }), false);
   } catch (error) {
     if (String(error.message || "").toLowerCase().includes("password")) {
       el.passwordRow.hidden = false;
       state.pendingBytes = bytes;
-      setStatus("База зашифрована паролем. Введите пароль.", false);
+      setStatus(t("status.passwordRequired"), false);
     } else {
       setStatus(String(error.message || error), true);
     }
@@ -262,46 +250,50 @@ async function handleUnlock() {
   }
   const password = el.passwordInput.value;
   try {
-    setStatus("Проверка пароля…", false);
+    setStatus(t("status.checkingPassword"), false);
     const { module, handle } = await openDatabase(state.pendingBytes, password);
     state.module = module;
     state.handle = handle;
     await loadTableList();
     renderTableSelect();
-    setStatus("Готово. Найдено " + state.tables.length + " " + pluralize(state.tables.length, "таблица", "таблицы", "таблиц") + ".", false);
+    setStatus(t("status.done", { count: state.tables.length, tableWord: pluralize(state.tables.length, "table") }), false);
   } catch (error) {
     setStatus(String(error.message || error), true);
   }
 }
 
-el.fileInput.addEventListener("change", (event) => {
-  const file = event.target.files && event.target.files[0];
-  if (file) {
-    handleFile(file);
-  }
-});
+(async () => {
+  await i18nReady;
 
-el.dropzone.addEventListener("dragover", (event) => {
-  event.preventDefault();
-  el.dropzone.classList.add("is-dragover");
-});
+  el.fileInput.addEventListener("change", (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (file) {
+      handleFile(file);
+    }
+  });
 
-el.dropzone.addEventListener("dragleave", () => {
-  el.dropzone.classList.remove("is-dragover");
-});
+  el.dropzone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    el.dropzone.classList.add("is-dragover");
+  });
 
-el.dropzone.addEventListener("drop", (event) => {
-  event.preventDefault();
-  el.dropzone.classList.remove("is-dragover");
-  const file = event.dataTransfer.files && event.dataTransfer.files[0];
-  if (file) {
-    handleFile(file);
-  }
-});
+  el.dropzone.addEventListener("dragleave", () => {
+    el.dropzone.classList.remove("is-dragover");
+  });
 
-el.tableSelect.addEventListener("change", (event) => {
-  selectTable(event.target.value);
-});
+  el.dropzone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    el.dropzone.classList.remove("is-dragover");
+    const file = event.dataTransfer.files && event.dataTransfer.files[0];
+    if (file) {
+      handleFile(file);
+    }
+  });
 
-el.unlockBtn.addEventListener("click", handleUnlock);
-el.exportBtn.addEventListener("click", exportActiveTableAsCsv);
+  el.tableSelect.addEventListener("change", (event) => {
+    selectTable(event.target.value);
+  });
+
+  el.unlockBtn.addEventListener("click", handleUnlock);
+  el.exportBtn.addEventListener("click", exportActiveTableAsCsv);
+})();

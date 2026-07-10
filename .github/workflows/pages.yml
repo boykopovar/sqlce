@@ -35,7 +35,8 @@ jobs:
       - name: Assemble demo site
         run: |
           mkdir -p site
-          cp demo/web/index.html demo/web/app.js demo/web/app.css site/
+          cp demo/web/index.html demo/web/app.js demo/web/app.css demo/web/i18n.js site/
+          cp -r demo/web/i18n site/i18n
           cp build-wasm/bindings/wasm/sqlce_wasm.js site/
           cp build-wasm/bindings/wasm/sqlce_wasm.wasm site/
           touch site/.nojekyll

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>sqlce - просмотр .sdf</title>
+<title data-i18n="page.title">sqlce - просмотр .sdf</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -17,15 +17,19 @@
         <svg class="github-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
           <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
         </svg>
-        <span>Репозиторий</span>
+        <span data-i18n="nav.repo">Репозиторий</span>
       </a>
-      <a href="https://github.com/boykopovar/sqlce/issues" target="_blank" rel="noopener">Issues</a>
+      <a href="https://github.com/boykopovar/sqlce/issues" target="_blank" rel="noopener" data-i18n="nav.issues">Issues</a>
+      <div class="lang-switch" id="langSwitch" role="group" aria-label="Language">
+        <button type="button" class="lang-btn" data-lang="ru">RU</button>
+        <button type="button" class="lang-btn" data-lang="en">EN</button>
+      </div>
     </div>
   </div>
 </nav>
 
 <header class="hero">
-  <h1>Просмотр SQL Server Compact (.sdf)</h1>
+  <h1 data-i18n="hero.title">Просмотр SQL Server Compact (.sdf)</h1>
 <!--  <p class="hero-sub"></p>-->
 </header>
 
@@ -33,31 +37,31 @@
   <section class="upload-card">
     <label class="dropzone" id="dropzone" for="fileInput">
       <span class="dropzone-icon">⭱</span>
-      <span class="dropzone-title" id="dropzoneHint">Выберите .sdf файл или перетащите его сюда</span>
+      <span class="dropzone-title" id="dropzoneHint" data-i18n="dropzone.title">Выберите .sdf файл или перетащите его сюда</span>
       <input type="file" id="fileInput" accept=".sdf" hidden>
     </label>
 
     <div class="password-row" id="passwordRow" hidden>
-      <label class="field-label" for="passwordInput">Файл защищён паролем</label>
+      <label class="field-label" for="passwordInput" data-i18n="password.label">Файл защищён паролем</label>
       <div class="password-controls">
-        <input type="password" id="passwordInput" placeholder="Введите пароль базы">
-        <button class="btn btn-primary" id="unlockBtn">Открыть</button>
+        <input type="password" id="passwordInput" data-i18n-placeholder="password.placeholder" placeholder="Введите пароль базы">
+        <button class="btn btn-primary" id="unlockBtn" data-i18n="password.unlock">Открыть</button>
       </div>
     </div>
 
     <p class="status" id="status" aria-live="polite"></p>
   </section>
 
-  <p class="trust-line">Файл не покидает вкладку. Ограничений по размеру нет, но в <a href="https://github.com/boykopovar/sqlce/tree/main/core" target="_blank" rel="noopener">текущей реализации</a> файл попадает целиком в оперативную память.</p>
+  <p class="trust-line" id="trustLine"></p>
 
   <section class="results" id="resultsSection">
     <div class="panel data" id="dataPanel" hidden>
       <div class="data-header">
         <div class="data-header-left">
-          <label class="panel-title" for="tableSelect">Таблица:</label>
+          <label class="panel-title" for="tableSelect" data-i18n="table.label">Таблица:</label>
           <select class="table-select" id="tableSelect"></select>
         </div>
-        <button class="btn btn-outline" id="exportBtn">Скачать CSV</button>
+        <button class="btn btn-outline" id="exportBtn" data-i18n="table.export">Скачать CSV</button>
       </div>
       <div class="table-scroll">
         <table id="dataTable">
@@ -77,11 +81,12 @@
       </svg>
       <span>github.com/boykopovar/sqlce</span>
     </a>
-    <span class="footer-sep">Работает на WebAssembly</span>
+    <span class="footer-sep" data-i18n="footer.wasm">Работает на WebAssembly</span>
   </div>
 </footer>
 
 <script src="sqlce_wasm.js"></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

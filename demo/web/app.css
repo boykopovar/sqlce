@@ -88,6 +88,36 @@ a {
   color: var(--accent);
 }
 
+.lang-switch {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 2px;
+}
+
+.lang-btn {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: calc(var(--radius) - 3px);
+  cursor: pointer;
+}
+
+.lang-btn:hover {
+  color: var(--ink);
+}
+
+.lang-btn.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
 .github-icon {
   flex: 0 0 auto;
 }

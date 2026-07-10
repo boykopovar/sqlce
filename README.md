@@ -38,6 +38,8 @@ for table_name in db.list_tables():
 
 The current implementation supports reading the list of tables, table schemas, and table contents (including password-protected databases). It is implemented in C++.
 
+Try it in the browser (WebAssembly, runs locally - the file never leaves your tab): https://boykopovar.github.io/sqlce/
+
 > Reading encrypted .sdf version 3.5 files is not currently supported (unencrypted files are supported).
 
 ### Testing
