@@ -97,8 +97,7 @@ function closeCurrentHandle() {
 
 async function loadTableList() {
   const rawJson = state.module.SdfDatabase.listTablesJson(state.handle);
-  const tablesJson = parseDataResult(rawJson);
-  state.tables = JSON.parse(tablesJson);
+  state.tables = parseDataResult(rawJson);
 }
 
 function renderTableList() {
@@ -125,14 +124,12 @@ function markActiveTableButton(tableName) {
 async function selectTable(tableName) {
   try {
     markActiveTableButton(tableName);
-    setStatus("Читаю таблицу " + tableName + "…", false);
+    setStatus("Чтение таблицы " + tableName + "…", false);
     const rawSchemaJson = state.module.SdfDatabase.tableSchemaJson(state.handle, tableName);
-    const schemaJson = parseDataResult(rawSchemaJson);
-    const schema = JSON.parse(schemaJson);
+    const schema = parseDataResult(rawSchemaJson);
 
     const rawDataJson = state.module.SdfDatabase.tableDataJson(state.handle, tableName);
-    const dataJson = parseDataResult(rawDataJson);
-    const rows = JSON.parse(dataJson);
+    const rows = parseDataResult(rawDataJson);
 
     state.activeTable = tableName;
     state.activeRows = rows;
@@ -215,11 +212,10 @@ function exportActiveTableAsCsv() {
     return;
   }
   const rawSchemaJson = state.module.SdfDatabase.tableSchemaJson(state.handle, state.activeTable);
-  const schemaJson = parseDataResult(rawSchemaJson);
-  const schema = JSON.parse(schemaJson);
-  const csv = buildCsv(schema, state.activeRows);
+  const schema = parseDataResult(rawSchemaJson);
+  const csv = "sep=,\r\n" + buildCsv(schema, state.activeRows);
 
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -241,7 +237,7 @@ async function handleFile(file) {
   const bytes = new Uint8Array(arrayBuffer);
 
   try {
-    setStatus("Открываю " + file.name + "…", false);
+    setStatus("Открытие " + file.name + "…", false);
     const { module, handle } = await openDatabase(bytes, null);
     state.module = module;
     state.handle = handle;
@@ -252,7 +248,7 @@ async function handleFile(file) {
     if (String(error.message || "").toLowerCase().includes("password")) {
       el.passwordRow.hidden = false;
       state.pendingBytes = bytes;
-      setStatus("База защищена паролем. Введите пароль.", false);
+      setStatus("База зашифрована паролем. Введите пароль.", false);
     } else {
       setStatus(String(error.message || error), true);
     }
@@ -265,7 +261,7 @@ async function handleUnlock() {
   }
   const password = el.passwordInput.value;
   try {
-    setStatus("Проверяю пароль…", false);
+    setStatus("Проверка пароля…", false);
     const { module, handle } = await openDatabase(state.pendingBytes, password);
     state.module = module;
     state.handle = handle;
