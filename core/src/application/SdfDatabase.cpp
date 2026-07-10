@@ -24,12 +24,18 @@ SdfDatabase::SdfDatabase(const std::string& path, const std::string& password) :
 
 std::unique_ptr<domain::IPageStorage> SdfDatabase::OpenStorage(const std::string& path, const std::string& password)
 {
+    const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
+    const domain::EncryptionMode mode = parsing::SdfPageCipher::ReadMode(firstPage);
+
     if (password.empty())
     {
+        if (mode != domain::EncryptionMode::None)
+        {
+            throw std::runtime_error("file is password-protected, password required");
+        }
         return std::make_unique<infrastructure::FileStorage>(path);
     }
 
-    const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
     const parsing::SdfPageCipher cipher(firstPage, password);
     return std::make_unique<infrastructure::FileStorage>(path, cipher);
 }
