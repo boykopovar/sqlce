@@ -8,7 +8,7 @@
 
 ## [Ru README](docs/ru/RuReadme.md)
 
-Reverse engineering of the `.sdf` (SQL Server Compact Edition 4.0) binary file format.
+Reverse engineering of the `.sdf` (SQL Server Compact Edition) binary file format.
 
 Analysis of the format's internal structure based on decompiled SQL CE components. The goal is to provide a cross-platform, runtime-independent implementation for reading `.sdf` files.
 
@@ -38,7 +38,7 @@ for table_name in db.list_tables():
 
 The current implementation supports reading the list of tables, table schemas, and table contents (including password-protected databases). It is implemented in C++.
 
-Try it in the browser (WebAssembly, runs locally - the file never leaves your tab): https://boykopovar.github.io/sqlce/
+Try it in the browser (WebAssembly, runs locally - the file never leaves your tab): [boykopovar.github.io/sqlce](https://boykopovar.github.io/sqlce/)
 
 > Reading encrypted .sdf version 3.5 files is not currently supported (unencrypted files are supported).
 

@@ -215,6 +215,11 @@ function exportActiveTableAsCsv() {
   URL.revokeObjectURL(url);
 }
 
+function encryptionModeName(mode) {
+  const names = ["NONE", "RC4_SHA1", "AES128_SHA1", "AES128_SHA256", "AES256_SHA512"];
+  return names[mode] !== undefined ? names[mode] : String(mode);
+}
+
 async function handleFile(file) {
   resetResultPanels();
   closeCurrentHandle();
@@ -237,7 +242,11 @@ async function handleFile(file) {
     if (String(error.message || "").toLowerCase().includes("password")) {
       el.passwordRow.hidden = false;
       state.pendingBytes = bytes;
-      setStatus(t("status.passwordRequired"), false);
+      const module = await ensureModule();
+      const path = writeFileToVirtualFs(module, bytes);
+      const modeRawJson = module.SdfDatabase.encryptionModeOfFile(path);
+      const mode = parseDataResult(modeRawJson);
+      setStatus(t("status.passwordRequired", { algorithm: encryptionModeName(mode) }), false);
     } else {
       setStatus(String(error.message || error), true);
     }

@@ -192,6 +192,28 @@ public:
         return json;
     }
 
+    std::uint32_t encryptionMode() const
+    {
+        return static_cast<std::uint32_t>(_database->GetEncryptionMode());
+    }
+
+    static std::string encryptionModeOfFile(const std::string& path)
+    {
+        try
+        {
+            const std::uint32_t mode = static_cast<std::uint32_t>(application::SdfDatabase::GetEncryptionMode(path));
+            std::string json;
+            json += "{\"ok\":true,\"data\":";
+            json += std::to_string(mode);
+            json += "}";
+            return json;
+        }
+        catch (const std::exception& error)
+        {
+            return ErrorResultJson(error.what());
+        }
+    }
+
 private:
     explicit SdfDatabaseWasm(std::unique_ptr<application::SdfDatabase> database) : _database(std::move(database))
     {
@@ -270,6 +292,16 @@ public:
         return withInstance(handleKey, [&tableName](const SdfDatabaseWasm& db) { return db.tableDataJson(tableName); });
     }
 
+    static std::string encryptionModeJson(const std::string& handleKey)
+    {
+        return withInstance(handleKey, [](const SdfDatabaseWasm& db) { return std::to_string(db.encryptionMode()); });
+    }
+
+    static std::string encryptionModeOfFile(const std::string& path)
+    {
+        return SdfDatabaseWasm::encryptionModeOfFile(path);
+    }
+
     static void close(const std::string& handleKey)
     {
         SdfDatabaseWasm::registry().erase(handleKey);
@@ -311,5 +343,7 @@ EMSCRIPTEN_BINDINGS(sqlce)
         .class_function("listTablesJson", &sdf::wasm::SdfDatabaseHandle::listTablesJson)
         .class_function("tableSchemaJson", &sdf::wasm::SdfDatabaseHandle::tableSchemaJson)
         .class_function("tableDataJson", &sdf::wasm::SdfDatabaseHandle::tableDataJson)
+        .class_function("encryptionModeJson", &sdf::wasm::SdfDatabaseHandle::encryptionModeJson)
+        .class_function("encryptionModeOfFile", &sdf::wasm::SdfDatabaseHandle::encryptionModeOfFile)
         .class_function("close", &sdf::wasm::SdfDatabaseHandle::close);
 }

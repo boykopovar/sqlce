@@ -14,7 +14,7 @@
   "footer.wasm": "Powered by WebAssembly",
   "status.opening": "Opening {fileName}…",
   "status.done": "Done. Found {count} {tableWord}.",
-  "status.passwordRequired": "The database is password-protected. Please enter the password.",
+  "status.passwordRequired": "The database is password-protected ({algorithm}). Please enter the password.",
   "status.checkingPassword": "Checking password…",
   "status.readingTable": "Reading table {tableName}…",
   "status.tableRows": "Table {tableName}: {count} {rowWord}.",
