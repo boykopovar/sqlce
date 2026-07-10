@@ -87,7 +87,9 @@ downloads/
 *.bat
 *.jpg
 *.png
+
 *.json
+!demo/web/i18n/*.json
 
 !/assets/*.jpg
 !/assets/*.png
