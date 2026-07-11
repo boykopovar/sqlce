@@ -14,6 +14,8 @@ Analysis of the format's internal structure based on decompiled SQL CE component
 
 > Intended solely for interoperability with existing `.sdf` files. Does not contain any original product source code.
 
+Browser version (WebAssembly, runs locally - the file never leaves your tab): [boykopovar.github.io/sqlce](https://boykopovar.github.io/sqlce/)
+
 - `core/` — C++ parser implementation
 - `bindings/` — Bindings for the C++ library to other languages
 - `python/sqlce/` — Python API
@@ -37,8 +39,6 @@ for table_name in db.list_tables():
 ```
 
 The current implementation supports reading the list of tables, table schemas, and table contents (including password-protected databases). It is implemented in C++.
-
-Try it in the browser (WebAssembly, runs locally - the file never leaves your tab): [boykopovar.github.io/sqlce](https://boykopovar.github.io/sqlce/)
 
 > Reading encrypted .sdf version 3.5 files is not currently supported (unencrypted files are supported).
 
