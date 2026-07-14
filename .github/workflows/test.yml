@@ -1,0 +1,31 @@
+name: Tests
+
+on:
+  workflow_call:
+
+jobs:
+  test-windows:
+    name: Run tests (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install SQL Server Compact 3.5 and 4.0 runtimes
+        shell: pwsh
+        run: |
+          choco install mssqlserver-compact3.5 --version=3.5.8080.0 -y --no-progress
+          choco install mssqlserver-compact4.0 -y --no-progress
+
+      - name: Install package with dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        run: pytest

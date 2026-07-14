@@ -61,9 +61,14 @@ dev = [
     "twine",
     "pytest",
     "pytest-cov",
-    "pythonnet"
+    "pythonnet",
+    "mypy"
 ]
 
 [tool.pytest.ini_options]
 addopts = "--cov=sqlce --cov-report=term-missing"
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.8"
+files = ["python/sqlce"]
