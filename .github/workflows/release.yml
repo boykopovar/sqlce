@@ -50,7 +50,7 @@ jobs:
         env:
           CIBW_ARCHS_WINDOWS: AMD64
           CIBW_BUILD_VERBOSITY: 1
-          CIBW_CMAKE_ARGS: "-DSDF_BUILD_PYTHON_BINDINGS=ON"
+          CIBW_CMAKE_ARGS: "-DSQLCE_BUILD_PYTHON_BINDINGS=ON"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -73,22 +73,22 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_SHARED_LIBS=${{ matrix.link == 'shared' && 'ON' || 'OFF' }}
 
-      - name: Build libsdf
-        run: cmake --build build --target libsdf -j
+      - name: Build libsqlce
+        run: cmake --build build --target libsqlce -j
 
       - name: Package library + headers
         run: |
           version="${GITHUB_REF_NAME#v}"
-          pkg="libsdf-${version}-linux-x86_64-${{ matrix.link }}"
+          pkg="libsqlce-${version}-linux-x86_64-${{ matrix.link }}"
           mkdir -p "$pkg/lib" "$pkg/include"
-          cp build/dist/lib/libsdf.* "$pkg/lib/"
+          cp build/dist/lib/libsqlce.* "$pkg/lib/"
           cp -r core/include/. "$pkg/include/"
           tar -czf "${pkg}.tar.gz" "$pkg"
 
       - uses: actions/upload-artifact@v4
         with:
           name: cpp-linux-${{ matrix.link }}
-          path: libsdf-*.tar.gz
+          path: libsqlce-*.tar.gz
 
   build-cpp-windows:
     name: Build C++ library (Windows, ${{ matrix.link }})
@@ -106,24 +106,33 @@ jobs:
           $shared = if ("${{ matrix.link }}" -eq "shared") { "ON" } else { "OFF" }
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=$shared
 
-      - name: Build libsdf
-        run: cmake --build build --target libsdf --config Release -j
+      - name: Build libsqlce
+        run: cmake --build build --target libsqlce --config Release -j
 
       - name: Package library + headers
         shell: pwsh
         run: |
           $version = "${env:GITHUB_REF_NAME}" -replace '^v', ''
-          $pkg = "libsdf-$version-windows-x86_64-${{ matrix.link }}"
+          $pkg = "libsqlce-$version-windows-x86_64-${{ matrix.link }}"
           New-Item -ItemType Directory -Force -Path "$pkg/lib" | Out-Null
           New-Item -ItemType Directory -Force -Path "$pkg/include" | Out-Null
-          Copy-Item "build/dist/lib/libsdf.*" "$pkg/lib/"
+          Copy-Item "build/dist/lib/libsqlce.*" "$pkg/lib/"
           Copy-Item -Recurse "core/include/*" "$pkg/include/"
           Compress-Archive -Path $pkg -DestinationPath "$pkg.zip"
 
       - uses: actions/upload-artifact@v4
         with:
           name: cpp-windows-${{ matrix.link }}
-          path: libsdf-*.zip
+          path: libsqlce-*.zip
+
+  pages:
+    name: Build WASM demo and deploy to GitHub Pages
+    needs: test
+    uses: ./.github/workflows/pages.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
 
   publish:
     name: Publish to PyPI

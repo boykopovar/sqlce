@@ -1,15 +1,7 @@
 name: Build WASM demo and deploy to GitHub Pages
 
 on:
-  push:
-    tags:
-      - 'v*'
-    branches:
-      - main
-    paths:
-      - 'demo/**'
-      - 'bindings/wasm/**'
-      - 'core/**'
+  workflow_call:
 
 permissions:
   contents: read
@@ -33,7 +25,7 @@ jobs:
           version: latest
 
       - name: Configure (Emscripten + CMake)
-        run: emcmake cmake -B build-wasm -DSDF_BUILD_WASM=ON -DCMAKE_BUILD_TYPE=Release
+        run: emcmake cmake -B build-wasm -DSQLCE_BUILD_WASM=ON -DCMAKE_BUILD_TYPE=Release
 
       - name: Build sqlce_wasm
         run: cmake --build build-wasm --target sqlce_wasm --parallel
