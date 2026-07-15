@@ -1,12 +1,13 @@
 import datetime
 import decimal
 import enum
-import uuid
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Union
 from typing import overload
+import uuid
 
 class LazyLob:
     def read(self) -> Union[str, bytes]: ...
@@ -27,6 +28,11 @@ ColumnValue = Union[
 ]
 
 Row = Dict[str, ColumnValue]
+
+
+class TableRowIterator:
+    def __iter__(self) -> "TableRowIterator": ...
+    def __next__(self) -> Row: ...
 
 
 class EncryptionMode(enum.Enum):
@@ -78,7 +84,10 @@ class SdfDatabase:
 
     def read_table(self, table_name: str) -> List[Row]: ...
 
+    def iterate_table(self, table_name: str) -> Iterator[Row]: ...
+
     def get_encryption_mode(self) -> EncryptionMode: ...
 
     @staticmethod
     def get_encryption_mode_from_file(path: str) -> EncryptionMode: ...
+

@@ -4,6 +4,7 @@ from sqlce._sdf_native import InvalidPasswordError
 from sqlce._sdf_native import LazyLob
 from sqlce._sdf_native import Row
 from sqlce._sdf_native import SdfDatabase
+from sqlce._sdf_native import TableRowIterator
 from sqlce._sdf_native import UnsupportedEncryptionModeError
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "LazyLob",
     "Row",
     "SdfDatabase",
+    "TableRowIterator",
     "UnsupportedEncryptionModeError",
 ]

@@ -16,10 +16,10 @@ Analysis of the format's internal structure based on decompiled SQL CE component
 
 Browser version (WebAssembly, runs locally - the file never leaves your tab): [boykopovar.github.io/sqlce](https://boykopovar.github.io/sqlce/)
 
-- `core/` — C++ parser implementation
-- `bindings/` — Bindings for the C++ library to other languages
-- `python/sqlce/` — Python API
-- `research/` — Experimental scripts
+- `core/` - C++ parser implementation
+- `bindings/` - Bindings for the C++ library to other languages
+- `python/sqlce/` - Python API
+- `research/` - Experimental scripts
 
 ### Example
 

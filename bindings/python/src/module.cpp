@@ -9,6 +9,7 @@
 
 #include "sdf/application/ColumnSchema.hpp"
 #include "sdf/application/SdfDatabase.hpp"
+#include "sdf/application/TableRowRange.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
 #include "sdf/domain/LazyLob.hpp"
 #include "sdf/domain/Row.hpp"
@@ -37,6 +38,9 @@ constexpr char TableSchemaName[] = "table_schema";
 constexpr char TableSchemaDoc[] = "Return the column schema of a table.";
 constexpr char ReadTableName[] = "read_table";
 constexpr char ReadTableDoc[] = "Return every row of a table as a list of column-name -> value mappings.";
+constexpr char IterateTableName[] = "iterate_table";
+constexpr char IterateTableDoc[]
+    = "Lazily iterate over the rows of a table, decoding one row at a time without materializing the whole table.";
 constexpr char TableNameArgName[] = "table_name";
 constexpr char GetEncryptionModeName[] = "get_encryption_mode";
 constexpr char GetEncryptionModeDoc[] = "Return the encryption mode the database file was opened with.";
@@ -68,6 +72,10 @@ constexpr char LazyLobDoc[] = "Ленивое LOB-значение (NText/Image)
 constexpr char LazyLobReadName[] = "read";
 constexpr char LazyLobReadChunksName[] = "read_chunks";
 
+constexpr char TableRowIteratorClassName[] = "TableRowIterator";
+constexpr char TableRowIteratorDoc[]
+    = "Lazy row-by-row iterator over a table, produced by SdfDatabase.iterate_table().";
+
 py::dict RowToDict(const domain::Row& row)
 {
     py::dict result;
@@ -77,6 +85,31 @@ py::dict RowToDict(const domain::Row& row)
     }
     return result;
 }
+
+class TableRowIterator
+{
+public:
+    TableRowIterator(const application::SdfDatabase& database, const std::string& tableName)
+        : _range(database.IterateTable(tableName)), _current(_range.begin()), _end(_range.end())
+    {
+    }
+
+    py::dict Next()
+    {
+        if (_current == _end)
+        {
+            throw py::stop_iteration();
+        }
+        py::dict row = RowToDict(*_current);
+        ++_current;
+        return row;
+    }
+
+private:
+    application::TableRowRange _range;
+    application::TableRowRange::Iterator _current;
+    application::TableRowRange::Iterator _end;
+};
 
 std::vector<py::dict> ReadTableAsDicts(const application::SdfDatabase& database, const std::string& tableName)
 {
@@ -140,17 +173,17 @@ PYBIND11_MODULE(_sdf_native, module)
         .value(EncryptionModeAes128Sha256Name, domain::EncryptionMode::Aes128Sha256)
         .value(EncryptionModeAes256Sha512Name, domain::EncryptionMode::Aes256Sha512);
 
+    const auto readLob = [](const domain::LazyLob& lob) -> py::object {
+        if (lob.IsText())
+        {
+            return py::str(lob.ReadText());
+        }
+        const std::vector<std::uint8_t> bytes = lob.ReadBytes();
+        return py::bytes(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    };
+
     py::class_<domain::LazyLob>(module, LazyLobClassName, LazyLobDoc)
-        .def(
-            LazyLobReadName,
-            [](const domain::LazyLob& lob) -> py::object {
-                if (lob.IsText())
-                {
-                    return py::str(lob.ReadText());
-                }
-                const std::vector<std::uint8_t> bytes = lob.ReadBytes();
-                return py::bytes(reinterpret_cast<const char*>(bytes.data()), bytes.size());
-            })
+        .def(LazyLobReadName, readLob)
         .def(LazyLobReadChunksName, [](const domain::LazyLob& lob) {
             py::list result;
             for (const std::vector<std::uint8_t>& chunk : lob.ReadChunks())
@@ -158,7 +191,28 @@ PYBIND11_MODULE(_sdf_native, module)
                 result.append(py::bytes(reinterpret_cast<const char*>(chunk.data()), chunk.size()));
             }
             return result;
+        })
+        .def("__eq__", [readLob](const domain::LazyLob& lob, const py::object& other) -> py::object {
+            if (py::isinstance<domain::LazyLob>(other))
+            {
+                return py::bool_(readLob(lob).equal(readLob(other.cast<const domain::LazyLob&>())));
+            }
+            if (py::isinstance<py::str>(other) || py::isinstance<py::bytes>(other))
+            {
+                return py::bool_(readLob(lob).equal(other));
+            }
+            return py::module_::import("builtins").attr("NotImplemented");
+        })
+        .def("__repr__", [](const domain::LazyLob& lob) {
+            return "<LazyLob " + std::string(lob.IsText() ? "text" : "binary") + " length="
+                + std::to_string(lob.TotalLength()) + ">";
         });
+
+    py::class_<TableRowIterator>(module, TableRowIteratorClassName, TableRowIteratorDoc)
+        .def(
+            "__iter__",
+            [](TableRowIterator& self) -> TableRowIterator& { return self; })
+        .def("__next__", &TableRowIterator::Next);
 
     py::class_<application::ColumnSchema>(module, SchemaClassName, SchemaDoc)
         .def_property_readonly(
@@ -194,6 +248,14 @@ PYBIND11_MODULE(_sdf_native, module)
             py::arg(TableNameArgName),
             TableSchemaDoc)
         .def(ReadTableName, &ReadTableAsDicts, py::arg(TableNameArgName), ReadTableDoc)
+        .def(
+            IterateTableName,
+            [](const application::SdfDatabase& database, const std::string& tableName) {
+                return TableRowIterator(database, tableName);
+            },
+            py::arg(TableNameArgName),
+            IterateTableDoc,
+            py::keep_alive<0, 1>())
         .def(
             GetEncryptionModeName,
             py::overload_cast<>(&application::SdfDatabase::GetEncryptionMode, py::const_),
