@@ -2,13 +2,13 @@ name: Build WASM demo and deploy to GitHub Pages
 
 on:
   workflow_call:
-  push:
-    branches:
-      - main
-    paths:
-      - 'demo/**'
-      - 'bindings/wasm/**'
-      - 'core/**'
+#  push:
+#    branches:
+#      - main
+#    paths:
+#      - 'demo/**'
+#      - 'bindings/wasm/**'
+#      - 'core/**'
 
 permissions:
   contents: read
