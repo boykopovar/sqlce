@@ -21,11 +21,11 @@
 namespace sdf::application
 {
 
-class SdfDatabase
+class SqlceDatabase
 {
 public:
-    explicit SdfDatabase(const std::string& path);
-    SdfDatabase(const std::string& path, const std::string& password);
+    explicit SqlceDatabase(const std::string& path);
+    SqlceDatabase(const std::string& path, const std::string& password);
 
     [[nodiscard]] std::vector<std::string> ListTables() const;
     [[nodiscard]] std::vector<ColumnSchema> TableSchema(const std::string& tableName) const;
@@ -51,7 +51,7 @@ private:
     };
 
     static OpenResult Open(const std::string& path, const std::string& password);
-    explicit SdfDatabase(OpenResult opened);
+    explicit SqlceDatabase(OpenResult opened);
 
     void AssignDataPages();
     [[nodiscard]] const domain::TableDef& RequireTable(const std::string& tableName) const;

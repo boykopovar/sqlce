@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "sdf/application/ColumnSchema.hpp"
-#include "sdf/application/SdfDatabase.hpp"
+#include "sdf/application/SqlceDatabase.hpp"
 #include "sdf/application/TableRowRange.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
 #include "sdf/domain/LazyLob.hpp"
@@ -26,7 +26,7 @@ namespace
 
 constexpr char ModuleDoc[] = "Native reader for SQL Server Compact (.sdf) database files.";
 
-constexpr char DatabaseClassName[] = "SdfDatabase";
+constexpr char DatabaseClassName[] = "SqlceDatabase";
 constexpr char DatabaseDoc[] = "Reads tables, schemas and rows from a .sdf database file.";
 constexpr char InitDoc[] = "Open a .sdf file at the given path.";
 constexpr char InitWithPasswordDoc[] = "Open a password-protected .sdf file, auto-detecting its encryption mode.";
@@ -74,7 +74,7 @@ constexpr char LazyLobReadChunksName[] = "read_chunks";
 
 constexpr char TableRowIteratorClassName[] = "TableRowIterator";
 constexpr char TableRowIteratorDoc[]
-    = "Lazy row-by-row iterator over a table, produced by SdfDatabase.iterate_table().";
+    = "Lazy row-by-row iterator over a table, produced by SqlceDatabase.iterate_table().";
 
 py::dict RowToDict(const domain::Row& row)
 {
@@ -89,7 +89,7 @@ py::dict RowToDict(const domain::Row& row)
 class TableRowIterator
 {
 public:
-    TableRowIterator(const application::SdfDatabase& database, const std::string& tableName)
+    TableRowIterator(const application::SqlceDatabase& database, const std::string& tableName)
         : _range(database.IterateTable(tableName)), _current(_range.begin()), _end(_range.end())
     {
     }
@@ -111,7 +111,7 @@ private:
     application::TableRowRange::Iterator _end;
 };
 
-std::vector<py::dict> ReadTableAsDicts(const application::SdfDatabase& database, const std::string& tableName)
+std::vector<py::dict> ReadTableAsDicts(const application::SqlceDatabase& database, const std::string& tableName)
 {
     std::vector<py::dict> result;
     const std::vector<domain::Row> rows = database.ReadTable(tableName);
@@ -160,7 +160,7 @@ void RegisterExceptions(py::module_& module)
 
 }
 
-PYBIND11_MODULE(_sdf_native, module)
+PYBIND11_MODULE(_sqlce_native, module)
 {
     module.doc() = ModuleDoc;
 
@@ -234,23 +234,23 @@ PYBIND11_MODULE(_sdf_native, module)
             ScaleAttrName,
             [](const application::ColumnSchema& schema) { return OptionalByteToInt(schema.scale); });
 
-    py::class_<application::SdfDatabase>(module, DatabaseClassName, DatabaseDoc)
+    py::class_<application::SqlceDatabase>(module, DatabaseClassName, DatabaseDoc)
         .def(py::init<const std::string&>(), py::arg(PathArgName), InitDoc)
         .def(
             py::init<const std::string&, const std::string&>(),
             py::arg(PathArgName),
             py::arg(PasswordArgName),
             InitWithPasswordDoc)
-        .def(ListTablesName, &application::SdfDatabase::ListTables, ListTablesDoc)
+        .def(ListTablesName, &application::SqlceDatabase::ListTables, ListTablesDoc)
         .def(
             TableSchemaName,
-            &application::SdfDatabase::TableSchema,
+            &application::SqlceDatabase::TableSchema,
             py::arg(TableNameArgName),
             TableSchemaDoc)
         .def(ReadTableName, &ReadTableAsDicts, py::arg(TableNameArgName), ReadTableDoc)
         .def(
             IterateTableName,
-            [](const application::SdfDatabase& database, const std::string& tableName) {
+            [](const application::SqlceDatabase& database, const std::string& tableName) {
                 return TableRowIterator(database, tableName);
             },
             py::arg(TableNameArgName),
@@ -258,11 +258,11 @@ PYBIND11_MODULE(_sdf_native, module)
             py::keep_alive<0, 1>())
         .def(
             GetEncryptionModeName,
-            py::overload_cast<>(&application::SdfDatabase::GetEncryptionMode, py::const_),
+            py::overload_cast<>(&application::SqlceDatabase::GetEncryptionMode, py::const_),
             GetEncryptionModeDoc)
         .def_static(
             GetEncryptionModeStaticName,
-            py::overload_cast<const std::string&>(&application::SdfDatabase::GetEncryptionMode),
+            py::overload_cast<const std::string&>(&application::SqlceDatabase::GetEncryptionMode),
             py::arg(PathArgName),
             GetEncryptionModeStaticDoc);
 }

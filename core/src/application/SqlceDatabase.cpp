@@ -1,4 +1,4 @@
-#include "sdf/application/SdfDatabase.hpp"
+#include "sdf/application/SqlceDatabase.hpp"
 
 #include <stdexcept>
 
@@ -14,15 +14,15 @@
 namespace sdf::application
 {
 
-SdfDatabase::SdfDatabase(const std::string& path) : SdfDatabase(Open(path, std::string()))
+SqlceDatabase::SqlceDatabase(const std::string& path) : SqlceDatabase(Open(path, std::string()))
 {
 }
 
-SdfDatabase::SdfDatabase(const std::string& path, const std::string& password) : SdfDatabase(Open(path, password))
+SqlceDatabase::SqlceDatabase(const std::string& path, const std::string& password) : SqlceDatabase(Open(path, password))
 {
 }
 
-SdfDatabase::OpenResult SdfDatabase::Open(const std::string& path, const std::string& password)
+SqlceDatabase::OpenResult SqlceDatabase::Open(const std::string& path, const std::string& password)
 {
     const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
     const domain::EncryptionMode mode = GetEncryptionMode(path);
@@ -40,7 +40,7 @@ SdfDatabase::OpenResult SdfDatabase::Open(const std::string& path, const std::st
     return OpenResult{std::make_unique<infrastructure::FileStorage>(path, cipher), mode};
 }
 
-SdfDatabase::SdfDatabase(OpenResult opened)
+SqlceDatabase::SqlceDatabase(OpenResult opened)
     : _encryptionMode(opened.encryptionMode)
     , _storage(std::move(opened.storage))
     , _pageScanner(std::make_shared<parsing::CatalogPageScanner>())
@@ -53,7 +53,7 @@ SdfDatabase::SdfDatabase(OpenResult opened)
     AssignDataPages();
 }
 
-void SdfDatabase::AssignDataPages()
+void SqlceDatabase::AssignDataPages()
 {
     const std::set<std::uint8_t> catalogObjectIds = _pageScanner->FindCatalogObjectIds(*_storage);
 
@@ -84,7 +84,7 @@ void SdfDatabase::AssignDataPages()
     }
 }
 
-std::vector<std::string> SdfDatabase::ListTables() const
+std::vector<std::string> SqlceDatabase::ListTables() const
 {
     std::vector<std::string> names;
     names.reserve(_tables.size());
@@ -95,7 +95,7 @@ std::vector<std::string> SdfDatabase::ListTables() const
     return names;
 }
 
-const domain::TableDef& SdfDatabase::RequireTable(const std::string& tableName) const
+const domain::TableDef& SqlceDatabase::RequireTable(const std::string& tableName) const
 {
     const auto it = _tables.find(tableName);
     if (it == _tables.end())
@@ -105,7 +105,7 @@ const domain::TableDef& SdfDatabase::RequireTable(const std::string& tableName) 
     return it->second;
 }
 
-std::vector<ColumnSchema> SdfDatabase::TableSchema(const std::string& tableName) const
+std::vector<ColumnSchema> SqlceDatabase::TableSchema(const std::string& tableName) const
 {
     const domain::TableDef& table = RequireTable(tableName);
 
@@ -130,24 +130,24 @@ std::vector<ColumnSchema> SdfDatabase::TableSchema(const std::string& tableName)
     return result;
 }
 
-TableRowRange SdfDatabase::IterateTable(const std::string& tableName) const
+TableRowRange SqlceDatabase::IterateTable(const std::string& tableName) const
 {
     const domain::TableDef& table = RequireTable(tableName);
     return TableRowRange(_storage.get(), &table, _rowDecoder.get());
 }
 
-std::vector<domain::Row> SdfDatabase::ReadTable(const std::string& tableName) const
+std::vector<domain::Row> SqlceDatabase::ReadTable(const std::string& tableName) const
 {
     const TableRowRange range = IterateTable(tableName);
     return std::vector<domain::Row>(range.begin(), range.end());
 }
 
-domain::EncryptionMode SdfDatabase::GetEncryptionMode() const
+domain::EncryptionMode SqlceDatabase::GetEncryptionMode() const
 {
     return _encryptionMode;
 }
 
-domain::EncryptionMode SdfDatabase::GetEncryptionMode(const std::string& path)
+domain::EncryptionMode SqlceDatabase::GetEncryptionMode(const std::string& path)
 {
     const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
     return parsing::SdfPageCipher::ReadMode(firstPage);

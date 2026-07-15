@@ -4,7 +4,7 @@
 #include <string>
 
 #include "sdf/application/ColumnSchema.hpp"
-#include "sdf/application/SdfDatabase.hpp"
+#include "sdf/application/SqlceDatabase.hpp"
 #include "sdf/domain/ColumnValue.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
 #include "sdf/domain/Row.hpp"
@@ -92,7 +92,7 @@ std::string OkResultJson(const std::string& handleKey)
 
 }
 
-class SdfDatabaseWasm
+class SqlceDatabaseWasm
 {
 public:
     static std::string open(const std::string& path)
@@ -201,7 +201,7 @@ public:
     {
         try
         {
-            const std::uint32_t mode = static_cast<std::uint32_t>(application::SdfDatabase::GetEncryptionMode(path));
+            const std::uint32_t mode = static_cast<std::uint32_t>(application::SqlceDatabase::GetEncryptionMode(path));
             std::string json;
             json += "{\"ok\":true,\"data\":";
             json += std::to_string(mode);
@@ -215,7 +215,7 @@ public:
     }
 
 private:
-    explicit SdfDatabaseWasm(std::unique_ptr<application::SdfDatabase> database) : _database(std::move(database))
+    explicit SqlceDatabaseWasm(std::unique_ptr<application::SqlceDatabase> database) : _database(std::move(database))
     {
     }
 
@@ -223,10 +223,10 @@ private:
     {
         try
         {
-            std::unique_ptr<application::SdfDatabase> database = password
-                ? std::make_unique<application::SdfDatabase>(path, *password)
-                : std::make_unique<application::SdfDatabase>(path);
-            const std::string handleKey = registerInstance(SdfDatabaseWasm(std::move(database)));
+            std::unique_ptr<application::SqlceDatabase> database = password
+                ? std::make_unique<application::SqlceDatabase>(path, *password)
+                : std::make_unique<application::SqlceDatabase>(path);
+            const std::string handleKey = registerInstance(SqlceDatabaseWasm(std::move(database)));
             return OkResultJson(handleKey);
         }
         catch (const domain::InvalidPasswordException& error)
@@ -243,7 +243,7 @@ private:
         }
     }
 
-    static std::string registerInstance(SdfDatabaseWasm instance)
+    static std::string registerInstance(SqlceDatabaseWasm instance)
     {
         static std::uint64_t nextHandle = 1;
         const std::uint64_t handle = nextHandle;
@@ -253,65 +253,65 @@ private:
         return handleKey;
     }
 
-    static std::map<std::string, SdfDatabaseWasm>& registry()
+    static std::map<std::string, SqlceDatabaseWasm>& registry()
     {
-        static std::map<std::string, SdfDatabaseWasm> instances;
+        static std::map<std::string, SqlceDatabaseWasm> instances;
         return instances;
     }
 
-    std::unique_ptr<application::SdfDatabase> _database;
+    std::unique_ptr<application::SqlceDatabase> _database;
 
-    friend class SdfDatabaseHandle;
+    friend class SqlceDatabaseHandle;
 };
 
-class SdfDatabaseHandle
+class SqlceDatabaseHandle
 {
 public:
     static std::string open(const std::string& path)
     {
-        return SdfDatabaseWasm::open(path);
+        return SqlceDatabaseWasm::open(path);
     }
 
     static std::string openWithPassword(const std::string& path, const std::string& password)
     {
-        return SdfDatabaseWasm::openWithPassword(path, password);
+        return SqlceDatabaseWasm::openWithPassword(path, password);
     }
 
     static std::string listTablesJson(const std::string& handleKey)
     {
-        return withInstance(handleKey, [](const SdfDatabaseWasm& db) { return db.listTablesJson(); });
+        return withInstance(handleKey, [](const SqlceDatabaseWasm& db) { return db.listTablesJson(); });
     }
 
     static std::string tableSchemaJson(const std::string& handleKey, const std::string& tableName)
     {
-        return withInstance(handleKey, [&tableName](const SdfDatabaseWasm& db) { return db.tableSchemaJson(tableName); });
+        return withInstance(handleKey, [&tableName](const SqlceDatabaseWasm& db) { return db.tableSchemaJson(tableName); });
     }
 
     static std::string tableDataJson(const std::string& handleKey, const std::string& tableName)
     {
-        return withInstance(handleKey, [&tableName](const SdfDatabaseWasm& db) { return db.tableDataJson(tableName); });
+        return withInstance(handleKey, [&tableName](const SqlceDatabaseWasm& db) { return db.tableDataJson(tableName); });
     }
 
     static std::string encryptionModeJson(const std::string& handleKey)
     {
-        return withInstance(handleKey, [](const SdfDatabaseWasm& db) { return std::to_string(db.encryptionMode()); });
+        return withInstance(handleKey, [](const SqlceDatabaseWasm& db) { return std::to_string(db.encryptionMode()); });
     }
 
     static std::string encryptionModeOfFile(const std::string& path)
     {
-        return SdfDatabaseWasm::encryptionModeOfFile(path);
+        return SqlceDatabaseWasm::encryptionModeOfFile(path);
     }
 
     static void close(const std::string& handleKey)
     {
-        SdfDatabaseWasm::registry().erase(handleKey);
+        SqlceDatabaseWasm::registry().erase(handleKey);
     }
 
 private:
     template <typename Func>
     static std::string withInstance(const std::string& handleKey, Func&& func)
     {
-        auto& registry = SdfDatabaseWasm::registry();
+        auto& registry = SqlceDatabaseWasm::registry();
         auto it = registry.find(handleKey);
         if (it == registry.end())
         {
@@ -337,13 +337,13 @@ private:
 
 EMSCRIPTEN_BINDINGS(sqlce)
 {
-    emscripten::class_<sdf::wasm::SdfDatabaseHandle>("SdfDatabase")
-        .class_function("open", &sdf::wasm::SdfDatabaseHandle::open)
-        .class_function("openWithPassword", &sdf::wasm::SdfDatabaseHandle::openWithPassword)
-        .class_function("listTablesJson", &sdf::wasm::SdfDatabaseHandle::listTablesJson)
-        .class_function("tableSchemaJson", &sdf::wasm::SdfDatabaseHandle::tableSchemaJson)
-        .class_function("tableDataJson", &sdf::wasm::SdfDatabaseHandle::tableDataJson)
-        .class_function("encryptionModeJson", &sdf::wasm::SdfDatabaseHandle::encryptionModeJson)
-        .class_function("encryptionModeOfFile", &sdf::wasm::SdfDatabaseHandle::encryptionModeOfFile)
-        .class_function("close", &sdf::wasm::SdfDatabaseHandle::close);
+    emscripten::class_<sdf::wasm::SqlceDatabaseHandle>("SqlceDatabase")
+        .class_function("open", &sdf::wasm::SqlceDatabaseHandle::open)
+        .class_function("openWithPassword", &sdf::wasm::SqlceDatabaseHandle::openWithPassword)
+        .class_function("listTablesJson", &sdf::wasm::SqlceDatabaseHandle::listTablesJson)
+        .class_function("tableSchemaJson", &sdf::wasm::SqlceDatabaseHandle::tableSchemaJson)
+        .class_function("tableDataJson", &sdf::wasm::SqlceDatabaseHandle::tableDataJson)
+        .class_function("encryptionModeJson", &sdf::wasm::SqlceDatabaseHandle::encryptionModeJson)
+        .class_function("encryptionModeOfFile", &sdf::wasm::SqlceDatabaseHandle::encryptionModeOfFile)
+        .class_function("close", &sdf::wasm::SqlceDatabaseHandle::close);
 }

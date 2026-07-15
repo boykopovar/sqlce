@@ -4,7 +4,7 @@ from typing import List
 from typing import Tuple
 
 from sqlce import InvalidPasswordError
-from sqlce import SdfDatabase
+from sqlce import SqlceDatabase
 from sqlce import UnsupportedEncryptionModeError
 
 DEFAULT_DIR = Path("research/raw/examples")
@@ -37,7 +37,7 @@ def dump_file(sdf_path: Path, password: str) -> None:
     print(f"\n{sdf_path.name}")
 
     try:
-        db = SdfDatabase(str(sdf_path), password) if password else SdfDatabase(str(sdf_path))
+        db = SqlceDatabase(str(sdf_path), password) if password else SqlceDatabase(str(sdf_path))
     except (UnsupportedEncryptionModeError, InvalidPasswordError) as error:
         print(f"skipped: {error}")
         return

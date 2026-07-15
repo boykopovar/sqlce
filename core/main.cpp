@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "include/sdf/application/SdfDatabase.hpp"
+#include "include/sdf/application/SqlceDatabase.hpp"
 #include "include/sdf/domain/EncryptionMode.hpp"
 
 namespace
@@ -77,11 +77,11 @@ void DumpFile(const std::filesystem::path& sdfPath, const std::string& password)
 {
     std::cout << "\n" << sdfPath.filename().string() << "\n";
 
-    std::unique_ptr<sdf::application::SdfDatabase> db;
+    std::unique_ptr<sdf::application::SqlceDatabase> db;
     try
     {
-        db = password.empty() ? std::make_unique<sdf::application::SdfDatabase>(sdfPath.string())
-                               : std::make_unique<sdf::application::SdfDatabase>(sdfPath.string(), password);
+        db = password.empty() ? std::make_unique<sdf::application::SqlceDatabase>(sdfPath.string())
+                               : std::make_unique<sdf::application::SqlceDatabase>(sdfPath.string(), password);
     }
     catch (const sdf::domain::UnsupportedEncryptionModeException& error)
     {

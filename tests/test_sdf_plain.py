@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from sqlce import SdfDatabase
+from sqlce import SqlceDatabase
 from tests.sample_tables import SAMPLE_TABLE_SPEC
 from tests.sdf_factory import SDF_VERSION_35
 from tests.sdf_factory import SDF_VERSION_40
@@ -26,7 +26,7 @@ def test_sdf_plain_database_created_file_exists(sdf_dir: Path, version: str) -> 
 def test_sdf_plain_database_opens_without_password(sdf_dir: Path, version: str) -> None:
     path = create_plain_database(sdf_dir, version=version)
 
-    db = SdfDatabase(str(path))
+    db = SqlceDatabase(str(path))
 
     assert db.list_tables() == []
 
@@ -41,6 +41,6 @@ def test_sdf_plain_database_full_structure_matches_source(sdf_dir: Path, version
     finally:
         connection.Close()
 
-    db = SdfDatabase(str(path))
+    db = SqlceDatabase(str(path))
 
     assert_table_matches(db, SAMPLE_TABLE_SPEC)

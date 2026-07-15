@@ -49,11 +49,11 @@ class SdfScenario:
         return sdf_open_connection(self.path, self.password, self.version)
 
     def open_database(self):
-        from sqlce import SdfDatabase
+        from sqlce import SqlceDatabase
 
         if self.password is None:
-            return SdfDatabase(str(self.path))
-        return SdfDatabase(str(self.path), self.password)
+            return SqlceDatabase(str(self.path))
+        return SqlceDatabase(str(self.path), self.password)
 
 
 def _build_plain_35_scenario(sdf_dir: Path) -> SdfScenario:

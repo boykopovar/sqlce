@@ -71,7 +71,7 @@ class ColumnSchema:
     def scale(self) -> Optional[int]: ...
 
 
-class SdfDatabase:
+class SqlceDatabase:
     @overload
     def __init__(self, path: str) -> None: ...
 

@@ -1,6 +1,6 @@
 add_executable(sqlce_wasm wasm_bindings.cpp)
 
-target_link_libraries(sqlce_wasm PRIVATE libsdf)
+target_link_libraries(sqlce_wasm PRIVATE libsqlce)
 target_compile_features(sqlce_wasm PRIVATE cxx_std_20)
 set_target_properties(sqlce_wasm PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 
