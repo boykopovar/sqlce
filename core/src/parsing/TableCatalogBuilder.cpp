@@ -10,9 +10,9 @@ namespace sdf::parsing
 namespace
 {
 
-domain::ColumnType ToColumnType(std::uint16_t inttype)
+domain::ColumnType ToColumnType(std::uint16_t intType)
 {
-    switch (inttype)
+    switch (intType)
     {
         case 0:
             return domain::ColumnType::TinyInt;
@@ -65,14 +65,14 @@ TableCatalogBuilder::TableCatalogBuilder(
 
 std::map<std::string, domain::TableDef> TableCatalogBuilder::BuildTables(const domain::IPageStorage& storage) const
 {
-    const std::vector<infrastructure::RowSlice> catalogRows = _pageScanner->CollectCatalogRows(storage);
+    const std::vector<std::vector<std::uint8_t>> catalogRows = _pageScanner->CollectCatalogRows(storage);
 
     std::map<std::string, domain::TableDef> tablesByName;
     std::vector<PendingColumn> pendingColumns;
 
-    for (const infrastructure::RowSlice& slice : catalogRows)
+    for (const std::vector<std::uint8_t>& rowBytes : catalogRows)
     {
-        const std::optional<CatalogRow> decoded = _rowDecoder->Decode(slice.bytes);
+        const std::optional<CatalogRow> decoded = _rowDecoder->Decode(rowBytes);
         if (!decoded.has_value())
         {
             continue;

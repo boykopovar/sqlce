@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "sdf/domain/IPageStorage.hpp"
-#include "sdf/infrastructure/PageView.hpp"
 
 namespace sdf::parsing
 {
@@ -18,7 +17,7 @@ public:
 
     virtual std::set<std::uint8_t> FindCatalogObjectIds(const domain::IPageStorage& storage) const = 0;
 
-    virtual std::vector<infrastructure::RowSlice> CollectCatalogRows(const domain::IPageStorage& storage) const = 0;
+    virtual std::vector<std::vector<std::uint8_t>> CollectCatalogRows(const domain::IPageStorage& storage) const = 0;
 };
 
 }

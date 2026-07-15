@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <array>
 
+#include "sdf/infrastructure/PageView.hpp"
+
 namespace sdf::parsing
 {
 
@@ -44,11 +46,11 @@ std::set<std::uint8_t> CatalogPageScanner::FindCatalogObjectIds(const domain::IP
     return objectIds;
 }
 
-std::vector<infrastructure::RowSlice> CatalogPageScanner::CollectCatalogRows(
+std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
     const domain::IPageStorage& storage) const
 {
     const std::set<std::uint8_t> catalogObjectIds = FindCatalogObjectIds(storage);
-    std::vector<infrastructure::RowSlice> rows;
+    std::vector<std::vector<std::uint8_t>> rows;
     const std::size_t pageCount = storage.PageCount();
 
     for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
@@ -64,7 +66,7 @@ std::vector<infrastructure::RowSlice> CatalogPageScanner::CollectCatalogRows(
         }
         for (const infrastructure::RowSlice& slice : page.Rows())
         {
-            rows.push_back(slice);
+            rows.emplace_back(slice.bytes.begin(), slice.bytes.end());
         }
     }
 

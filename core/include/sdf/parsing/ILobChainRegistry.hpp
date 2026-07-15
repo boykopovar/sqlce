@@ -2,8 +2,10 @@
 #define SDF_PARSING_I_LOB_CHAIN_REGISTRY_HPP
 
 #include <cstdint>
+#include <memory>
 #include <span>
-#include <vector>
+
+#include "sdf/domain/ILazyLobSource.hpp"
 
 namespace sdf::parsing
 {
@@ -13,7 +15,7 @@ class ILobChainRegistry
 public:
     virtual ~ILobChainRegistry() = default;
 
-    virtual std::vector<std::uint8_t> ResolvePayload(
+    virtual std::shared_ptr<domain::ILazyLobSource> ResolveLob(
         std::span<const std::uint8_t> inlineTail, std::size_t totalLength) = 0;
 };
 

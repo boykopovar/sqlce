@@ -8,6 +8,7 @@
 
 #include "sdf/domain/DateTimeValue.hpp"
 #include "sdf/domain/Guid.hpp"
+#include "sdf/domain/LazyLob.hpp"
 #include "sdf/domain/NumericValue.hpp"
 
 namespace sdf::domain
@@ -27,7 +28,8 @@ using ColumnValueStorage = std::variant<
     std::vector<std::uint8_t>,
     DateTimeValue,
     NumericValue,
-    Guid>;
+    Guid,
+    LazyLob>;
 
 class ColumnValue
 {

@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "sdf/application/ColumnSchema.hpp"
+#include "sdf/application/TableRowRange.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
 #include "sdf/domain/IPageCipher.hpp"
 #include "sdf/domain/IPageStorage.hpp"
@@ -28,6 +29,7 @@ public:
 
     [[nodiscard]] std::vector<std::string> ListTables() const;
     [[nodiscard]] std::vector<ColumnSchema> TableSchema(const std::string& tableName) const;
+    [[nodiscard]] TableRowRange IterateTable(const std::string& tableName) const;
     [[nodiscard]] std::vector<domain::Row> ReadTable(const std::string& tableName) const;
     [[nodiscard]] domain::EncryptionMode GetEncryptionMode() const;
     [[nodiscard]] static domain::EncryptionMode GetEncryptionMode(const std::string& path);

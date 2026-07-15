@@ -36,7 +36,7 @@ SdfDatabase::OpenResult SdfDatabase::Open(const std::string& path, const std::st
         return OpenResult{std::make_unique<infrastructure::FileStorage>(path), mode};
     }
 
-    const parsing::SdfPageCipher cipher(firstPage, password);
+    auto cipher = std::make_shared<parsing::SdfPageCipher>(firstPage, password);
     return OpenResult{std::make_unique<infrastructure::FileStorage>(path, cipher), mode};
 }
 
@@ -130,21 +130,16 @@ std::vector<ColumnSchema> SdfDatabase::TableSchema(const std::string& tableName)
     return result;
 }
 
-std::vector<domain::Row> SdfDatabase::ReadTable(const std::string& tableName) const
+TableRowRange SdfDatabase::IterateTable(const std::string& tableName) const
 {
     const domain::TableDef& table = RequireTable(tableName);
+    return TableRowRange(_storage.get(), &table, _rowDecoder.get());
+}
 
-    std::vector<domain::Row> rows;
-    for (const std::size_t pageNumber : table.DataPageNumbers())
-    {
-        const infrastructure::PageView page(_storage->PageBytes(pageNumber));
-        for (const infrastructure::RowSlice& slice : page.Rows())
-        {
-            rows.push_back(_rowDecoder->Decode(table, slice.bytes));
-        }
-    }
-
-    return rows;
+std::vector<domain::Row> SdfDatabase::ReadTable(const std::string& tableName) const
+{
+    const TableRowRange range = IterateTable(tableName);
+    return std::vector<domain::Row>(range.begin(), range.end());
 }
 
 domain::EncryptionMode SdfDatabase::GetEncryptionMode() const

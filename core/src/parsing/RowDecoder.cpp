@@ -3,8 +3,9 @@
 #include <utility>
 #include <vector>
 
+#include "sdf/domain/LazyLob.hpp"
+#include "sdf/domain/TextDecoder.hpp"
 #include "sdf/infrastructure/BinaryReader.hpp"
-#include "sdf/parsing/TextDecoder.hpp"
 
 namespace sdf::parsing
 {
@@ -287,7 +288,7 @@ domain::ColumnValue RowDecoder::DecodeVarLength(
 {
     if (column.Type() == domain::ColumnType::NVarChar)
     {
-        return domain::ColumnValue(domain::ColumnValueStorage(DecodeText(chunk, compressed)));
+        return domain::ColumnValue(domain::ColumnValueStorage(domain::DecodeText(chunk, compressed)));
     }
     return domain::ColumnValue(domain::ColumnValueStorage(std::vector<std::uint8_t>(chunk.begin(), chunk.end())));
 }
@@ -296,26 +297,20 @@ domain::ColumnValue RowDecoder::DecodeLob(
     const domain::ColumnDef& column, std::span<const std::uint8_t> chunk, bool compressed) const
 {
     constexpr std::size_t LobHeaderLength = 8;
+    const bool isText = column.Type() == domain::ColumnType::NText;
 
     if (chunk.size() < LobHeaderLength)
     {
-        if (column.Type() == domain::ColumnType::NText)
-        {
-            return domain::ColumnValue(domain::ColumnValueStorage(std::string()));
-        }
-        return domain::ColumnValue(domain::ColumnValueStorage(std::vector<std::uint8_t>{}));
+        std::shared_ptr<domain::ILazyLobSource> emptySource = _lobChainRegistry->ResolveLob({}, 0);
+        return domain::ColumnValue(domain::ColumnValueStorage(domain::LazyLob(emptySource, isText, compressed)));
     }
 
     const std::uint32_t length = infrastructure::ReadUInt32LE(chunk, 0);
     const std::span<const std::uint8_t> inlineTail = chunk.subspan(LobHeaderLength);
 
-    const std::vector<std::uint8_t> payload = _lobChainRegistry->ResolvePayload(inlineTail, length);
+    std::shared_ptr<domain::ILazyLobSource> source = _lobChainRegistry->ResolveLob(inlineTail, length);
 
-    if (column.Type() == domain::ColumnType::NText)
-    {
-        return domain::ColumnValue(domain::ColumnValueStorage(DecodeText(payload, compressed)));
-    }
-    return domain::ColumnValue(domain::ColumnValueStorage(payload));
+    return domain::ColumnValue(domain::ColumnValueStorage(domain::LazyLob(source, isText, compressed)));
 }
 
 }

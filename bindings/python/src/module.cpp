@@ -10,6 +10,7 @@
 #include "sdf/application/ColumnSchema.hpp"
 #include "sdf/application/SdfDatabase.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
+#include "sdf/domain/LazyLob.hpp"
 #include "sdf/domain/Row.hpp"
 
 #include "value_convert.hpp"
@@ -61,6 +62,11 @@ constexpr char ScaleAttrName[] = "scale";
 
 constexpr char UnsupportedEncryptionModeErrorName[] = "UnsupportedEncryptionModeError";
 constexpr char InvalidPasswordErrorName[] = "InvalidPasswordError";
+
+constexpr char LazyLobClassName[] = "LazyLob";
+constexpr char LazyLobDoc[] = "Ленивое LOB-значение (NText/Image), читаемое по требованию.";
+constexpr char LazyLobReadName[] = "read";
+constexpr char LazyLobReadChunksName[] = "read_chunks";
 
 py::dict RowToDict(const domain::Row& row)
 {
@@ -133,6 +139,26 @@ PYBIND11_MODULE(_sdf_native, module)
         .value(EncryptionModeAes128Sha1Name, domain::EncryptionMode::Aes128Sha1)
         .value(EncryptionModeAes128Sha256Name, domain::EncryptionMode::Aes128Sha256)
         .value(EncryptionModeAes256Sha512Name, domain::EncryptionMode::Aes256Sha512);
+
+    py::class_<domain::LazyLob>(module, LazyLobClassName, LazyLobDoc)
+        .def(
+            LazyLobReadName,
+            [](const domain::LazyLob& lob) -> py::object {
+                if (lob.IsText())
+                {
+                    return py::str(lob.ReadText());
+                }
+                const std::vector<std::uint8_t> bytes = lob.ReadBytes();
+                return py::bytes(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+            })
+        .def(LazyLobReadChunksName, [](const domain::LazyLob& lob) {
+            py::list result;
+            for (const std::vector<std::uint8_t>& chunk : lob.ReadChunks())
+            {
+                result.append(py::bytes(reinterpret_cast<const char*>(chunk.data()), chunk.size()));
+            }
+            return result;
+        });
 
     py::class_<application::ColumnSchema>(module, SchemaClassName, SchemaDoc)
         .def_property_readonly(

@@ -97,6 +97,11 @@ std::string ColumnValue::ToDisplayString() const
         {
             return value.ToString();
         }
+
+        std::string operator()(const LazyLob& value) const
+        {
+            return value.IsText() ? value.ReadText() : ("0x" + BytesToHex(value.ReadBytes()));
+        }
     };
 
     return std::visit(Visitor{}, _storage);

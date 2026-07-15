@@ -8,6 +8,11 @@ from typing import Optional
 from typing import Union
 from typing import overload
 
+class LazyLob:
+    def read(self) -> Union[str, bytes]: ...
+    def read_chunks(self) -> List[bytes]: ...
+
+
 ColumnValue = Union[
     None,
     int,
@@ -18,6 +23,7 @@ ColumnValue = Union[
     datetime.datetime,
     decimal.Decimal,
     uuid.UUID,
+    LazyLob,
 ]
 
 Row = Dict[str, ColumnValue]

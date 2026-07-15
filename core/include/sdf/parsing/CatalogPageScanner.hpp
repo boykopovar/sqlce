@@ -10,7 +10,7 @@ class CatalogPageScanner final : public ICatalogPageScanner
 {
 public:
     std::set<std::uint8_t> FindCatalogObjectIds(const domain::IPageStorage& storage) const override;
-    std::vector<infrastructure::RowSlice> CollectCatalogRows(const domain::IPageStorage& storage) const override;
+    std::vector<std::vector<std::uint8_t>> CollectCatalogRows(const domain::IPageStorage& storage) const override;
 };
 
 }

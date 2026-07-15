@@ -1,8 +1,8 @@
 #include "sdf/infrastructure/FileStorage.hpp"
 
 #include <algorithm>
-#include <fstream>
 #include <stdexcept>
+#include <utility>
 
 #include "sdf/domain/EncryptionMode.hpp"
 #include "sdf/domain/PageLayout.hpp"
@@ -28,38 +28,31 @@ std::vector<std::uint8_t> ReadFirstPageRaw(const std::string& path)
     return page;
 }
 
-FileStorage::FileStorage(const std::string& path) : _pageCount(0)
+FileStorage::FileStorage(const std::string& path) : _pageCount(0), _cipher(nullptr), _pageBuffer(domain::PageSize)
 {
-    Load(path);
+    Open(path);
 }
 
-FileStorage::FileStorage(const std::string& path, const domain::IPageCipher& cipher) : _pageCount(0)
+FileStorage::FileStorage(const std::string& path, std::shared_ptr<const domain::IPageCipher> cipher)
+    : _pageCount(0), _cipher(std::move(cipher)), _pageBuffer(domain::PageSize)
 {
-    Load(path);
+    Open(path);
 
-    if (!cipher.VerifyPassword())
+    if (!_cipher->VerifyPassword())
     {
         throw domain::InvalidPasswordException();
     }
-
-    for (std::size_t pageNumber = 0; pageNumber < _pageCount; ++pageNumber)
-    {
-        const std::size_t offset = pageNumber * domain::PageSize;
-        const std::span<const std::uint8_t> encryptedPage(_fileBytes.data() + offset, domain::PageSize);
-        const std::vector<std::uint8_t> decryptedPage = cipher.DecryptPage(pageNumber, encryptedPage);
-        std::copy(decryptedPage.begin(), decryptedPage.end(), _fileBytes.begin() + static_cast<std::ptrdiff_t>(offset));
-    }
 }
 
-void FileStorage::Load(const std::string& path)
+void FileStorage::Open(const std::string& path)
 {
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file.is_open())
+    _file.open(path, std::ios::binary | std::ios::ate);
+    if (!_file.is_open())
     {
         throw std::runtime_error("cannot open file: " + path);
     }
 
-    const std::streamsize size = file.tellg();
+    const std::streamsize size = _file.tellg();
     if (size < 0)
     {
         throw std::runtime_error("cannot determine file size: " + path);
@@ -70,18 +63,7 @@ void FileStorage::Load(const std::string& path)
         throw std::runtime_error("file size is not a multiple of page size, not a valid .sdf: " + path);
     }
 
-    _fileBytes.resize(static_cast<std::size_t>(size));
-    file.seekg(0, std::ios::beg);
-    if (!_fileBytes.empty())
-    {
-        file.read(reinterpret_cast<char*>(_fileBytes.data()), size);
-        if (!file)
-        {
-            throw std::runtime_error("failed to read file: " + path);
-        }
-    }
-
-    _pageCount = _fileBytes.size() / domain::PageSize;
+    _pageCount = static_cast<std::size_t>(size) / domain::PageSize;
 }
 
 std::size_t FileStorage::PageCount() const
@@ -95,8 +77,22 @@ std::span<const std::uint8_t> FileStorage::PageBytes(std::size_t pageNumber) con
     {
         throw std::out_of_range("page number out of range");
     }
-    const std::size_t offset = pageNumber * domain::PageSize;
-    return std::span<const std::uint8_t>(_fileBytes.data() + offset, domain::PageSize);
+
+    const std::streamoff offset = static_cast<std::streamoff>(pageNumber * domain::PageSize);
+    _file.seekg(offset, std::ios::beg);
+    _file.read(reinterpret_cast<char*>(_pageBuffer.data()), static_cast<std::streamsize>(domain::PageSize));
+    if (!_file)
+    {
+        throw std::runtime_error("failed to read page " + std::to_string(pageNumber));
+    }
+
+    if (_cipher)
+    {
+        const std::vector<std::uint8_t> decrypted = _cipher->DecryptPage(pageNumber, std::span<const std::uint8_t>(_pageBuffer));
+        std::copy(decrypted.begin(), decrypted.end(), _pageBuffer.begin());
+    }
+
+    return std::span<const std::uint8_t>(_pageBuffer.data(), domain::PageSize);
 }
 
 }

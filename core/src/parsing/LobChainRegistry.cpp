@@ -146,35 +146,73 @@ LobChainRegistry::LobChainRegistry(const domain::IPageStorage& storage) : _stora
     }
 }
 
-std::vector<std::uint8_t> LobChainRegistry::ReadChainBytes(const Chain& chain, std::size_t totalLength) const
+class LobChainRegistry::InlineLobSource final : public domain::ILazyLobSource
 {
-    std::vector<std::uint8_t> buffer;
-    buffer.reserve(totalLength);
-
-    for (const std::size_t pageNumber : chain.pageNumbers)
+public:
+    explicit InlineLobSource(std::vector<std::uint8_t> bytes) : _bytes(std::move(bytes))
     {
-        const std::span<const std::uint8_t> pageBytes = _storage->PageBytes(pageNumber);
+    }
+
+    std::size_t TotalLength() const override
+    {
+        return _bytes.size();
+    }
+
+    std::size_t ChunkCount() const override
+    {
+        return _bytes.empty() ? 0 : 1;
+    }
+
+    std::vector<std::uint8_t> ReadChunk(std::size_t) const override
+    {
+        return _bytes;
+    }
+
+private:
+    std::vector<std::uint8_t> _bytes;
+};
+
+class LobChainRegistry::ChainLobSource final : public domain::ILazyLobSource
+{
+public:
+    ChainLobSource(const domain::IPageStorage* storage, std::vector<std::size_t> pageNumbers, std::size_t totalLength)
+        : _storage(storage), _pageNumbers(std::move(pageNumbers)), _totalLength(totalLength)
+    {
+    }
+
+    std::size_t TotalLength() const override
+    {
+        return _totalLength;
+    }
+
+    std::size_t ChunkCount() const override
+    {
+        return _pageNumbers.size();
+    }
+
+    std::vector<std::uint8_t> ReadChunk(std::size_t chunkIndex) const override
+    {
+        const std::span<const std::uint8_t> pageBytes = _storage->PageBytes(_pageNumbers[chunkIndex]);
         const std::span<const std::uint8_t> payload = pageBytes.subspan(domain::LobPageHeaderLength);
-        buffer.insert(buffer.end(), payload.begin(), payload.end());
-        if (buffer.size() >= totalLength)
-        {
-            break;
-        }
+        const std::size_t consumedBefore = chunkIndex * (domain::PageSize - domain::LobPageHeaderLength);
+        const std::size_t remaining = _totalLength > consumedBefore ? _totalLength - consumedBefore : 0;
+        const std::size_t take = std::min(payload.size(), remaining);
+        return std::vector<std::uint8_t>(payload.begin(), payload.begin() + take);
     }
 
-    if (buffer.size() > totalLength)
-    {
-        buffer.resize(totalLength);
-    }
-    return buffer;
-}
+private:
+    const domain::IPageStorage* _storage;
+    std::vector<std::size_t> _pageNumbers;
+    std::size_t _totalLength;
+};
 
-std::vector<std::uint8_t> LobChainRegistry::ResolvePayload(
+std::shared_ptr<domain::ILazyLobSource> LobChainRegistry::ResolveLob(
     std::span<const std::uint8_t> inlineTail, std::size_t totalLength)
 {
     if (inlineTail.size() >= totalLength)
     {
-        return std::vector<std::uint8_t>(inlineTail.begin(), inlineTail.begin() + totalLength);
+        return std::make_shared<InlineLobSource>(
+            std::vector<std::uint8_t>(inlineTail.begin(), inlineTail.begin() + totalLength));
     }
 
     for (auto& [key, chain] : _chains)
@@ -188,11 +226,11 @@ std::vector<std::uint8_t> LobChainRegistry::ResolvePayload(
         if (capacity >= totalLength)
         {
             _usedChains.insert(key);
-            return ReadChainBytes(chain, totalLength);
+            return std::make_shared<ChainLobSource>(_storage, chain.pageNumbers, totalLength);
         }
     }
 
-    return std::vector<std::uint8_t>(inlineTail.begin(), inlineTail.end());
+    return std::make_shared<InlineLobSource>(std::vector<std::uint8_t>(inlineTail.begin(), inlineTail.end()));
 }
 
 }

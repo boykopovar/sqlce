@@ -10,6 +10,7 @@
 
 #include "sdf/domain/DateTimeValue.hpp"
 #include "sdf/domain/Guid.hpp"
+#include "sdf/domain/LazyLob.hpp"
 #include "sdf/domain/NumericValue.hpp"
 
 namespace sdf::bindings
@@ -133,6 +134,11 @@ struct ValueVisitor
     py::object operator()(const domain::Guid& value) const
     {
         return UuidFromValue(value);
+    }
+
+    py::object operator()(const domain::LazyLob& value) const
+    {
+        return py::cast(value);
     }
 };
 

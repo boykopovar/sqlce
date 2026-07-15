@@ -15,9 +15,11 @@ add_library(libsdf
         src/domain/ColumnValue.cpp
         src/domain/DateTimeValue.cpp
         src/domain/Guid.cpp
+        src/domain/LazyLob.cpp
         src/domain/NumericValue.cpp
         src/domain/Row.cpp
         src/domain/TableDef.cpp
+        src/domain/TextDecoder.cpp
         src/infrastructure/AesCbc.cpp
         src/infrastructure/BinaryReader.cpp
         src/infrastructure/FileStorage.cpp
@@ -32,8 +34,8 @@ add_library(libsdf
         src/parsing/RowDecoder.cpp
         src/parsing/SdfPageCipher.cpp
         src/parsing/TableCatalogBuilder.cpp
-        src/parsing/TextDecoder.cpp
         src/application/SdfDatabase.cpp
+        src/application/TableRowRange.cpp
 )
 
 set_target_properties(libsdf PROPERTIES
