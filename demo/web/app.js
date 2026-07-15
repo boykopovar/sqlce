@@ -79,21 +79,21 @@ async function openDatabase(bytes, password) {
   const module = await ensureModule();
   const path = writeFileToVirtualFs(module, bytes);
   const rawResult = password
-    ? module.SdfDatabase.openWithPassword(path, password)
-    : module.SdfDatabase.open(path);
+      ? module.SqlceDatabase.openWithPassword(path, password)
+      : module.SqlceDatabase.open(path);
   const handle = parseOpenResult(rawResult);
   return { module, handle };
 }
 
 function closeCurrentHandle() {
   if (state.module && state.handle) {
-    state.module.SdfDatabase.close(state.handle);
+    state.module.SqlceDatabase.close(state.handle);
   }
   state.handle = null;
 }
 
 async function loadTableList() {
-  const rawJson = state.module.SdfDatabase.listTablesJson(state.handle);
+  const rawJson = state.module.SqlceDatabase.listTablesJson(state.handle);
   state.tables = parseDataResult(rawJson);
 }
 
@@ -115,10 +115,10 @@ async function selectTable(tableName) {
   try {
     el.tableSelect.value = tableName;
     setStatus(t("status.readingTable", { tableName }), false);
-    const rawSchemaJson = state.module.SdfDatabase.tableSchemaJson(state.handle, tableName);
+    const rawSchemaJson = state.module.SqlceDatabase.tableSchemaJson(state.handle, tableName);
     const schema = parseDataResult(rawSchemaJson);
 
-    const rawDataJson = state.module.SdfDatabase.tableDataJson(state.handle, tableName);
+    const rawDataJson = state.module.SqlceDatabase.tableDataJson(state.handle, tableName);
     const rows = parseDataResult(rawDataJson);
 
     state.activeTable = tableName;
@@ -200,7 +200,7 @@ function exportActiveTableAsCsv() {
   if (!state.activeTable) {
     return;
   }
-  const rawSchemaJson = state.module.SdfDatabase.tableSchemaJson(state.handle, state.activeTable);
+  const rawSchemaJson = state.module.SqlceDatabase.tableSchemaJson(state.handle, state.activeTable);
   const schema = parseDataResult(rawSchemaJson);
   const csv = "sep=,\r\n" + buildCsv(schema, state.activeRows);
 
@@ -244,7 +244,7 @@ async function handleFile(file) {
       state.pendingBytes = bytes;
       const module = await ensureModule();
       const path = writeFileToVirtualFs(module, bytes);
-      const modeRawJson = module.SdfDatabase.encryptionModeOfFile(path);
+      const modeRawJson = module.SqlceDatabase.encryptionModeOfFile(path);
       const mode = parseDataResult(modeRawJson);
       setStatus(t("status.passwordRequired", { algorithm: encryptionModeName(mode) }), false);
     } else {

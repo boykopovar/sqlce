@@ -67,6 +67,7 @@ def get_sdf_dir(base_dir: Path) -> Path:
 
 
 def cleanup_sdf_dir(base_dir: Path) -> None:
+    return
     sdf_dir = base_dir / SDF_DIR_NAME
     if sdf_dir.exists():
         shutil.rmtree(sdf_dir, ignore_errors=True)
