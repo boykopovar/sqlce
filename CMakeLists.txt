@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
 project(sqlce_workspace LANGUAGES CXX)
 
-option(SDF_BUILD_PYTHON_BINDINGS "Build the _sqlce_native pybind11 extension module" OFF)
-option(SDF_BUILD_WASM "Build the Emscripten wasm module" OFF)
+option(SQLCE_BUILD_PYTHON_BINDINGS "Build the _sqlce_native pybind11 extension module" OFF)
+option(SQLCE_BUILD_WASM "Build the Emscripten wasm module" OFF)
 
 add_subdirectory(core)
 
-if(SDF_BUILD_PYTHON_BINDINGS)
+if(SQLCE_BUILD_PYTHON_BINDINGS)
     add_subdirectory(bindings/python)
 endif()
 
-if(SDF_BUILD_WASM)
+if(SQLCE_BUILD_WASM)
     add_subdirectory(bindings/wasm)
 endif()
 

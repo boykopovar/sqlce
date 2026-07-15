@@ -33,7 +33,7 @@ Homepage = "https://github.com/boykopovar/sqlce"
 Issues = "https://github.com/boykopovar/sqlce/issues"
 
 [tool.scikit-build]
-cmake.args = ["-DSDF_BUILD_PYTHON_BINDINGS=ON"]
+cmake.args = ["-DSQLCE_BUILD_PYTHON_BINDINGS=ON"]
 wheel.packages = ["python/sqlce"]
 
 [tool.cibuildwheel]

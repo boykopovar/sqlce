@@ -1,8 +1,8 @@
-pip install -e . -v --config-settings=cmake.args="-G Ninja;-DCMAKE_CXX_COMPILER=g++;-DCMAKE_C_COMPILER=gcc;-DSDF_BUILD_PYTHON_BINDINGS=ON"
-python -m build --wheel -C cmake.args="-G Ninja;-DCMAKE_CXX_COMPILER=g++;-DCMAKE_C_COMPILER=gcc;-DSDF_BUILD_PYTHON_BINDINGS=ON"
+pip install -e . -v --config-settings=cmake.args="-G Ninja;-DCMAKE_CXX_COMPILER=g++;-DCMAKE_C_COMPILER=gcc;-DSQLCE_BUILD_PYTHON_BINDINGS=ON"
+python -m build --wheel -C cmake.args="-G Ninja;-DCMAKE_CXX_COMPILER=g++;-DCMAKE_C_COMPILER=gcc;-DSQLCE_BUILD_PYTHON_BINDINGS=ON"
 
-git tag v0.1.4
-git push origin v0.1.4
+git tag v0.1.6
+git push origin v0.1.6
 
 git tag -d v0.1.0
 git push origin --delete v0.1.0
