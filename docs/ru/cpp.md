@@ -4,18 +4,18 @@
 
 ## Сборка
 
-CMake, C++20, ninja/gcc или msvc. Флаг `SDF_BUILD_PYTHON_BINDINGS` для plain C++ не нужен, по умолчанию `OFF`.
+CMake, C++20, ninja/gcc или msvc. Флаг `SQLCE_BUILD_PYTHON_BINDINGS` для plain C++ не нужен, по умолчанию `OFF`.
 
-Собирает библиотеку `libsdf` и бинарник `sdf_dump` (main.cpp, дампит все .sdf файлы из папки).
+Собирает библиотеку `libsqlce` и бинарник `sdf_dump` (main.cpp, дампит все .sdf файлы из папки).
 
 ## Пример
 
 ```cpp
-#include "sdf/application/SdfDatabase.hpp"
+#include "sdf/application/SqlceDatabase.hpp"
 
-sdf::application::SdfDatabase db("file.sdf");
+sdf::application::SqlceDatabase db("file.sdf");
 // или с паролем
-sdf::application::SdfDatabase db("file.sdf", "password");
+sdf::application::SqlceDatabase db("file.sdf", "password");
 
 for (auto& name : db.ListTables()) { ... }
 
@@ -23,7 +23,7 @@ auto schema = db.TableSchema("MyTable");
 auto rows = db.ReadTable("MyTable");
 ```
 
-## SdfDatabase (sdf/application/SdfDatabase.hpp)
+## SqlceDatabase (sdf/application/SqlceDatabase.hpp)
 
 - `ListTables() -> vector<string>`
 - `TableSchema(name) -> vector<ColumnSchema>`

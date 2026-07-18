@@ -4,18 +4,18 @@ Parser for .sdf files (SQL Server Compact). Reads tables, schema, and rows.
 
 ## Build
 
-CMake, C++20, ninja/gcc or msvc. The `SDF_BUILD_PYTHON_BINDINGS` flag is not needed for plain C++, it is `OFF` by default.
+CMake, C++20, ninja/gcc or msvc. The `SQLCE_BUILD_PYTHON_BINDINGS` flag is not needed for plain C++, it is `OFF` by default.
 
-Builds the `libsdf` library and the `sdf_dump` executable (`main.cpp`, dumps all .sdf files from a folder).
+Builds the `libsqlce` library and the `sdf_dump` executable (`main.cpp`, dumps all .sdf files from a folder).
 
 ## Example
 
 ```cpp
-#include "sdf/application/SdfDatabase.hpp"
+#include "sdf/application/SqlceDatabase.hpp"
 
-sdf::application::SdfDatabase db("file.sdf");
+sdf::application::SqlceDatabase db("file.sdf");
 // or with a password
-sdf::application::SdfDatabase db("file.sdf", "password");
+sdf::application::SqlceDatabase db("file.sdf", "password");
 
 for (auto& name : db.ListTables()) { ... }
 
@@ -23,7 +23,7 @@ auto schema = db.TableSchema("MyTable");
 auto rows = db.ReadTable("MyTable");
 ```
 
-## SdfDatabase (sdf/application/SdfDatabase.hpp)
+## SqlceDatabase (sdf/application/SqlceDatabase.hpp)
 
 - `ListTables() -> vector<string>`
 - `TableSchema(name) -> vector<ColumnSchema>`

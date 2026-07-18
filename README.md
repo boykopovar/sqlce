@@ -28,9 +28,9 @@ pip install sqlce
 ```
 
 ```python
-from sqlce import SdfDatabase
+from sqlce import SqlceDatabase
 
-db = SdfDatabase("example.sdf", password="secret123")
+db = SqlceDatabase("example.sdf", password="secret123")
 
 for table_name in db.list_tables():
     print(table_name, db.table_schema(table_name))

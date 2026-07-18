@@ -1,6 +1,6 @@
 # Python API
 
-`sqlce` bindings for [libsdf](cpp.md) (pybind11). Parses .sdf files (SQL Server Compact).
+`sqlce` bindings for [libsqlce](cpp.md) (pybind11). Parses .sdf files (SQL Server Compact).
 
 ## Installation
 
@@ -11,11 +11,11 @@ pip install sqlce
 ## Example
 
 ```python
-from sqlce import SdfDatabase
+from sqlce import SqlceDatabase
 
-db = SdfDatabase("file.sdf")
+db = SqlceDatabase("file.sdf")
 # or with a password
-db = SdfDatabase("file.sdf", "password")
+db = SqlceDatabase("file.sdf", "password")
 
 for name in db.list_tables():
     print(name)
@@ -26,7 +26,7 @@ for col in db.table_schema("MyTable"):
 rows = db.read_table("MyTable")  # list of dicts {column name: value}
 ```
 
-## SdfDatabase
+## SqlceDatabase
 
 - `__init__(path)` / `__init__(path, password)` - open a file
 - `list_tables() -> List[str]`
