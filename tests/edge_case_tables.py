@@ -207,3 +207,101 @@ NULLABLE_EXTREMES_TABLE_SPEC = TableSpec(
         (3, -1, "not null", b"\x00\x01\x02"),
     ),
 )
+
+WIDE_MIXED_TYPES_TABLE_SPEC = TableSpec(
+    name="WideMixedTypes",
+    columns=(
+        ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
+        ColumnSpec(name="A", sql_type="nvarchar(50)", type_name="nvarchar/nchar", declared_size=100),
+        ColumnSpec(name="B", sql_type="int", type_name="int", declared_size=4),
+        ColumnSpec(name="C", sql_type="bit", type_name="bit", declared_size=1),
+        ColumnSpec(name="D", sql_type="datetime", type_name="datetime", declared_size=8),
+        ColumnSpec(name="E", sql_type="money", type_name="money", declared_size=8),
+        ColumnSpec(name="F", sql_type="float", type_name="float/real", declared_size=8),
+        ColumnSpec(
+            name="G",
+            sql_type="numeric(10, 2)",
+            type_name="numeric/decimal",
+            declared_size=6,
+            precision=10,
+            scale=2,
+        ),
+        ColumnSpec(name="H", sql_type="uniqueidentifier", type_name="uniqueidentifier", declared_size=16),
+        ColumnSpec(name="I", sql_type="ntext", type_name="ntext", declared_size=0, check_declared_size=False),
+        ColumnSpec(name="J", sql_type="image", type_name="image", declared_size=0, check_declared_size=False),
+        ColumnSpec(name="K", sql_type="smallint", type_name="smallint", declared_size=2),
+        ColumnSpec(name="L", sql_type="tinyint", type_name="tinyint", declared_size=1),
+        ColumnSpec(name="M", sql_type="bigint", type_name="bigint", declared_size=8),
+    ),
+    rows=(
+        (1, None, None, None, None, None, None, decimal.Decimal("0.00"), None, None, None, None, None, None),
+        (
+            2,
+            "not null",
+            42,
+            True,
+            datetime.datetime(2020, 1, 1, 12, 30, 0),
+            decimal.Decimal("100.00"),
+            1.5,
+            decimal.Decimal("1500.50"),
+            uuid.UUID(int=(2 ** 128) - 1),
+            "long text value",
+            b"\x00\x01\x02\x03",
+            32767,
+            255,
+            9223372036854775807,
+        ),
+    ),
+)
+
+MANY_BIT_COLUMNS_TABLE_SPEC = TableSpec(
+    name="ManyBitColumns",
+    columns=(
+        ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
+        ColumnSpec(name="B1", sql_type="bit", type_name="bit", declared_size=1),
+        ColumnSpec(name="B2", sql_type="bit", type_name="bit", declared_size=1),
+        ColumnSpec(name="B3", sql_type="bit", type_name="bit", declared_size=1),
+        ColumnSpec(name="B4", sql_type="bit", type_name="bit", declared_size=1),
+        ColumnSpec(name="B5", sql_type="bit", type_name="bit", declared_size=1),
+        ColumnSpec(name="B6", sql_type="bit", type_name="bit", declared_size=1),
+        ColumnSpec(name="B7", sql_type="bit", type_name="bit", declared_size=1),
+        ColumnSpec(name="B8", sql_type="bit", type_name="bit", declared_size=1),
+        ColumnSpec(name="B9", sql_type="bit", type_name="bit", declared_size=1),
+        ColumnSpec(name="B10", sql_type="bit", type_name="bit", declared_size=1),
+    ),
+    rows=(
+        (1, False, False, False, False, False, False, False, False, False, False),
+        (2, True, True, True, True, True, True, True, True, True, True),
+        (3, True, False, True, False, True, False, True, False, True, False),
+        (4, True, False, False, False, False, False, False, False, False, False),
+        (5, False, False, False, False, False, False, False, False, True, False),
+        (6, False, False, False, False, False, False, False, False, False, True),
+    ),
+)
+
+MANY_TABLES_IN_ONE_FILE_SPECS = (
+    TableSpec(
+        name="MultiTableA",
+        columns=(
+            ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
+            ColumnSpec(name="Val", sql_type="nvarchar(50)", type_name="nvarchar/nchar", declared_size=100),
+        ),
+        rows=((1, "A row"),),
+    ),
+    TableSpec(
+        name="MultiTableB",
+        columns=(
+            ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
+            ColumnSpec(name="Val", sql_type="nvarchar(50)", type_name="nvarchar/nchar", declared_size=100),
+        ),
+        rows=((1, "B row"),),
+    ),
+    TableSpec(
+        name="MultiTableC",
+        columns=(
+            ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
+            ColumnSpec(name="Val", sql_type="nvarchar(50)", type_name="nvarchar/nchar", declared_size=100),
+        ),
+        rows=((1, "C row"),),
+    ),
+)

@@ -5,9 +5,12 @@ from tests.edge_case_tables import GUID_EXTREMES_TABLE_SPEC
 from tests.edge_case_tables import HUGE_BINARY_TABLE_SPEC
 from tests.edge_case_tables import HUGE_TEXT_TABLE_SPEC
 from tests.edge_case_tables import INTEGER_EXTREMES_TABLE_SPEC
+from tests.edge_case_tables import MANY_BIT_COLUMNS_TABLE_SPEC
 from tests.edge_case_tables import MANY_ROWS_TABLE_SPEC
+from tests.edge_case_tables import MANY_TABLES_IN_ONE_FILE_SPECS
 from tests.edge_case_tables import NULLABLE_EXTREMES_TABLE_SPEC
 from tests.edge_case_tables import NUMERIC_EXTREMES_TABLE_SPEC
+from tests.edge_case_tables import WIDE_MIXED_TYPES_TABLE_SPEC
 from tests.table_spec import assert_table_matches
 from tests.table_spec import build_table
 
@@ -118,3 +121,41 @@ def test_sdf_edge_case_nullable_extremes_full_structure_matches_source(sdf_scena
     db = sdf_scenario.open_database()
 
     assert_table_matches(db, NULLABLE_EXTREMES_TABLE_SPEC)
+
+
+def test_sdf_edge_case_wide_mixed_types_full_structure_matches_source(sdf_scenario: SdfScenario) -> None:
+    connection = sdf_scenario.open_connection()
+    try:
+        build_table(connection, WIDE_MIXED_TYPES_TABLE_SPEC, sdf_scenario.version)
+    finally:
+        connection.Close()
+
+    db = sdf_scenario.open_database()
+
+    assert_table_matches(db, WIDE_MIXED_TYPES_TABLE_SPEC)
+
+
+def test_sdf_edge_case_many_bit_columns_full_structure_matches_source(sdf_scenario: SdfScenario) -> None:
+    connection = sdf_scenario.open_connection()
+    try:
+        build_table(connection, MANY_BIT_COLUMNS_TABLE_SPEC, sdf_scenario.version)
+    finally:
+        connection.Close()
+
+    db = sdf_scenario.open_database()
+
+    assert_table_matches(db, MANY_BIT_COLUMNS_TABLE_SPEC)
+
+
+def test_sdf_edge_case_many_tables_in_one_file_full_structure_matches_source(sdf_scenario: SdfScenario) -> None:
+    connection = sdf_scenario.open_connection()
+    try:
+        for spec in MANY_TABLES_IN_ONE_FILE_SPECS:
+            build_table(connection, spec, sdf_scenario.version)
+    finally:
+        connection.Close()
+
+    db = sdf_scenario.open_database()
+
+    for spec in MANY_TABLES_IN_ONE_FILE_SPECS:
+        assert_table_matches(db, spec)
