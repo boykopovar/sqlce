@@ -2,6 +2,7 @@
 #define SDF_APPLICATION_TABLE_ROW_RANGE_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <optional>
 #include <vector>
@@ -48,12 +49,13 @@ public:
         parsing::IRowDecoder* _rowDecoder;
         std::size_t _pageIndex;
         std::size_t _slotIndex;
-        std::vector<infrastructure::RowSlice> _currentPageRows;
+        std::vector<infrastructure::ContinuedRowSlice> _currentPageRows;
         std::optional<domain::Row> _current;
 
         void LoadPageAt(std::size_t pageIndex);
-        void SkipEmptyPages();
+        void SkipToNextFirstFragment();
         void LoadCurrentRow();
+        std::vector<std::uint8_t> AssembleRowBytes() const;
     };
 
     TableRowRange(const domain::IPageStorage* storage, const domain::TableDef* table, parsing::IRowDecoder* rowDecoder);

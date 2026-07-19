@@ -20,9 +20,10 @@ struct ContinuedRowSlice
     std::size_t slotIndex;
     std::size_t recordOffset;
     std::span<const std::uint8_t> bytes;
+    bool isFirstFragment;
     bool hasContinuation;
     std::size_t continuationPageNumber;
-    std::size_t continuationRecordOffset;
+    std::size_t continuationSlotIndex;
 };
 
 class PageView

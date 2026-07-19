@@ -166,16 +166,17 @@ std::vector<ContinuedRowSlice> PageView::RowsWithContinuation() const
         }
         const std::uint32_t continuationDword = ReadU32(_bytes, recordOffset + domain::RowContinuationDwordOffset);
 
-        ContinuedRowSlice slice{slotIndex, recordOffset, _bytes.subspan(start, recordLength), false, 0, 0};
+        ContinuedRowSlice slice{slotIndex, recordOffset, _bytes.subspan(start, recordLength), (flags & 0x02u) != 0, false, 0, 0};
         if (continuationDword != 0)
         {
-            const std::size_t nextRecordOffset = continuationDword & 0xFFFu;
-            const std::size_t continuationPageMarker = continuationDword >> 12;
-            if (continuationPageMarker > domain::ContinuationPageNumberBias)
+            const std::size_t nextSlotIndex = continuationDword & 0xFFFu;
+            const std::size_t marker = continuationDword >> 12;
+
+            if (marker > domain::ContinuationPageNumberBias)
             {
                 slice.hasContinuation = true;
-                slice.continuationPageNumber = continuationPageMarker - domain::ContinuationPageNumberBias;
-                slice.continuationRecordOffset = nextRecordOffset;
+                slice.continuationPageNumber = marker - domain::ContinuationPageNumberBias;
+                slice.continuationSlotIndex = nextSlotIndex;
             }
         }
 

@@ -18,7 +18,7 @@ TableRowRange::Iterator::Iterator(
     if (_pageIndex < _table->DataPageNumbers().size())
     {
         LoadPageAt(_pageIndex);
-        SkipEmptyPages();
+        SkipToNextFirstFragment();
     }
     LoadCurrentRow();
 }
@@ -26,20 +26,69 @@ TableRowRange::Iterator::Iterator(
 void TableRowRange::Iterator::LoadPageAt(std::size_t pageIndex)
 {
     const std::span<const std::uint8_t> pageBytes = _storage->PageBytes(_table->DataPageNumbers()[pageIndex]);
-    _currentPageRows = infrastructure::PageView(pageBytes).Rows();
+    _currentPageRows = infrastructure::PageView(pageBytes).RowsWithContinuation();
 }
 
-void TableRowRange::Iterator::SkipEmptyPages()
+void TableRowRange::Iterator::SkipToNextFirstFragment()
 {
     const std::vector<std::size_t>& pageNumbers = _table->DataPageNumbers();
-    while (_currentPageRows.empty() && _pageIndex < pageNumbers.size())
+    while (_pageIndex < pageNumbers.size())
     {
+        while (_slotIndex < _currentPageRows.size() && !_currentPageRows[_slotIndex].isFirstFragment)
+        {
+            ++_slotIndex;
+        }
+        if (_slotIndex < _currentPageRows.size())
+        {
+            return;
+        }
+        _slotIndex = 0;
         ++_pageIndex;
         if (_pageIndex < pageNumbers.size())
         {
             LoadPageAt(_pageIndex);
         }
     }
+}
+
+std::vector<std::uint8_t> TableRowRange::Iterator::AssembleRowBytes() const
+{
+    const infrastructure::ContinuedRowSlice& first = _currentPageRows[_slotIndex];
+    std::vector<std::uint8_t> assembled(first.bytes.begin(), first.bytes.end());
+
+    bool continued = first.hasContinuation;
+    std::size_t nextPageNumber = first.continuationPageNumber;
+    std::size_t nextSlotIndex = first.continuationSlotIndex;
+    std::size_t hops = 0;
+    constexpr std::size_t MaxContinuationHops = 64;
+
+    while (continued && hops < MaxContinuationHops)
+    {
+        ++hops;
+        const infrastructure::PageView nextPage(_storage->PageBytes(nextPageNumber));
+
+        bool matched = false;
+        for (const infrastructure::ContinuedRowSlice& nextSlice : nextPage.RowsWithContinuation())
+        {
+            if (nextSlice.slotIndex != nextSlotIndex)
+            {
+                continue;
+            }
+            assembled.insert(assembled.end(), nextSlice.bytes.begin(), nextSlice.bytes.end());
+            matched = true;
+            continued = nextSlice.hasContinuation;
+            nextPageNumber = nextSlice.continuationPageNumber;
+            nextSlotIndex = nextSlice.continuationSlotIndex;
+            break;
+        }
+
+        if (!matched)
+        {
+            break;
+        }
+    }
+
+    return assembled;
 }
 
 void TableRowRange::Iterator::LoadCurrentRow()
@@ -50,7 +99,8 @@ void TableRowRange::Iterator::LoadCurrentRow()
         return;
     }
 
-    _current = _rowDecoder->Decode(*_table, _currentPageRows[_slotIndex].bytes);
+    const std::vector<std::uint8_t> assembled = AssembleRowBytes();
+    _current = _rowDecoder->Decode(*_table, std::span<const std::uint8_t>(assembled.data(), assembled.size()));
 }
 
 TableRowRange::Iterator::reference TableRowRange::Iterator::operator*() const
@@ -78,8 +128,8 @@ TableRowRange::Iterator& TableRowRange::Iterator::operator++()
         {
             _currentPageRows.clear();
         }
-        SkipEmptyPages();
     }
+    SkipToNextFirstFragment();
 
     LoadCurrentRow();
     return *this;

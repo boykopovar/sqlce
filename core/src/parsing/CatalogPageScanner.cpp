@@ -70,7 +70,7 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
         {
             if (slice.hasContinuation && slice.continuationPageNumber < pageCount)
             {
-                continuationTargets.emplace(slice.continuationPageNumber, slice.continuationRecordOffset);
+                continuationTargets.emplace(slice.continuationPageNumber, slice.continuationSlotIndex);
             }
         }
     }
@@ -86,7 +86,11 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
         const infrastructure::PageView page(storage.PageBytes(pageNumber));
         for (const infrastructure::ContinuedRowSlice& slice : page.RowsWithContinuation())
         {
-            if (continuationTargets.find({pageNumber, slice.recordOffset}) != continuationTargets.end())
+            if (!slice.isFirstFragment)
+            {
+                continue;
+            }
+            if (continuationTargets.find({pageNumber, slice.slotIndex}) != continuationTargets.end())
             {
                 continue;
             }
@@ -95,7 +99,7 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
 
             bool continued = slice.hasContinuation;
             std::size_t nextPageNumber = slice.continuationPageNumber;
-            std::size_t nextRecordOffset = slice.continuationRecordOffset;
+            std::size_t nextSlotIndex = slice.continuationSlotIndex;
             std::size_t hops = 0;
             constexpr std::size_t MaxContinuationHops = 64;
 
@@ -107,7 +111,7 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
                 bool matched = false;
                 for (const infrastructure::ContinuedRowSlice& nextSlice : nextPage.RowsWithContinuation())
                 {
-                    if (nextSlice.recordOffset != nextRecordOffset)
+                    if (nextSlice.slotIndex != nextSlotIndex)
                     {
                         continue;
                     }
@@ -115,7 +119,7 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
                     matched = true;
                     continued = nextSlice.hasContinuation;
                     nextPageNumber = nextSlice.continuationPageNumber;
-                    nextRecordOffset = nextSlice.continuationRecordOffset;
+                    nextSlotIndex = nextSlice.continuationSlotIndex;
                     break;
                 }
 
