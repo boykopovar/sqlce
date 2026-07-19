@@ -11,6 +11,7 @@ from tests.edge_case_tables import MANY_TABLES_IN_ONE_FILE_SPECS
 from tests.edge_case_tables import NULLABLE_EXTREMES_TABLE_SPEC
 from tests.edge_case_tables import NUMERIC_EXTREMES_TABLE_SPEC
 from tests.edge_case_tables import WIDE_MIXED_TYPES_TABLE_SPEC
+from tests.edge_case_tables import WIDE_ROW_PAGE_SPLIT_TABLE_SPEC
 from tests.table_spec import assert_table_matches
 from tests.table_spec import build_table
 
@@ -133,6 +134,18 @@ def test_sdf_edge_case_wide_mixed_types_full_structure_matches_source(sdf_scenar
     db = sdf_scenario.open_database()
 
     assert_table_matches(db, WIDE_MIXED_TYPES_TABLE_SPEC)
+
+
+def test_sdf_edge_case_wide_row_page_split_full_structure_matches_source(sdf_scenario: SdfScenario) -> None:
+    connection = sdf_scenario.open_connection()
+    try:
+        build_table(connection, WIDE_ROW_PAGE_SPLIT_TABLE_SPEC, sdf_scenario.version)
+    finally:
+        connection.Close()
+
+    db = sdf_scenario.open_database()
+
+    assert_table_matches(db, WIDE_ROW_PAGE_SPLIT_TABLE_SPEC)
 
 
 def test_sdf_edge_case_many_bit_columns_full_structure_matches_source(sdf_scenario: SdfScenario) -> None:

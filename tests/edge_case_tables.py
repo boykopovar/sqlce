@@ -279,6 +279,62 @@ MANY_BIT_COLUMNS_TABLE_SPEC = TableSpec(
     ),
 )
 
+_WIDE_ROW_COL_CHAR_COUNT = 1000
+_WIDE_ROW_FILL_UNIT = "Привет мир проверка длинной строки "
+
+
+def _wide_row_fill(char_count: int) -> str:
+    repeated = _WIDE_ROW_FILL_UNIT * (char_count // len(_WIDE_ROW_FILL_UNIT) + 1)
+    return repeated[:char_count]
+
+
+WIDE_ROW_PAGE_SPLIT_TABLE_SPEC = TableSpec(
+    name="WideRowPageSplit",
+    columns=(
+        ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
+        ColumnSpec(
+            name="Col1",
+            sql_type=f"nvarchar({_WIDE_ROW_COL_CHAR_COUNT})",
+            type_name="nvarchar/nchar",
+            declared_size=_WIDE_ROW_COL_CHAR_COUNT * 2,
+        ),
+        ColumnSpec(
+            name="Col2",
+            sql_type=f"nvarchar({_WIDE_ROW_COL_CHAR_COUNT})",
+            type_name="nvarchar/nchar",
+            declared_size=_WIDE_ROW_COL_CHAR_COUNT * 2,
+        ),
+        ColumnSpec(
+            name="Col3",
+            sql_type=f"nvarchar({_WIDE_ROW_COL_CHAR_COUNT})",
+            type_name="nvarchar/nchar",
+            declared_size=_WIDE_ROW_COL_CHAR_COUNT * 2,
+        ),
+        ColumnSpec(
+            name="Col4",
+            sql_type=f"nvarchar({_WIDE_ROW_COL_CHAR_COUNT})",
+            type_name="nvarchar/nchar",
+            declared_size=_WIDE_ROW_COL_CHAR_COUNT * 2,
+        ),
+    ),
+    rows=(
+        (
+            1,
+            _wide_row_fill(_WIDE_ROW_COL_CHAR_COUNT),
+            _wide_row_fill(_WIDE_ROW_COL_CHAR_COUNT)[::-1],
+            _wide_row_fill(_WIDE_ROW_COL_CHAR_COUNT),
+            _wide_row_fill(_WIDE_ROW_COL_CHAR_COUNT)[::-1],
+        ),
+        (
+            2,
+            "second row col1",
+            "second row col2",
+            "second row col3",
+            "second row col4",
+        ),
+    ),
+)
+
 MANY_TABLES_IN_ONE_FILE_SPECS = (
     TableSpec(
         name="MultiTableA",
