@@ -43,6 +43,10 @@ ColumnType ColumnDef::Type() const
 
 std::uint16_t ColumnDef::DeclaredSize() const
 {
+    if (IsBit())
+    {
+        return 1;
+    }
     return _declaredSize;
 }
 
