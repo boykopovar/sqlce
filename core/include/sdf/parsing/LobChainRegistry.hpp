@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "sdf/domain/ILazyLobSource.hpp"
@@ -31,9 +32,14 @@ namespace sdf::parsing
             std::uint8_t pageType;
         };
 
+        static std::vector<std::uint32_t> ReadPackedSlots(
+            std::span<const std::uint8_t> bytes, std::size_t offset, std::size_t maxSlots);
+
+        std::optional<std::size_t> PhysicalPageOf(std::uint32_t logicalId) const;
+
         const domain::IPageStorage* _storage;
 
-        std::map<std::uint16_t, PageEntry> _pageByLogicalId;
+        std::map<std::uint32_t, PageEntry> _pageByLogicalId;
     };
 
 }

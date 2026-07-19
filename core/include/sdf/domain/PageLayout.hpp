@@ -10,11 +10,21 @@ namespace sdf::domain
 constexpr std::size_t PageSize = 4096;
 constexpr std::uint8_t DataPageType = 0x40;
 constexpr std::uint8_t LobPageType = 0x50;
+constexpr std::uint8_t LvMapPageType = 0x90;
 constexpr std::size_t LobPageHeaderLength = 16;
 constexpr std::size_t SlotArrayBaseIndex = 1017;
 constexpr std::size_t RowHeaderLength = 28;
 constexpr std::size_t RowContinuationDwordOffset = 24;
 constexpr std::size_t ContinuationPageNumberBias = 1022;
+
+constexpr std::size_t LvBitsPerSlot = 20;
+constexpr std::size_t LvSlotsPerWord = 3;
+constexpr std::size_t LvWordBytes = 8;
+constexpr std::size_t LvInlineThreshold = 0xF8;
+constexpr std::size_t LvSingleLevelThreshold = 0x5CA30;
+constexpr std::size_t LvSlotsPerPage = 93;
+constexpr std::size_t LvSlotsPerMapPage = 1527;
+constexpr std::uint32_t LvNullSlot = 0xFFFFF;
 
 constexpr std::size_t PlaintextHeaderLength = 16;
 constexpr std::size_t Page0ModeOffset = 184;

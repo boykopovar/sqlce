@@ -11,9 +11,9 @@ namespace sdf::parsing
 namespace
 {
 
-std::uint16_t LogicalPageIdOf(std::span<const std::uint8_t> pageBytes)
+std::uint32_t LogicalPageIdOf(std::span<const std::uint8_t> pageBytes)
 {
-    return static_cast<std::uint16_t>(infrastructure::ReadUInt32LE(pageBytes, 4) & 0xFFFFu);
+    return infrastructure::ReadUInt32LE(pageBytes, 4) & 0xFFFFFu;
 }
 
 }
@@ -24,9 +24,50 @@ LobChainRegistry::LobChainRegistry(const domain::IPageStorage& storage) : _stora
     for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
     {
         const std::span<const std::uint8_t> pageBytes = storage.PageBytes(pageNumber);
-        const std::uint16_t logicalId = LogicalPageIdOf(pageBytes);
+        const std::uint32_t logicalId = LogicalPageIdOf(pageBytes);
         _pageByLogicalId[logicalId] = PageEntry{pageNumber, pageBytes[6]};
     }
+}
+
+std::optional<std::size_t> LobChainRegistry::PhysicalPageOf(std::uint32_t logicalId) const
+{
+    const auto it = _pageByLogicalId.find(logicalId);
+    if (it == _pageByLogicalId.end())
+    {
+        return std::nullopt;
+    }
+    return it->second.pageNumber;
+}
+
+std::vector<std::uint32_t> LobChainRegistry::ReadPackedSlots(
+    std::span<const std::uint8_t> bytes, std::size_t offset, std::size_t maxSlots)
+{
+    std::vector<std::uint32_t> slots;
+    slots.reserve(maxSlots);
+
+    for (std::size_t slot = 0; slot < maxSlots; ++slot)
+    {
+        const std::size_t wordIndex = (domain::LvBitsPerSlot * slot) / (domain::LvSlotsPerWord * domain::LvBitsPerSlot);
+        const std::size_t bitOffset = (domain::LvBitsPerSlot * slot) % (domain::LvSlotsPerWord * domain::LvBitsPerSlot);
+        const std::size_t wordByteOffset = offset + wordIndex * domain::LvWordBytes;
+
+        if (wordByteOffset + domain::LvWordBytes > bytes.size())
+        {
+            break;
+        }
+
+        const std::uint64_t word = infrastructure::ReadUInt64LE(bytes, wordByteOffset);
+        const std::uint32_t value = static_cast<std::uint32_t>((word >> bitOffset) & 0xFFFFFu);
+
+        if (value == domain::LvNullSlot)
+        {
+            break;
+        }
+
+        slots.push_back(value);
+    }
+
+    return slots;
 }
 
 class LobChainRegistry::InlineLobSource final : public domain::ILazyLobSource
@@ -92,39 +133,50 @@ private:
 std::shared_ptr<domain::ILazyLobSource> LobChainRegistry::ResolveLob(
     std::span<const std::uint8_t> inlineTail, std::size_t totalLength)
 {
-    if (inlineTail.size() >= totalLength)
+    if (totalLength <= domain::LvInlineThreshold)
     {
+        const std::size_t take = std::min(inlineTail.size(), totalLength);
         return std::make_shared<InlineLobSource>(
-            std::vector<std::uint8_t>(inlineTail.begin(), inlineTail.begin() + totalLength));
+            std::vector<std::uint8_t>(inlineTail.begin(), inlineTail.begin() + take));
     }
 
     const std::size_t bytesPerPage = domain::PageSize - domain::LobPageHeaderLength;
     const std::size_t pagesNeeded = (totalLength + bytesPerPage - 1) / bytesPerPage;
 
-    std::vector<std::size_t> pageNumbers;
+    std::vector<std::uint32_t> logicalIds;
 
-    if (inlineTail.size() >= 2 && pagesNeeded > 0)
+    if (totalLength <= domain::LvSingleLevelThreshold)
     {
-        pageNumbers.reserve(pagesNeeded);
-
-        std::uint16_t logicalId = infrastructure::ReadUInt16LE(inlineTail, 0);
-        std::size_t missCount = 0;
-        constexpr std::size_t MaxConsecutiveMisses = 64;
-
-        while (pageNumbers.size() < pagesNeeded && missCount < MaxConsecutiveMisses)
+        logicalIds = ReadPackedSlots(inlineTail, 0, std::min(pagesNeeded, domain::LvSlotsPerPage));
+    }
+    else
+    {
+        const std::vector<std::uint32_t> mapPageId = ReadPackedSlots(inlineTail, 0, 1);
+        if (!mapPageId.empty())
         {
-            const auto it = _pageByLogicalId.find(logicalId);
-            if (it != _pageByLogicalId.end() && it->second.pageType == domain::LobPageType)
+            if (const std::optional<std::size_t> mapPhysicalPage = PhysicalPageOf(mapPageId.front()))
             {
-                pageNumbers.push_back(it->second.pageNumber);
-                missCount = 0;
+                const std::span<const std::uint8_t> mapPageBytes = _storage->PageBytes(*mapPhysicalPage);
+                if (mapPageBytes.size() > 6 && mapPageBytes[6] == domain::LvMapPageType)
+                {
+                    logicalIds = ReadPackedSlots(
+                        mapPageBytes, domain::LobPageHeaderLength,
+                        std::min(pagesNeeded, domain::LvSlotsPerMapPage));
+                }
             }
-            else
-            {
-                ++missCount;
-            }
-            ++logicalId;
         }
+    }
+
+    std::vector<std::size_t> pageNumbers;
+    pageNumbers.reserve(logicalIds.size());
+    for (const std::uint32_t logicalId : logicalIds)
+    {
+        const std::optional<std::size_t> physicalPage = PhysicalPageOf(logicalId);
+        if (!physicalPage)
+        {
+            break;
+        }
+        pageNumbers.push_back(*physicalPage);
     }
 
     if (pageNumbers.size() == pagesNeeded)
