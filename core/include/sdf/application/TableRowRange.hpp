@@ -10,8 +10,8 @@
 #include "sdf/domain/interfaces/IPageStorage.hpp"
 #include "sdf/domain/Row.hpp"
 #include "sdf/domain/TableDef.hpp"
-#include "sdf/infrastructure/PageView.hpp"
 #include "sdf/parsing/interfaces/IRowDecoder.hpp"
+#include "sdf/parsing/interfaces/IRowFragmentReassembler.hpp"
 
 namespace sdf::application
 {
@@ -33,7 +33,8 @@ public:
             const domain::IPageStorage* storage,
             const domain::TableDef* table,
             parsing::IRowDecoder* rowDecoder,
-            std::size_t pageIndex);
+            const parsing::IRowFragmentReassembler* reassembler,
+            bool atEnd);
 
         reference operator*() const;
         pointer operator->() const;
@@ -47,18 +48,18 @@ public:
         const domain::IPageStorage* _storage;
         const domain::TableDef* _table;
         parsing::IRowDecoder* _rowDecoder;
-        std::size_t _pageIndex;
-        std::size_t _slotIndex;
-        std::vector<infrastructure::ContinuedRowSlice> _currentPageRows;
+        const parsing::IRowFragmentReassembler* _reassembler;
+        std::optional<parsing::RowCursor> _cursor;
         std::optional<domain::Row> _current;
 
-        void LoadPageAt(std::size_t pageIndex);
-        void SkipToNextFirstFragment();
         void LoadCurrentRow();
-        std::vector<std::uint8_t> AssembleRowBytes() const;
     };
 
-    TableRowRange(const domain::IPageStorage* storage, const domain::TableDef* table, parsing::IRowDecoder* rowDecoder);
+    TableRowRange(
+        const domain::IPageStorage* storage,
+        const domain::TableDef* table,
+        parsing::IRowDecoder* rowDecoder,
+        const parsing::IRowFragmentReassembler* reassembler);
 
     Iterator begin() const;
     Iterator end() const;
@@ -67,6 +68,7 @@ private:
     const domain::IPageStorage* _storage;
     const domain::TableDef* _table;
     parsing::IRowDecoder* _rowDecoder;
+    const parsing::IRowFragmentReassembler* _reassembler;
 };
 
 }

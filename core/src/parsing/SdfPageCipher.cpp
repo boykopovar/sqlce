@@ -2,11 +2,11 @@
 
 #include <stdexcept>
 
-#include "sdf/domain/PageLayout.hpp"
 #include "sdf/infrastructure/AesCbc.hpp"
 #include "sdf/infrastructure/BinaryReader.hpp"
 #include "sdf/infrastructure/Sha256.hpp"
 #include "sdf/infrastructure/Sha512.hpp"
+#include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::parsing
 {
@@ -46,13 +46,13 @@ std::array<std::uint8_t, infrastructure::AesBlockLength> ZeroIv()
 
 domain::EncryptionMode SdfPageCipher::ReadMode(std::span<const std::uint8_t> page0)
 {
-    const std::uint32_t rawMode = infrastructure::ReadUInt32LE(page0, domain::Page0ModeOffset);
+    const std::uint32_t rawMode = infrastructure::ReadUInt32LE(page0, Page0ModeOffset);
     return static_cast<domain::EncryptionMode>(rawMode);
 }
 
 SdfPageCipher::SdfPageCipher(std::span<const std::uint8_t> page0, std::string password) : _password(std::move(password))
 {
-    if (_password.size() > domain::MaxPasswordLength)
+    if (_password.size() > MaxPasswordLength)
     {
         throw std::invalid_argument("password exceeds maximum supported length");
     }
@@ -65,11 +65,11 @@ SdfPageCipher::SdfPageCipher(std::span<const std::uint8_t> page0, std::string pa
 
     _passwordUtf16Le = ToUtf16Le(_password);
 
-    const auto ciphertext = page0.subspan(domain::Page0VerifierOffset, domain::Page0VerifierLength);
+    const auto ciphertext = page0.subspan(Page0VerifierOffset, Page0VerifierLength);
     _page0Ciphertext.assign(ciphertext.begin(), ciphertext.end());
 
-    const auto keyParam = page0.subspan(domain::Page0KeyParamOffset, domain::Page0KeyParamLength);
-    for (std::size_t i = 0; i < domain::Page0KeyParamLength; ++i)
+    const auto keyParam = page0.subspan(Page0KeyParamOffset, Page0KeyParamLength);
+    for (std::size_t i = 0; i < Page0KeyParamLength; ++i)
     {
         _page0KeyParam[i] = keyParam[i];
     }
@@ -104,7 +104,7 @@ bool SdfPageCipher::VerifyPassword() const
     const std::vector<std::uint8_t> plaintext = decryptor.Decrypt(_page0Ciphertext);
 
     std::vector<std::uint8_t> expected = _passwordUtf16Le;
-    expected.resize(domain::Page0VerifierLength, 0x00);
+    expected.resize(Page0VerifierLength, 0x00);
 
     return plaintext == expected;
 }
@@ -118,7 +118,7 @@ std::vector<std::uint8_t> SdfPageCipher::DecryptPage0(std::span<const std::uint8
     std::vector<std::uint8_t> result(page0.begin(), page0.end());
     for (std::size_t i = 0; i < plaintext.size(); ++i)
     {
-        result[domain::Page0VerifierOffset + i] = plaintext[i];
+        result[Page0VerifierOffset + i] = plaintext[i];
     }
     return result;
 }
@@ -130,21 +130,21 @@ std::vector<std::uint8_t> SdfPageCipher::DecryptPage(std::size_t pageNumber, std
         return DecryptPage0(page);
     }
 
-    const std::uint32_t pageTypeWord = infrastructure::ReadUInt32LE(page, domain::EncryptedPageTypeWordOffset);
-    const std::uint32_t pageType = (pageTypeWord >> domain::EncryptedPageTypeShift) & domain::EncryptedPageTypeMask;
-    if (pageType <= domain::EncryptedPageTypeMaxPlaintext)
+    const std::uint32_t pageTypeWord = infrastructure::ReadUInt32LE(page, EncryptedPageTypeWordOffset);
+    const std::uint32_t pageType = (pageTypeWord >> EncryptedPageTypeShift) & EncryptedPageTypeMask;
+    if (pageType <= EncryptedPageTypeMaxPlaintext)
     {
         return std::vector<std::uint8_t>(page.begin(), page.end());
     }
 
-    const auto keyParam = page.subspan(0, domain::Page0KeyParamLength);
+    const auto keyParam = page.subspan(0, Page0KeyParamLength);
     const std::vector<std::uint8_t> key = DeriveKey(keyParam);
     const infrastructure::AesCbcDecryptor decryptor(key, ZeroIv());
 
-    const auto tailCiphertext = page.subspan(domain::PlaintextHeaderLength);
+    const auto tailCiphertext = page.subspan(PlaintextHeaderLength);
     const std::vector<std::uint8_t> tailPlaintext = decryptor.Decrypt(tailCiphertext);
 
-    std::vector<std::uint8_t> result(page.begin(), page.begin() + domain::PlaintextHeaderLength);
+    std::vector<std::uint8_t> result(page.begin(), page.begin() + PlaintextHeaderLength);
     result.insert(result.end(), tailPlaintext.begin(), tailPlaintext.end());
     return result;
 }

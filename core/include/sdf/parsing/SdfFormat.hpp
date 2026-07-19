@@ -1,15 +1,13 @@
-#ifndef SDF_DOMAIN_PAGE_LAYOUT_HPP
-#define SDF_DOMAIN_PAGE_LAYOUT_HPP
+#ifndef SDF_PARSING_SDF_FORMAT_HPP
+#define SDF_PARSING_SDF_FORMAT_HPP
 
 #include <cstddef>
 #include <cstdint>
 
-namespace sdf::domain
+namespace sdf::parsing
 {
 
-constexpr std::size_t PageSize = 4096;
 constexpr std::uint8_t DataPageType = 0x40;
-constexpr std::uint8_t LobPageType = 0x50;
 constexpr std::uint8_t LvMapPageType = 0x90;
 constexpr std::size_t LobPageHeaderLength = 16;
 constexpr std::size_t SlotArrayBaseIndex = 1017;
@@ -74,8 +72,6 @@ constexpr std::uint8_t SingleBitMask = 0x01u;
 constexpr std::size_t RowInternalHeaderLength = 4;
 
 constexpr std::size_t LobValueHeaderLength = 8;
-
-constexpr std::size_t DisplayTruncationLength = 20;
 
 }
 

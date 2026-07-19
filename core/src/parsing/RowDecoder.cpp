@@ -4,9 +4,9 @@
 #include <vector>
 
 #include "sdf/domain/LazyLob.hpp"
-#include "sdf/domain/PageLayout.hpp"
 #include "sdf/domain/TextDecoder.hpp"
 #include "sdf/infrastructure/BinaryReader.hpp"
+#include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::parsing
 {
@@ -68,7 +68,7 @@ bool RowDecoder::IsNull(std::span<const std::uint8_t> presence, std::size_t ordi
     {
         return false;
     }
-    return ((presence[byteIndex] >> bitIndex) & domain::SingleBitMask) != 0;
+    return ((presence[byteIndex] >> bitIndex) & SingleBitMask) != 0;
 }
 
 domain::Row RowDecoder::Decode(const domain::TableDef& table, std::span<const std::uint8_t> rowBytes)
@@ -80,7 +80,7 @@ domain::Row RowDecoder::Decode(const domain::TableDef& table, std::span<const st
     const std::vector<const domain::ColumnDef*> bitColumns = BitColumnsOf(table);
     const std::size_t bitRegionBytes = (bitColumns.size() + 7) / 8;
 
-    std::size_t offset = domain::RowInternalHeaderLength;
+    std::size_t offset = RowInternalHeaderLength;
     const std::span<const std::uint8_t> presence
         = offset + presenceBytes <= rowBytes.size() ? rowBytes.subspan(offset, presenceBytes)
                                                       : std::span<const std::uint8_t>{};
@@ -129,7 +129,7 @@ domain::Row RowDecoder::Decode(const domain::TableDef& table, std::span<const st
             const std::size_t bitInByte = bitIndex % 8;
             if (byteIndex < bitRegion.size())
             {
-                const bool bitValue = ((bitRegion[byteIndex] >> bitInByte) & domain::SingleBitMask) != 0;
+                const bool bitValue = ((bitRegion[byteIndex] >> bitInByte) & SingleBitMask) != 0;
                 value = domain::ColumnValue(domain::ColumnValueStorage(bitValue));
             }
         }
@@ -159,7 +159,7 @@ domain::Row RowDecoder::Decode(const domain::TableDef& table, std::span<const st
 
         if (!allNull)
         {
-            const std::size_t directoryLength = domain::VarDirectoryEntryLength * varColumns.size();
+            const std::size_t directoryLength = VarDirectoryEntryLength * varColumns.size();
             if (offset + directoryLength <= rowBytes.size())
             {
                 const std::span<const std::uint8_t> directoryBytes = rowBytes.subspan(offset, directoryLength);
@@ -172,9 +172,9 @@ domain::Row RowDecoder::Decode(const domain::TableDef& table, std::span<const st
                 for (std::size_t i = 0; i < varColumns.size(); ++i)
                 {
                     const std::uint16_t entry
-                        = infrastructure::ReadUInt16LE(directoryBytes, domain::VarDirectoryEntryLength * i);
-                    starts[i] = entry & domain::VarDirectoryOffsetMask;
-                    compressedFlags[i] = (entry & domain::VarDirectoryCompressedFlag) != 0;
+                        = infrastructure::ReadUInt16LE(directoryBytes, VarDirectoryEntryLength * i);
+                    starts[i] = entry & VarDirectoryOffsetMask;
+                    compressedFlags[i] = (entry & VarDirectoryCompressedFlag) != 0;
                 }
 
                 for (std::size_t i = 0; i < varColumns.size(); ++i)
@@ -298,14 +298,14 @@ domain::ColumnValue RowDecoder::DecodeLob(
 {
     const bool isText = column.Type() == domain::ColumnType::NText;
 
-    if (chunk.size() < domain::LobValueHeaderLength)
+    if (chunk.size() < LobValueHeaderLength)
     {
         std::shared_ptr<domain::ILazyLobSource> emptySource = _lobChainRegistry->ResolveLob({}, 0);
         return domain::ColumnValue(domain::ColumnValueStorage(domain::LazyLob(emptySource, isText, compressed)));
     }
 
     const std::uint32_t length = infrastructure::ReadUInt32LE(chunk, 0);
-    const std::span<const std::uint8_t> inlineTail = chunk.subspan(domain::LobValueHeaderLength);
+    const std::span<const std::uint8_t> inlineTail = chunk.subspan(LobValueHeaderLength);
 
     std::shared_ptr<domain::ILazyLobSource> source = _lobChainRegistry->ResolveLob(inlineTail, length);
 

@@ -1,12 +1,10 @@
 #include "sdf/application/TableRowRange.hpp"
 
-#include "sdf/domain/PageLayout.hpp"
-
 namespace sdf::application
 {
 
 TableRowRange::Iterator::Iterator()
-    : _storage(nullptr), _table(nullptr), _rowDecoder(nullptr), _pageIndex(0), _slotIndex(0)
+    : _storage(nullptr), _table(nullptr), _rowDecoder(nullptr), _reassembler(nullptr), _cursor(std::nullopt)
 {
 }
 
@@ -14,94 +12,32 @@ TableRowRange::Iterator::Iterator(
     const domain::IPageStorage* storage,
     const domain::TableDef* table,
     parsing::IRowDecoder* rowDecoder,
-    std::size_t pageIndex)
-    : _storage(storage), _table(table), _rowDecoder(rowDecoder), _pageIndex(pageIndex), _slotIndex(0)
+    const parsing::IRowFragmentReassembler* reassembler,
+    bool atEnd)
+    : _storage(storage), _table(table), _rowDecoder(rowDecoder), _reassembler(reassembler), _cursor(std::nullopt)
 {
-    if (_pageIndex < _table->DataPageNumbers().size())
+    if (!atEnd)
     {
-        LoadPageAt(_pageIndex);
-        SkipToNextFirstFragment();
+        LoadCurrentRow();
     }
-    LoadCurrentRow();
-}
-
-void TableRowRange::Iterator::LoadPageAt(std::size_t pageIndex)
-{
-    const std::span<const std::uint8_t> pageBytes = _storage->PageBytes(_table->DataPageNumbers()[pageIndex]);
-    _currentPageRows = infrastructure::PageView(pageBytes).RowsWithContinuation();
-}
-
-void TableRowRange::Iterator::SkipToNextFirstFragment()
-{
-    const std::vector<std::size_t>& pageNumbers = _table->DataPageNumbers();
-    while (_pageIndex < pageNumbers.size())
-    {
-        while (_slotIndex < _currentPageRows.size() && !_currentPageRows[_slotIndex].isFirstFragment)
-        {
-            ++_slotIndex;
-        }
-        if (_slotIndex < _currentPageRows.size())
-        {
-            return;
-        }
-        _slotIndex = 0;
-        ++_pageIndex;
-        if (_pageIndex < pageNumbers.size())
-        {
-            LoadPageAt(_pageIndex);
-        }
-    }
-}
-
-std::vector<std::uint8_t> TableRowRange::Iterator::AssembleRowBytes() const
-{
-    const infrastructure::ContinuedRowSlice& first = _currentPageRows[_slotIndex];
-    std::vector<std::uint8_t> assembled(first.bytes.begin(), first.bytes.end());
-
-    bool continued = first.hasContinuation;
-    std::size_t nextPageNumber = first.continuationPageNumber;
-    std::size_t nextSlotIndex = first.continuationSlotIndex;
-    std::size_t hops = 0;
-
-    while (continued && hops < domain::MaxRowContinuationHops)
-    {
-        ++hops;
-        const infrastructure::PageView nextPage(_storage->PageBytes(nextPageNumber));
-
-        bool matched = false;
-        for (const infrastructure::ContinuedRowSlice& nextSlice : nextPage.RowsWithContinuation())
-        {
-            if (nextSlice.slotIndex != nextSlotIndex)
-            {
-                continue;
-            }
-            assembled.insert(assembled.end(), nextSlice.bytes.begin(), nextSlice.bytes.end());
-            matched = true;
-            continued = nextSlice.hasContinuation;
-            nextPageNumber = nextSlice.continuationPageNumber;
-            nextSlotIndex = nextSlice.continuationSlotIndex;
-            break;
-        }
-
-        if (!matched)
-        {
-            break;
-        }
-    }
-
-    return assembled;
 }
 
 void TableRowRange::Iterator::LoadCurrentRow()
 {
-    if (_pageIndex >= _table->DataPageNumbers().size())
+    const parsing::RowCursor searchFrom = _cursor.has_value() ? *_cursor : parsing::RowCursor{0, 0};
+    const std::optional<parsing::AssembledRow> found = _cursor.has_value()
+        ? _reassembler->FindNext(*_storage, _table->DataPageNumbers(), searchFrom)
+        : _reassembler->FindFirst(*_storage, _table->DataPageNumbers(), searchFrom);
+
+    if (!found.has_value())
     {
+        _cursor = std::nullopt;
         _current = std::nullopt;
         return;
     }
 
-    const std::vector<std::uint8_t> assembled = AssembleRowBytes();
-    _current = _rowDecoder->Decode(*_table, std::span<const std::uint8_t>(assembled.data(), assembled.size()));
+    _cursor = found->cursor;
+    _current = _rowDecoder->Decode(*_table, std::span<const std::uint8_t>(found->bytes.data(), found->bytes.size()));
 }
 
 TableRowRange::Iterator::reference TableRowRange::Iterator::operator*() const
@@ -116,22 +52,6 @@ TableRowRange::Iterator::pointer TableRowRange::Iterator::operator->() const
 
 TableRowRange::Iterator& TableRowRange::Iterator::operator++()
 {
-    ++_slotIndex;
-    if (_slotIndex >= _currentPageRows.size())
-    {
-        _slotIndex = 0;
-        ++_pageIndex;
-        if (_pageIndex < _table->DataPageNumbers().size())
-        {
-            LoadPageAt(_pageIndex);
-        }
-        else
-        {
-            _currentPageRows.clear();
-        }
-    }
-    SkipToNextFirstFragment();
-
     LoadCurrentRow();
     return *this;
 }
@@ -145,18 +65,11 @@ TableRowRange::Iterator TableRowRange::Iterator::operator++(int)
 
 bool TableRowRange::Iterator::operator==(const Iterator& other) const
 {
-    const std::size_t thisPageCount = _table->DataPageNumbers().size();
-    const std::size_t otherPageCount = other._table->DataPageNumbers().size();
-
-    const bool thisIsEnd = _pageIndex >= thisPageCount;
-    const bool otherIsEnd = other._pageIndex >= otherPageCount;
-
-    if (thisIsEnd || otherIsEnd)
+    if (!_current.has_value() || !other._current.has_value())
     {
-        return thisIsEnd == otherIsEnd;
+        return _current.has_value() == other._current.has_value();
     }
-
-    return _pageIndex == other._pageIndex && _slotIndex == other._slotIndex;
+    return _cursor->pageIndex == other._cursor->pageIndex && _cursor->slotIndex == other._cursor->slotIndex;
 }
 
 bool TableRowRange::Iterator::operator!=(const Iterator& other) const
@@ -165,19 +78,22 @@ bool TableRowRange::Iterator::operator!=(const Iterator& other) const
 }
 
 TableRowRange::TableRowRange(
-    const domain::IPageStorage* storage, const domain::TableDef* table, parsing::IRowDecoder* rowDecoder)
-    : _storage(storage), _table(table), _rowDecoder(rowDecoder)
+    const domain::IPageStorage* storage,
+    const domain::TableDef* table,
+    parsing::IRowDecoder* rowDecoder,
+    const parsing::IRowFragmentReassembler* reassembler)
+    : _storage(storage), _table(table), _rowDecoder(rowDecoder), _reassembler(reassembler)
 {
 }
 
 TableRowRange::Iterator TableRowRange::begin() const
 {
-    return Iterator(_storage, _table, _rowDecoder, 0);
+    return Iterator(_storage, _table, _rowDecoder, _reassembler, false);
 }
 
 TableRowRange::Iterator TableRowRange::end() const
 {
-    return Iterator(_storage, _table, _rowDecoder, _table->DataPageNumbers().size());
+    return Iterator(_storage, _table, _rowDecoder, _reassembler, true);
 }
 
 }

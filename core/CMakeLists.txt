@@ -23,7 +23,6 @@ add_library(libsqlce
         src/infrastructure/AesCbc.cpp
         src/infrastructure/BinaryReader.cpp
         src/infrastructure/FileStorage.cpp
-        src/infrastructure/PageView.cpp
         src/infrastructure/Sha256.cpp
         src/infrastructure/Sha512.cpp
         src/parsing/CatalogPageScanner.cpp
@@ -31,7 +30,10 @@ add_library(libsqlce
         src/parsing/CatalogRowDecoder.cpp
         src/parsing/CatalogSchema.cpp
         src/parsing/LobChainRegistry.cpp
+        src/parsing/PageView.cpp
         src/parsing/RowDecoder.cpp
+        src/parsing/RowFragmentReassembler.cpp
+        src/parsing/SdfDatabaseComponents.cpp
         src/parsing/SdfPageCipher.cpp
         src/parsing/TableCatalogBuilder.cpp
         src/application/SqlceDatabase.cpp

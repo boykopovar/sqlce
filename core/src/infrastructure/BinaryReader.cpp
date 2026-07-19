@@ -7,7 +7,8 @@ namespace sdf::infrastructure
 
 std::uint16_t ReadUInt16LE(std::span<const std::uint8_t> bytes, std::size_t offset)
 {
-    return static_cast<std::uint16_t>(bytes[offset]) | (static_cast<std::uint16_t>(bytes[offset + 1]) << 8);
+    return static_cast<std::uint16_t>(
+        static_cast<std::uint16_t>(bytes[offset]) | static_cast<std::uint16_t>(bytes[offset + 1] << 8));
 }
 
 std::uint32_t ReadUInt32LE(std::span<const std::uint8_t> bytes, std::size_t offset)

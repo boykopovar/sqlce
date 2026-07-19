@@ -9,14 +9,15 @@
 #include "sdf/application/ColumnSchema.hpp"
 #include "sdf/application/TableRowRange.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
-#include "sdf/domain/interfaces/IPageCipher.hpp"
 #include "sdf/domain/interfaces/IPageStorage.hpp"
 #include "sdf/domain/Row.hpp"
 #include "sdf/domain/TableDef.hpp"
 #include "sdf/parsing/interfaces/ICatalogPageScanner.hpp"
 #include "sdf/parsing/interfaces/ILobChainRegistry.hpp"
 #include "sdf/parsing/interfaces/IRowDecoder.hpp"
+#include "sdf/parsing/interfaces/IRowFragmentReassembler.hpp"
 #include "sdf/parsing/interfaces/ITableCatalogBuilder.hpp"
+#include "sdf/parsing/SdfDatabaseComponents.hpp"
 
 namespace sdf::application
 {
@@ -41,17 +42,11 @@ private:
     std::shared_ptr<parsing::ITableCatalogBuilder> _tableCatalogBuilder;
     std::shared_ptr<parsing::ILobChainRegistry> _lobChainRegistry;
     std::shared_ptr<parsing::IRowDecoder> _rowDecoder;
+    std::shared_ptr<parsing::IRowFragmentReassembler> _rowFragmentReassembler;
 
     std::map<std::string, domain::TableDef> _tables;
 
-    struct OpenResult
-    {
-        std::unique_ptr<domain::IPageStorage> storage;
-        domain::EncryptionMode encryptionMode;
-    };
-
-    static OpenResult Open(const std::string& path, const std::string& password);
-    explicit SqlceDatabase(OpenResult opened);
+    explicit SqlceDatabase(parsing::SdfDatabaseComponents components);
 
     void AssignDataPages();
     [[nodiscard]] const domain::TableDef& RequireTable(const std::string& tableName) const;

@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <array>
 
-#include "sdf/domain/PageLayout.hpp"
-#include "sdf/infrastructure/PageView.hpp"
+#include "sdf/parsing/PageView.hpp"
+#include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::parsing
 {
@@ -33,7 +33,7 @@ std::set<std::uint8_t> CatalogPageScanner::FindCatalogObjectIds(const domain::IP
 
     for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
     {
-        const infrastructure::PageView page(storage.PageBytes(pageNumber));
+        const PageView page(storage.PageBytes(pageNumber));
         if (!page.IsDataPage())
         {
             continue;
@@ -47,6 +47,32 @@ std::set<std::uint8_t> CatalogPageScanner::FindCatalogObjectIds(const domain::IP
     return objectIds;
 }
 
+void CatalogPageScanner::AssignDataPages(
+    const domain::IPageStorage& storage, const std::map<std::uint8_t, domain::TableDef*>& tableByObjectId) const
+{
+    const std::set<std::uint8_t> catalogObjectIds = FindCatalogObjectIds(storage);
+    const std::size_t pageCount = storage.PageCount();
+
+    for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
+    {
+        const PageView page(storage.PageBytes(pageNumber));
+        if (!page.IsDataPage())
+        {
+            continue;
+        }
+        if (catalogObjectIds.find(page.OwnerObjectId()) != catalogObjectIds.end())
+        {
+            continue;
+        }
+
+        const auto it = tableByObjectId.find(page.OwnerObjectId());
+        if (it != tableByObjectId.end())
+        {
+            it->second->DataPageNumbers().push_back(pageNumber);
+        }
+    }
+}
+
 std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
     const domain::IPageStorage& storage) const
 {
@@ -55,7 +81,7 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
 
     auto isCatalogPage = [&](std::size_t pageNumber) -> bool
     {
-        const infrastructure::PageView page(storage.PageBytes(pageNumber));
+        const PageView page(storage.PageBytes(pageNumber));
         return page.IsDataPage() && catalogObjectIds.find(page.OwnerObjectId()) != catalogObjectIds.end();
     };
 
@@ -66,8 +92,8 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
         {
             continue;
         }
-        const infrastructure::PageView page(storage.PageBytes(pageNumber));
-        for (const infrastructure::ContinuedRowSlice& slice : page.RowsWithContinuation())
+        const PageView page(storage.PageBytes(pageNumber));
+        for (const ContinuedRowSlice& slice : page.RowsWithContinuation())
         {
             if (slice.hasContinuation && slice.continuationPageNumber < pageCount)
             {
@@ -84,8 +110,8 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
         {
             continue;
         }
-        const infrastructure::PageView page(storage.PageBytes(pageNumber));
-        for (const infrastructure::ContinuedRowSlice& slice : page.RowsWithContinuation())
+        const PageView page(storage.PageBytes(pageNumber));
+        for (const ContinuedRowSlice& slice : page.RowsWithContinuation())
         {
             if (!slice.isFirstFragment)
             {
@@ -103,13 +129,13 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
             std::size_t nextSlotIndex = slice.continuationSlotIndex;
             std::size_t hops = 0;
 
-            while (continued && hops < domain::MaxRowContinuationHops && nextPageNumber < pageCount)
+            while (continued && hops < MaxRowContinuationHops && nextPageNumber < pageCount)
             {
                 ++hops;
-                const infrastructure::PageView nextPage(storage.PageBytes(nextPageNumber));
+                const PageView nextPage(storage.PageBytes(nextPageNumber));
 
                 bool matched = false;
-                for (const infrastructure::ContinuedRowSlice& nextSlice : nextPage.RowsWithContinuation())
+                for (const ContinuedRowSlice& nextSlice : nextPage.RowsWithContinuation())
                 {
                     if (nextSlice.slotIndex != nextSlotIndex)
                     {

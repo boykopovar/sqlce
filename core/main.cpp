@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -6,10 +7,11 @@
 
 #include "include/sdf/application/SqlceDatabase.hpp"
 #include "include/sdf/domain/EncryptionMode.hpp"
-#include "include/sdf/domain/PageLayout.hpp"
 
 namespace
 {
+
+constexpr std::size_t DisplayTruncationLength = 20;
 
 std::string Truncate(const std::string& value, std::size_t maxLen)
 {
@@ -32,7 +34,7 @@ void PrintTableRows(const std::vector<std::string>& columnNames, const std::vect
         {
             const sdf::domain::ColumnValue* value = row.Find(columnName);
             stringRow.push_back(
-                Truncate(value != nullptr ? value->ToDisplayString() : "", sdf::domain::DisplayTruncationLength));
+                Truncate(value != nullptr ? value->ToDisplayString() : "", DisplayTruncationLength));
         }
         stringRows.push_back(std::move(stringRow));
     }

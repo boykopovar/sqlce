@@ -1,12 +1,15 @@
 #include "sdf/domain/TextDecoder.hpp"
 
-#include "sdf/infrastructure/BinaryReader.hpp"
-
 namespace sdf::domain
 {
 
 namespace
 {
+
+std::uint16_t ReadUInt16LE(std::span<const std::uint8_t> chunk, std::size_t offset)
+{
+    return static_cast<std::uint16_t>(chunk[offset]) | static_cast<std::uint16_t>(chunk[offset + 1] << 8);
+}
 
 void AppendUtf8CodePoint(std::string& out, std::uint32_t codePoint)
 {
@@ -53,11 +56,11 @@ std::string DecodeUtf16LE(std::span<const std::uint8_t> chunk)
     const std::size_t unitCount = chunk.size() / 2;
     for (std::size_t i = 0; i < unitCount; ++i)
     {
-        const std::uint16_t unit = infrastructure::ReadUInt16LE(chunk, 2 * i);
+        const std::uint16_t unit = ReadUInt16LE(chunk, 2 * i);
 
         if (unit >= 0xD800 && unit <= 0xDBFF && i + 1 < unitCount)
         {
-            const std::uint16_t nextUnit = infrastructure::ReadUInt16LE(chunk, 2 * (i + 1));
+            const std::uint16_t nextUnit = ReadUInt16LE(chunk, 2 * (i + 1));
             if (nextUnit >= 0xDC00 && nextUnit <= 0xDFFF)
             {
                 const std::uint32_t codePoint

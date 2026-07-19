@@ -1,12 +1,12 @@
-#ifndef SDF_INFRASTRUCTURE_PAGE_VIEW_HPP
-#define SDF_INFRASTRUCTURE_PAGE_VIEW_HPP
+#ifndef SDF_PARSING_PAGE_VIEW_HPP
+#define SDF_PARSING_PAGE_VIEW_HPP
 
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
 
-namespace sdf::infrastructure
+namespace sdf::parsing
 {
 
 struct RowSlice

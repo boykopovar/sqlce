@@ -2,8 +2,9 @@
 
 #include <algorithm>
 
-#include "sdf/domain/PageLayout.hpp"
+#include "sdf/domain/PageSize.hpp"
 #include "sdf/infrastructure/BinaryReader.hpp"
+#include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::parsing
 {
@@ -13,7 +14,7 @@ namespace
 
 std::uint32_t LogicalPageIdOf(std::span<const std::uint8_t> pageBytes)
 {
-    return infrastructure::ReadUInt32LE(pageBytes, domain::LogicalPageIdOffset) & domain::LogicalPageIdMask;
+    return infrastructure::ReadUInt32LE(pageBytes, LogicalPageIdOffset) & LogicalPageIdMask;
 }
 
 }
@@ -25,7 +26,7 @@ LobChainRegistry::LobChainRegistry(const domain::IPageStorage& storage) : _stora
     {
         const std::span<const std::uint8_t> pageBytes = storage.PageBytes(pageNumber);
         const std::uint32_t logicalId = LogicalPageIdOf(pageBytes);
-        _pageByLogicalId[logicalId] = PageEntry{pageNumber, pageBytes[domain::PageTypeOffset]};
+        _pageByLogicalId[logicalId] = PageEntry{pageNumber, pageBytes[PageTypeOffset]};
     }
 }
 
@@ -47,19 +48,19 @@ std::vector<std::uint32_t> LobChainRegistry::ReadPackedSlots(
 
     for (std::size_t slot = 0; slot < maxSlots; ++slot)
     {
-        const std::size_t wordIndex = (domain::LvBitsPerSlot * slot) / (domain::LvSlotsPerWord * domain::LvBitsPerSlot);
-        const std::size_t bitOffset = (domain::LvBitsPerSlot * slot) % (domain::LvSlotsPerWord * domain::LvBitsPerSlot);
-        const std::size_t wordByteOffset = offset + wordIndex * domain::LvWordBytes;
+        const std::size_t wordIndex = (LvBitsPerSlot * slot) / (LvSlotsPerWord * LvBitsPerSlot);
+        const std::size_t bitOffset = (LvBitsPerSlot * slot) % (LvSlotsPerWord * LvBitsPerSlot);
+        const std::size_t wordByteOffset = offset + wordIndex * LvWordBytes;
 
-        if (wordByteOffset + domain::LvWordBytes > bytes.size())
+        if (wordByteOffset + LvWordBytes > bytes.size())
         {
             break;
         }
 
         const std::uint64_t word = infrastructure::ReadUInt64LE(bytes, wordByteOffset);
-        const auto value = static_cast<std::uint32_t>((word >> bitOffset) & domain::LvSlotValueMask);
+        const auto value = static_cast<std::uint32_t>((word >> bitOffset) & LvSlotValueMask);
 
-        if (value == domain::LvNullSlot)
+        if (value == LvNullSlot)
         {
             break;
         }
@@ -117,11 +118,12 @@ public:
     [[nodiscard]] std::vector<std::uint8_t> ReadChunk(std::size_t chunkIndex) const override
     {
         const std::span<const std::uint8_t> pageBytes = _storage->PageBytes(_pageNumbers[chunkIndex]);
-        const std::span<const std::uint8_t> payload = pageBytes.subspan(domain::LobPageHeaderLength);
-        const std::size_t consumedBefore = chunkIndex * (domain::PageSize - domain::LobPageHeaderLength);
+        const std::span<const std::uint8_t> payload = pageBytes.subspan(LobPageHeaderLength);
+        const std::size_t consumedBefore = chunkIndex * (domain::PageSize - LobPageHeaderLength);
         const std::size_t remaining = _totalLength > consumedBefore ? _totalLength - consumedBefore : 0;
         const std::size_t take = std::min(payload.size(), remaining);
-        return std::vector<std::uint8_t>(payload.begin(), payload.begin() + take);
+        const std::span<const std::uint8_t> taken = payload.first(take);
+        return std::vector<std::uint8_t>(taken.begin(), taken.end());
     }
 
 private:
@@ -133,21 +135,21 @@ private:
 std::shared_ptr<domain::ILazyLobSource> LobChainRegistry::ResolveLob(
     std::span<const std::uint8_t> inlineTail, std::size_t totalLength)
 {
-    if (totalLength <= domain::LvInlineThreshold)
+    if (totalLength <= LvInlineThreshold)
     {
         const std::size_t take = std::min(inlineTail.size(), totalLength);
-        return std::make_shared<InlineLobSource>(
-            std::vector<std::uint8_t>(inlineTail.begin(), inlineTail.begin() + take));
+        const std::span<const std::uint8_t> taken = inlineTail.first(take);
+        return std::make_shared<InlineLobSource>(std::vector<std::uint8_t>(taken.begin(), taken.end()));
     }
 
-    constexpr std::size_t bytesPerPage = domain::PageSize - domain::LobPageHeaderLength;
+    constexpr std::size_t bytesPerPage = domain::PageSize - LobPageHeaderLength;
     const std::size_t pagesNeeded = (totalLength + bytesPerPage - 1) / bytesPerPage;
 
     std::vector<std::uint32_t> logicalIds;
 
-    if (totalLength <= domain::LvSingleLevelThreshold)
+    if (totalLength <= LvSingleLevelThreshold)
     {
-        logicalIds = ReadPackedSlots(inlineTail, 0, std::min(pagesNeeded, domain::LvSlotsPerPage));
+        logicalIds = ReadPackedSlots(inlineTail, 0, std::min(pagesNeeded, LvSlotsPerPage));
     }
     else
     {
@@ -157,11 +159,11 @@ std::shared_ptr<domain::ILazyLobSource> LobChainRegistry::ResolveLob(
             if (const std::optional<std::size_t> mapPhysicalPage = PhysicalPageOf(mapPageId.front()))
             {
                 const std::span<const std::uint8_t> mapPageBytes = _storage->PageBytes(*mapPhysicalPage);
-                if (mapPageBytes.size() > domain::PageTypeOffset && mapPageBytes[domain::PageTypeOffset] == domain::LvMapPageType)
+                if (mapPageBytes.size() > PageTypeOffset && mapPageBytes[PageTypeOffset] == LvMapPageType)
                 {
                     logicalIds = ReadPackedSlots(
-                        mapPageBytes, domain::LobPageHeaderLength,
-                        std::min(pagesNeeded, domain::LvSlotsPerMapPage));
+                        mapPageBytes, LobPageHeaderLength,
+                        std::min(pagesNeeded, LvSlotsPerMapPage));
                 }
             }
         }

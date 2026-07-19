@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "sdf/domain/EncryptionMode.hpp"
-#include "sdf/domain/PageLayout.hpp"
+#include "sdf/domain/PageSize.hpp"
 
 namespace sdf::infrastructure
 {

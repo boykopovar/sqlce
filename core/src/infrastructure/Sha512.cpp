@@ -38,7 +38,7 @@ std::uint64_t RotateRight(std::uint64_t value, unsigned int bits)
 std::vector<std::uint8_t> Pad(std::span<const std::uint8_t> message)
 {
     std::vector<std::uint8_t> padded(message.begin(), message.end());
-    const std::uint64_t bitLength = static_cast<std::uint64_t>(message.size()) * 8;
+    const std::uint64_t bitLength = message.size() * 8;
 
     padded.push_back(0x80);
     while (padded.size() % 128 != 112)

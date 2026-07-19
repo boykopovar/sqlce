@@ -11,6 +11,10 @@ class CatalogPageScanner final : public ICatalogPageScanner
 public:
     [[nodiscard]] std::set<std::uint8_t> FindCatalogObjectIds(const domain::IPageStorage& storage) const override;
     [[nodiscard]] std::vector<std::vector<std::uint8_t>> CollectCatalogRows(const domain::IPageStorage& storage) const override;
+
+    void AssignDataPages(
+        const domain::IPageStorage& storage,
+        const std::map<std::uint8_t, domain::TableDef*>& tableByObjectId) const override;
 };
 
 }
