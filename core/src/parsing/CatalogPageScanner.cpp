@@ -50,23 +50,82 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
     const domain::IPageStorage& storage) const
 {
     const std::set<std::uint8_t> catalogObjectIds = FindCatalogObjectIds(storage);
-    std::vector<std::vector<std::uint8_t>> rows;
     const std::size_t pageCount = storage.PageCount();
+
+    auto isCatalogPage = [&](std::size_t pageNumber) -> bool
+    {
+        const infrastructure::PageView page(storage.PageBytes(pageNumber));
+        return page.IsDataPage() && catalogObjectIds.find(page.OwnerObjectId()) != catalogObjectIds.end();
+    };
+
+    std::set<std::pair<std::size_t, std::size_t>> continuationTargets;
+    for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
+    {
+        if (!isCatalogPage(pageNumber))
+        {
+            continue;
+        }
+        const infrastructure::PageView page(storage.PageBytes(pageNumber));
+        for (const infrastructure::ContinuedRowSlice& slice : page.RowsWithContinuation())
+        {
+            if (slice.hasContinuation && slice.continuationPageNumber < pageCount)
+            {
+                continuationTargets.emplace(slice.continuationPageNumber, slice.continuationRecordOffset);
+            }
+        }
+    }
+
+    std::vector<std::vector<std::uint8_t>> rows;
 
     for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
     {
+        if (!isCatalogPage(pageNumber))
+        {
+            continue;
+        }
         const infrastructure::PageView page(storage.PageBytes(pageNumber));
-        if (!page.IsDataPage())
+        for (const infrastructure::ContinuedRowSlice& slice : page.RowsWithContinuation())
         {
-            continue;
-        }
-        if (catalogObjectIds.find(page.OwnerObjectId()) == catalogObjectIds.end())
-        {
-            continue;
-        }
-        for (const infrastructure::RowSlice& slice : page.Rows())
-        {
-            rows.emplace_back(slice.bytes.begin(), slice.bytes.end());
+            if (continuationTargets.find({pageNumber, slice.recordOffset}) != continuationTargets.end())
+            {
+                continue;
+            }
+
+            std::vector<std::uint8_t> assembled(slice.bytes.begin(), slice.bytes.end());
+
+            bool continued = slice.hasContinuation;
+            std::size_t nextPageNumber = slice.continuationPageNumber;
+            std::size_t nextRecordOffset = slice.continuationRecordOffset;
+            std::size_t hops = 0;
+            constexpr std::size_t MaxContinuationHops = 64;
+
+            while (continued && hops < MaxContinuationHops && nextPageNumber < pageCount)
+            {
+                ++hops;
+                const infrastructure::PageView nextPage(storage.PageBytes(nextPageNumber));
+
+                bool matched = false;
+                for (const infrastructure::ContinuedRowSlice& nextSlice : nextPage.RowsWithContinuation())
+                {
+                    if (nextSlice.recordOffset != nextRecordOffset)
+                    {
+                        continue;
+                    }
+                    assembled.insert(assembled.end(), nextSlice.bytes.begin(), nextSlice.bytes.end());
+                    matched = true;
+                    continued = nextSlice.hasContinuation;
+                    nextPageNumber = nextSlice.continuationPageNumber;
+                    nextRecordOffset = nextSlice.continuationRecordOffset;
+                    break;
+                }
+
+                if (!matched)
+                {
+                    break;
+                }
+            }
+
+            rows.push_back(std::move(assembled));
         }
     }
 

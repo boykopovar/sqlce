@@ -13,6 +13,8 @@ constexpr std::uint8_t LobPageType = 0x50;
 constexpr std::size_t LobPageHeaderLength = 16;
 constexpr std::size_t SlotArrayBaseIndex = 1017;
 constexpr std::size_t RowHeaderLength = 28;
+constexpr std::size_t RowContinuationDwordOffset = 24;
+constexpr std::size_t ContinuationPageNumberBias = 1022;
 
 constexpr std::size_t PlaintextHeaderLength = 16;
 constexpr std::size_t Page0ModeOffset = 184;

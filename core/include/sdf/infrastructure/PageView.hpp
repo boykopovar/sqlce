@@ -15,6 +15,16 @@ struct RowSlice
     std::span<const std::uint8_t> bytes;
 };
 
+struct ContinuedRowSlice
+{
+    std::size_t slotIndex;
+    std::size_t recordOffset;
+    std::span<const std::uint8_t> bytes;
+    bool hasContinuation;
+    std::size_t continuationPageNumber;
+    std::size_t continuationRecordOffset;
+};
+
 class PageView
 {
 public:
@@ -26,6 +36,7 @@ public:
     std::size_t SlotCount() const;
 
     std::vector<RowSlice> Rows() const;
+    std::vector<ContinuedRowSlice> RowsWithContinuation() const;
 
     std::span<const std::uint8_t> Bytes() const;
 
