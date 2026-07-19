@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "sdf/domain/EncryptionMode.hpp"
-#include "sdf/domain/IPageCipher.hpp"
+#include "sdf/domain/interfaces/IPageCipher.hpp"
 
 namespace sdf::parsing
 {
@@ -21,8 +21,8 @@ public:
 
     static domain::EncryptionMode ReadMode(std::span<const std::uint8_t> page0);
 
-    bool VerifyPassword() const override;
-    std::vector<std::uint8_t> DecryptPage(std::size_t pageNumber, std::span<const std::uint8_t> page) const override;
+    [[nodiscard]] bool VerifyPassword() const override;
+    [[nodiscard]] std::vector<std::uint8_t> DecryptPage(std::size_t pageNumber, std::span<const std::uint8_t> page) const override;
 
 private:
     domain::EncryptionMode _mode;
@@ -31,9 +31,9 @@ private:
     std::vector<std::uint8_t> _page0Ciphertext;
     std::array<std::uint8_t, 4> _page0KeyParam;
 
-    std::vector<std::uint8_t> DecryptPage0(std::span<const std::uint8_t> page0) const;
-    std::vector<std::uint8_t> DeriveKey(std::span<const std::uint8_t> keyParam) const;
-    std::vector<std::uint8_t> HashPasswordWith(std::span<const std::uint8_t> keyParam) const;
+    [[nodiscard]] std::vector<std::uint8_t> DecryptPage0(std::span<const std::uint8_t> page0) const;
+    [[nodiscard]] std::vector<std::uint8_t> DeriveKey(std::span<const std::uint8_t> keyParam) const;
+    [[nodiscard]] std::vector<std::uint8_t> HashPasswordWith(std::span<const std::uint8_t> keyParam) const;
 };
 
 }

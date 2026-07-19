@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-#include "sdf/domain/IPageStorage.hpp"
+#include "sdf/domain/interfaces/IPageStorage.hpp"
 #include "sdf/domain/TableDef.hpp"
 
 namespace sdf::parsing

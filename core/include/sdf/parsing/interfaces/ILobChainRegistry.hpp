@@ -5,7 +5,7 @@
 #include <memory>
 #include <span>
 
-#include "sdf/domain/ILazyLobSource.hpp"
+#include "sdf/domain/interfaces/ILazyLobSource.hpp"
 
 namespace sdf::parsing
 {

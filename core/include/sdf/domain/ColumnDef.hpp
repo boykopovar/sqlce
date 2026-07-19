@@ -21,19 +21,19 @@ public:
         std::uint8_t precision,
         std::uint8_t scale);
 
-    const std::string& Name() const;
-    std::uint16_t Ordinal() const;
-    std::uint8_t DbType() const;
-    ColumnType Type() const;
-    std::uint16_t DeclaredSize() const;
-    std::uint8_t Precision() const;
-    std::uint8_t Scale() const;
+    [[nodiscard]] const std::string& Name() const;
+    [[nodiscard]] std::uint16_t Ordinal() const;
+    [[nodiscard]] std::uint8_t DbType() const;
+    [[nodiscard]] ColumnType Type() const;
+    [[nodiscard]] std::uint16_t DeclaredSize() const;
+    [[nodiscard]] std::uint8_t Precision() const;
+    [[nodiscard]] std::uint8_t Scale() const;
 
-    bool IsBit() const;
-    bool IsNumeric() const;
-    bool IsVarLength() const;
-    bool IsLob() const;
-    std::size_t FixedSize() const;
+    [[nodiscard]] bool IsBit() const;
+    [[nodiscard]] bool IsNumeric() const;
+    [[nodiscard]] bool IsVarLength() const;
+    [[nodiscard]] bool IsLob() const;
+    [[nodiscard]] std::size_t FixedSize() const;
 
 private:
     std::string _name;

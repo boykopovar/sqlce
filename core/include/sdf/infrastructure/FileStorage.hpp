@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "sdf/domain/IPageCipher.hpp"
-#include "sdf/domain/IPageStorage.hpp"
+#include "sdf/domain/interfaces/IPageCipher.hpp"
+#include "sdf/domain/interfaces/IPageStorage.hpp"
 
 namespace sdf::infrastructure
 {

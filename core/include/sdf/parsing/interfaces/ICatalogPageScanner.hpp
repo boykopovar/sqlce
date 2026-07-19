@@ -5,7 +5,7 @@
 #include <set>
 #include <vector>
 
-#include "sdf/domain/IPageStorage.hpp"
+#include "sdf/domain/interfaces/IPageStorage.hpp"
 
 namespace sdf::parsing
 {

@@ -57,7 +57,7 @@ std::vector<std::uint32_t> LobChainRegistry::ReadPackedSlots(
         }
 
         const std::uint64_t word = infrastructure::ReadUInt64LE(bytes, wordByteOffset);
-        const std::uint32_t value = static_cast<std::uint32_t>((word >> bitOffset) & 0xFFFFFu);
+        const auto value = static_cast<std::uint32_t>((word >> bitOffset) & 0xFFFFFu);
 
         if (value == domain::LvNullSlot)
         {
@@ -77,17 +77,17 @@ public:
     {
     }
 
-    std::size_t TotalLength() const override
+    [[nodiscard]] std::size_t TotalLength() const override
     {
         return _bytes.size();
     }
 
-    std::size_t ChunkCount() const override
+    [[nodiscard]] std::size_t ChunkCount() const override
     {
         return _bytes.empty() ? 0 : 1;
     }
 
-    std::vector<std::uint8_t> ReadChunk(std::size_t) const override
+    [[nodiscard]] std::vector<std::uint8_t> ReadChunk(std::size_t) const override
     {
         return _bytes;
     }
@@ -104,17 +104,17 @@ public:
     {
     }
 
-    std::size_t TotalLength() const override
+    [[nodiscard]] std::size_t TotalLength() const override
     {
         return _totalLength;
     }
 
-    std::size_t ChunkCount() const override
+    [[nodiscard]] std::size_t ChunkCount() const override
     {
         return _pageNumbers.size();
     }
 
-    std::vector<std::uint8_t> ReadChunk(std::size_t chunkIndex) const override
+    [[nodiscard]] std::vector<std::uint8_t> ReadChunk(std::size_t chunkIndex) const override
     {
         const std::span<const std::uint8_t> pageBytes = _storage->PageBytes(_pageNumbers[chunkIndex]);
         const std::span<const std::uint8_t> payload = pageBytes.subspan(domain::LobPageHeaderLength);
@@ -140,7 +140,7 @@ std::shared_ptr<domain::ILazyLobSource> LobChainRegistry::ResolveLob(
             std::vector<std::uint8_t>(inlineTail.begin(), inlineTail.begin() + take));
     }
 
-    const std::size_t bytesPerPage = domain::PageSize - domain::LobPageHeaderLength;
+    constexpr std::size_t bytesPerPage = domain::PageSize - domain::LobPageHeaderLength;
     const std::size_t pagesNeeded = (totalLength + bytesPerPage - 1) / bytesPerPage;
 
     std::vector<std::uint32_t> logicalIds;

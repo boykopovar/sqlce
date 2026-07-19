@@ -15,8 +15,8 @@ class Row
 public:
     void Append(std::string columnName, ColumnValue value);
 
-    const std::vector<std::pair<std::string, ColumnValue>>& Values() const;
-    const ColumnValue* Find(const std::string& columnName) const;
+    [[nodiscard]] const std::vector<std::pair<std::string, ColumnValue>>& Values() const;
+    [[nodiscard]] const ColumnValue* Find(const std::string& columnName) const;
 
 private:
     std::vector<std::pair<std::string, ColumnValue>> _values;

@@ -9,14 +9,14 @@
 #include "sdf/application/ColumnSchema.hpp"
 #include "sdf/application/TableRowRange.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
-#include "sdf/domain/IPageCipher.hpp"
-#include "sdf/domain/IPageStorage.hpp"
+#include "sdf/domain/interfaces/IPageCipher.hpp"
+#include "sdf/domain/interfaces/IPageStorage.hpp"
 #include "sdf/domain/Row.hpp"
 #include "sdf/domain/TableDef.hpp"
-#include "sdf/parsing/ICatalogPageScanner.hpp"
-#include "sdf/parsing/ILobChainRegistry.hpp"
-#include "sdf/parsing/IRowDecoder.hpp"
-#include "sdf/parsing/ITableCatalogBuilder.hpp"
+#include "sdf/parsing/interfaces/ICatalogPageScanner.hpp"
+#include "sdf/parsing/interfaces/ILobChainRegistry.hpp"
+#include "sdf/parsing/interfaces/IRowDecoder.hpp"
+#include "sdf/parsing/interfaces/ITableCatalogBuilder.hpp"
 
 namespace sdf::application
 {

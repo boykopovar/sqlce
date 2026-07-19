@@ -26,7 +26,7 @@ public:
     {
     }
 
-    EncryptionMode Mode() const
+    [[nodiscard]] EncryptionMode Mode() const
     {
         return _mode;
     }

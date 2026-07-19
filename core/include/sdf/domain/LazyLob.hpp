@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "sdf/domain/ILazyLobSource.hpp"
+#include "sdf/domain/interfaces/ILazyLobSource.hpp"
 
 namespace sdf::domain
 {
@@ -47,8 +47,8 @@ public:
 
     explicit LazyLobChunkRange(std::shared_ptr<const ILazyLobSource> source);
 
-    Iterator begin() const;
-    Iterator end() const;
+    [[nodiscard]] Iterator begin() const;
+    [[nodiscard]] Iterator end() const;
 
 private:
     std::shared_ptr<const ILazyLobSource> _source;
@@ -59,13 +59,13 @@ class LazyLob
 public:
     LazyLob(std::shared_ptr<const ILazyLobSource> source, bool isText, bool compressed);
 
-    std::size_t TotalLength() const;
-    bool IsText() const;
+    [[nodiscard]] std::size_t TotalLength() const;
+    [[nodiscard]] bool IsText() const;
 
-    std::vector<std::uint8_t> ReadBytes() const;
-    std::string ReadText() const;
+    [[nodiscard]] std::vector<std::uint8_t> ReadBytes() const;
+    [[nodiscard]] std::string ReadText() const;
 
-    LazyLobChunkRange ReadChunks() const;
+    [[nodiscard]] LazyLobChunkRange ReadChunks() const;
 
 private:
     std::shared_ptr<const ILazyLobSource> _source;

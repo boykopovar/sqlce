@@ -20,11 +20,11 @@ namespace sdf::domain
         DateTimeValue();
         DateTimeValue(std::int32_t daysSinceEpoch, std::uint32_t ticksSinceMidnight);
 
-        std::uint32_t MillisecondsSinceMidnight() const;
-        std::int32_t DaysSinceEpoch() const;
-        CalendarDate Date() const;
+        [[nodiscard]] std::uint32_t MillisecondsSinceMidnight() const;
+        [[nodiscard]] std::int32_t DaysSinceEpoch() const;
+        [[nodiscard]] CalendarDate Date() const;
 
-        std::string ToString() const;
+        [[nodiscard]] std::string ToString() const;
 
     private:
         std::int32_t _daysSinceEpoch;

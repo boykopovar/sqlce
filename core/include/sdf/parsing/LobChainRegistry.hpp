@@ -7,9 +7,9 @@
 #include <optional>
 #include <vector>
 
-#include "sdf/domain/ILazyLobSource.hpp"
-#include "sdf/domain/IPageStorage.hpp"
-#include "sdf/parsing/ILobChainRegistry.hpp"
+#include "sdf/domain/interfaces/ILazyLobSource.hpp"
+#include "sdf/domain/interfaces/IPageStorage.hpp"
+#include "sdf/parsing/interfaces/ILobChainRegistry.hpp"
 
 namespace sdf::parsing
 {

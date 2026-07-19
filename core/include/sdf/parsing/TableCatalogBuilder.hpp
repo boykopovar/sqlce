@@ -3,9 +3,9 @@
 
 #include <memory>
 
-#include "sdf/parsing/ICatalogPageScanner.hpp"
-#include "sdf/parsing/ICatalogRowDecoder.hpp"
-#include "sdf/parsing/ITableCatalogBuilder.hpp"
+#include "sdf/parsing/interfaces/ICatalogPageScanner.hpp"
+#include "sdf/parsing/interfaces/ICatalogRowDecoder.hpp"
+#include "sdf/parsing/interfaces/ITableCatalogBuilder.hpp"
 
 namespace sdf::parsing
 {
@@ -16,7 +16,7 @@ public:
     TableCatalogBuilder(
         std::shared_ptr<ICatalogPageScanner> pageScanner, std::shared_ptr<ICatalogRowDecoder> rowDecoder);
 
-    std::map<std::string, domain::TableDef> BuildTables(const domain::IPageStorage& storage) const override;
+    [[nodiscard]] std::map<std::string, domain::TableDef> BuildTables(const domain::IPageStorage& storage) const override;
 
 private:
     std::shared_ptr<ICatalogPageScanner> _pageScanner;

@@ -30,15 +30,15 @@ class PageView
 public:
     explicit PageView(std::span<const std::uint8_t> bytes);
 
-    std::uint8_t PageType() const;
-    std::uint8_t OwnerObjectId() const;
-    bool IsDataPage() const;
-    std::size_t SlotCount() const;
+    [[nodiscard]] std::uint8_t PageType() const;
+    [[nodiscard]] std::uint8_t OwnerObjectId() const;
+    [[nodiscard]] bool IsDataPage() const;
+    [[nodiscard]] std::size_t SlotCount() const;
 
-    std::vector<RowSlice> Rows() const;
-    std::vector<ContinuedRowSlice> RowsWithContinuation() const;
+    [[nodiscard]] std::vector<RowSlice> Rows() const;
+    [[nodiscard]] std::vector<ContinuedRowSlice> RowsWithContinuation() const;
 
-    std::span<const std::uint8_t> Bytes() const;
+    [[nodiscard]] std::span<const std::uint8_t> Bytes() const;
 
 private:
     std::span<const std::uint8_t> _bytes;

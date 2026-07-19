@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "sdf/domain/ColumnValue.hpp"
-#include "sdf/parsing/ILobChainRegistry.hpp"
-#include "sdf/parsing/IRowDecoder.hpp"
+#include "sdf/parsing/interfaces/ILobChainRegistry.hpp"
+#include "sdf/parsing/interfaces/IRowDecoder.hpp"
 
 namespace sdf::parsing
 {

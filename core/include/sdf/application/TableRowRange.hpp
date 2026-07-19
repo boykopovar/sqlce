@@ -6,11 +6,11 @@
 #include <optional>
 #include <vector>
 
-#include "sdf/domain/IPageStorage.hpp"
+#include "sdf/domain/interfaces/IPageStorage.hpp"
 #include "sdf/domain/Row.hpp"
 #include "sdf/domain/TableDef.hpp"
 #include "sdf/infrastructure/PageView.hpp"
-#include "sdf/parsing/IRowDecoder.hpp"
+#include "sdf/parsing/interfaces/IRowDecoder.hpp"
 
 namespace sdf::application
 {

@@ -15,14 +15,14 @@ class TableDef
 public:
     TableDef(std::string name, std::uint8_t objectId);
 
-    const std::string& Name() const;
-    std::uint8_t ObjectId() const;
+    [[nodiscard]] const std::string& Name() const;
+    [[nodiscard]] std::uint8_t ObjectId() const;
 
     std::vector<ColumnDef>& Columns();
-    const std::vector<ColumnDef>& Columns() const;
+    [[nodiscard]] const std::vector<ColumnDef>& Columns() const;
 
     std::vector<std::size_t>& DataPageNumbers();
-    const std::vector<std::size_t>& DataPageNumbers() const;
+    [[nodiscard]] const std::vector<std::size_t>& DataPageNumbers() const;
 
 private:
     std::string _name;

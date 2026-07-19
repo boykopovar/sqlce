@@ -15,7 +15,7 @@ class AesCbcDecryptor
 public:
     explicit AesCbcDecryptor(std::span<const std::uint8_t> key, std::span<const std::uint8_t, 16> iv);
 
-    std::vector<std::uint8_t> Decrypt(std::span<const std::uint8_t> ciphertext) const;
+    [[nodiscard]] std::vector<std::uint8_t> Decrypt(std::span<const std::uint8_t> ciphertext) const;
 
 private:
     std::vector<std::uint32_t> _roundKeys;
