@@ -16,14 +16,6 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Cache Chocolatey packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            C:\ProgramData\chocolatey\lib
-            C:\ProgramData\chocolatey\lib-bad
-          key: choco-sqlce-3.5.8080.0-4.0
-
       - name: Install SQL Server Compact 3.5 and 4.0 runtimes
         shell: pwsh
         run: |

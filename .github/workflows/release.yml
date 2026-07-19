@@ -16,23 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache ccache (Linux wheel)
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ccache
-          key: ccache-wheel-linux-${{ github.sha }}
-          restore-keys: ccache-wheel-linux-
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_ARCHS_LINUX: x86_64
           CIBW_BUILD_VERBOSITY: 1
-          CIBW_ENVIRONMENT_LINUX: >-
-            CMAKE_CXX_COMPILER_LAUNCHER=ccache
-            CMAKE_C_COMPILER_LAUNCHER=ccache
-          CIBW_BEFORE_ALL_LINUX: (yum install -y ccache || apt-get install -y ccache || apk add ccache) 2>/dev/null || true
-          CIBW_CONTAINER_ENGINE: "docker; create_args: -v ${HOME}/.cache/ccache:/root/.cache/ccache"
 
       - name: Build sdist
         run: |
@@ -70,82 +58,75 @@ jobs:
           path: wheelhouse/*
 
   build-cpp-linux:
-    name: Build C++ library (Linux)
+    name: Build C++ library (Linux, ${{ matrix.link }})
     needs: test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        link: [static, shared]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install ccache
-        run: sudo apt-get update && sudo apt-get install -y ccache
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=${{ matrix.link == 'shared' && 'ON' || 'OFF' }}
 
-      - name: Cache ccache (Linux libsqlce)
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ccache
-          key: ccache-libsqlce-linux-${{ github.sha }}
-          restore-keys: ccache-libsqlce-linux-
+      - name: Build libsqlce
+        run: cmake --build build --target libsqlce -j
 
-      - name: Configure and build (static + shared)
+      - name: Package library + headers
         run: |
           version="${GITHUB_REF_NAME#v}"
-
-          for link in static shared; do
-            shared_flag=OFF
-            if [ "$link" = "shared" ]; then shared_flag=ON; fi
-
-            cmake -S . -B "build-$link" \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-              -DBUILD_SHARED_LIBS=$shared_flag
-
-            cmake --build "build-$link" --target libsqlce -j
-
-            pkg="libsqlce-${version}-linux-x86_64-${link}"
-            mkdir -p "$pkg/lib" "$pkg/include"
-            cp "build-$link/dist/lib/libsqlce".* "$pkg/lib/"
-            cp -r core/include/. "$pkg/include/"
-            tar -czf "${pkg}.tar.gz" "$pkg"
-          done
+          pkg="libsqlce-${version}-linux-x86_64-${{ matrix.link }}"
+          mkdir -p "$pkg/lib" "$pkg/include"
+          cp build/dist/lib/libsqlce.* "$pkg/lib/"
+          cp -r core/include/. "$pkg/include/"
+          tar -czf "${pkg}.tar.gz" "$pkg"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cpp-linux
+          name: cpp-linux-${{ matrix.link }}
           path: libsqlce-*.tar.gz
 
   build-cpp-windows:
-    name: Build C++ library (Windows)
+    name: Build C++ library (Windows, ${{ matrix.link }})
     needs: test
     runs-on: windows-latest
+    strategy:
+      matrix:
+        link: [static, shared]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure and build (static + shared)
+      - name: Configure CMake
+        shell: pwsh
+        run: |
+          $shared = if ("${{ matrix.link }}" -eq "shared") { "ON" } else { "OFF" }
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=$shared
+
+      - name: Build libsqlce
+        run: cmake --build build --target libsqlce --config Release -j
+
+      - name: Package library + headers
         shell: pwsh
         run: |
           $version = "${env:GITHUB_REF_NAME}" -replace '^v', ''
-
-          foreach ($link in @("static", "shared")) {
-            $sharedFlag = if ($link -eq "shared") { "ON" } else { "OFF" }
-
-            cmake -S . -B "build-$link" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=$sharedFlag
-            cmake --build "build-$link" --target libsqlce --config Release -j
-
-            $pkg = "libsqlce-$version-windows-x86_64-$link"
-            New-Item -ItemType Directory -Force -Path "$pkg/lib" | Out-Null
-            New-Item -ItemType Directory -Force -Path "$pkg/include" | Out-Null
-            Copy-Item "build-$link/dist/lib/libsqlce.*" "$pkg/lib/"
-            Copy-Item -Recurse "core/include/*" "$pkg/include/"
-            Compress-Archive -Path $pkg -DestinationPath "$pkg.zip"
-          }
+          $pkg = "libsqlce-$version-windows-x86_64-${{ matrix.link }}"
+          New-Item -ItemType Directory -Force -Path "$pkg/lib" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$pkg/include" | Out-Null
+          Copy-Item "build/dist/lib/libsqlce.*" "$pkg/lib/"
+          Copy-Item -Recurse "core/include/*" "$pkg/include/"
+          Compress-Archive -Path $pkg -DestinationPath "$pkg.zip"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cpp-windows
+          name: cpp-windows-${{ matrix.link }}
           path: libsqlce-*.zip
 
   pages:
-    name: Pages WASM Demo
+    name: Pages Wasm Demo
     needs: test
     uses: ./.github/workflows/pages.yml
     permissions:

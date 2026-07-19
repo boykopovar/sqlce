@@ -1,4 +1,4 @@
-name: Pages WASM Demo
+name: Pages Wasm Demo
 
 on:
   workflow_call:
@@ -26,27 +26,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache Emscripten SDK
-        uses: actions/cache@v4
-        with:
-          path: emsdk-cache
-          key: emsdk-latest-${{ runner.os }}
-
       - name: Set up Emscripten
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: latest
-          actions-cache-folder: emsdk-cache
-
-      - name: Cache ccache (wasm build)
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ccache
-          key: ccache-wasm-${{ github.sha }}
-          restore-keys: ccache-wasm-
 
       - name: Configure (Emscripten + CMake)
-        run: emcmake cmake -B build-wasm -DSQLCE_BUILD_WASM=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: emcmake cmake -B build-wasm -DSQLCE_BUILD_WASM=ON -DCMAKE_BUILD_TYPE=Release
 
       - name: Build sqlce_wasm
         run: cmake --build build-wasm --target sqlce_wasm --parallel
