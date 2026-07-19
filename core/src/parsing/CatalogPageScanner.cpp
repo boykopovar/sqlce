@@ -1,50 +1,15 @@
 #include "sdf/parsing/CatalogPageScanner.hpp"
 
-#include <algorithm>
-#include <array>
-
 #include "sdf/parsing/PageView.hpp"
 #include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::parsing
 {
 
-namespace
-{
-
-constexpr std::array<std::uint8_t, 5> CatalogMarker{'_', '_', 'S', 'y', 's'};
-
-bool ContainsCatalogMarker(std::span<const std::uint8_t> bytes)
-{
-    if (bytes.size() < CatalogMarker.size())
-    {
-        return false;
-    }
-    const auto it = std::search(bytes.begin(), bytes.end(), CatalogMarker.begin(), CatalogMarker.end());
-    return it != bytes.end();
-}
-
-}
-
 std::set<std::uint8_t> CatalogPageScanner::FindCatalogObjectIds(const domain::IPageStorage& storage) const
 {
-    std::set<std::uint8_t> objectIds;
-    const std::size_t pageCount = storage.PageCount();
-
-    for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
-    {
-        const PageView page(storage.PageBytes(pageNumber));
-        if (!page.IsDataPage())
-        {
-            continue;
-        }
-        if (ContainsCatalogMarker(page.Bytes()))
-        {
-            objectIds.insert(page.OwnerObjectId());
-        }
-    }
-
-    return objectIds;
+    (void)storage;
+    return {SystemCatalogObjectId};
 }
 
 void CatalogPageScanner::AssignDataPages(

@@ -17,6 +17,7 @@ constexpr std::size_t ContinuationPageNumberBias = 1022;
 
 constexpr std::size_t PageTypeOffset = 6;
 constexpr std::size_t OwnerObjectIdOffset = 16;
+constexpr std::uint8_t SystemCatalogObjectId = 3;
 constexpr std::size_t SlotCountFieldOffset = 20;
 constexpr std::uint32_t SlotCountFieldMask = 0xFFFu;
 constexpr std::size_t SlotEntryLength = 4;
