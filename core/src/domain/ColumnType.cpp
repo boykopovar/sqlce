@@ -27,6 +27,16 @@ bool IsLobColumnType(ColumnType type)
     return type == ColumnType::NText || type == ColumnType::Image;
 }
 
+bool IsNumericColumnType(ColumnType type)
+{
+    return type == ColumnType::Numeric;
+}
+
+std::uint16_t DeclaredSizeOfNumeric(std::uint8_t precision)
+{
+    return static_cast<std::uint16_t>((precision + 1) / 2 + 1);
+}
+
 std::size_t FixedSizeOf(ColumnType type, std::uint16_t declaredSize)
 {
     if (IsBitColumnType(type) || IsVarLengthColumnType(type))

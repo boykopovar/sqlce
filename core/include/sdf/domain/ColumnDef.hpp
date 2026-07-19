@@ -30,6 +30,7 @@ public:
     std::uint8_t Scale() const;
 
     bool IsBit() const;
+    bool IsNumeric() const;
     bool IsVarLength() const;
     bool IsLob() const;
     std::size_t FixedSize() const;

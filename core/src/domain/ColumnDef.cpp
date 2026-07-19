@@ -47,6 +47,10 @@ std::uint16_t ColumnDef::DeclaredSize() const
     {
         return 1;
     }
+    if (IsNumeric())
+    {
+        return DeclaredSizeOfNumeric(_precision);
+    }
     return _declaredSize;
 }
 
@@ -63,6 +67,11 @@ std::uint8_t ColumnDef::Scale() const
 bool ColumnDef::IsBit() const
 {
     return IsBitColumnType(_type);
+}
+
+bool ColumnDef::IsNumeric() const
+{
+    return IsNumericColumnType(_type);
 }
 
 bool ColumnDef::IsVarLength() const

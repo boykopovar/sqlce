@@ -33,6 +33,10 @@ bool IsVarLengthColumnType(ColumnType type);
 
 bool IsLobColumnType(ColumnType type);
 
+bool IsNumericColumnType(ColumnType type);
+
+std::uint16_t DeclaredSizeOfNumeric(std::uint8_t precision);
+
 std::size_t FixedSizeOf(ColumnType type, std::uint16_t declaredSize);
 
 std::string_view NameOf(ColumnType type);
