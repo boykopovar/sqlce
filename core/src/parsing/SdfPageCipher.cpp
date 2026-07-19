@@ -35,9 +35,9 @@ std::vector<std::uint8_t> Concat(std::span<const std::uint8_t> first, std::span<
     return result;
 }
 
-std::array<std::uint8_t, 16> ZeroIv()
+std::array<std::uint8_t, infrastructure::AesBlockLength> ZeroIv()
 {
-    std::array<std::uint8_t, 16> iv{};
+    std::array<std::uint8_t, infrastructure::AesBlockLength> iv{};
     iv.fill(0);
     return iv;
 }
@@ -92,7 +92,8 @@ std::vector<std::uint8_t> SdfPageCipher::HashPasswordWith(std::span<const std::u
 std::vector<std::uint8_t> SdfPageCipher::DeriveKey(std::span<const std::uint8_t> keyParam) const
 {
     const std::vector<std::uint8_t> hash = HashPasswordWith(keyParam);
-    const std::size_t keyLength = (_mode == domain::EncryptionMode::Aes128Sha256) ? 16 : 32;
+    const std::size_t keyLength
+        = (_mode == domain::EncryptionMode::Aes128Sha256) ? infrastructure::Aes128KeyLength : infrastructure::Aes256KeyLength;
     return std::vector<std::uint8_t>(hash.begin(), hash.begin() + static_cast<std::ptrdiff_t>(keyLength));
 }
 
@@ -129,9 +130,9 @@ std::vector<std::uint8_t> SdfPageCipher::DecryptPage(std::size_t pageNumber, std
         return DecryptPage0(page);
     }
 
-    const std::uint32_t pageTypeWord = infrastructure::ReadUInt32LE(page, 4);
-    const std::uint32_t pageType = (pageTypeWord >> 20) & 0xF;
-    if (pageType <= 2)
+    const std::uint32_t pageTypeWord = infrastructure::ReadUInt32LE(page, domain::EncryptedPageTypeWordOffset);
+    const std::uint32_t pageType = (pageTypeWord >> domain::EncryptedPageTypeShift) & domain::EncryptedPageTypeMask;
+    if (pageType <= domain::EncryptedPageTypeMaxPlaintext)
     {
         return std::vector<std::uint8_t>(page.begin(), page.end());
     }

@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Reverse engineered](https://img.shields.io/badge/Reverse%20engineered%20with-🔬-red)
 
-## [Ru README](docs/ru/RuReadme.md)
+## [Ru README](https://github.com/boykopovar/sqlce/blob/main/docs/ru/RuReadme.md)
 
 Reverse engineering of the `.sdf` (SQL Server Compact Edition) binary file format.
 
@@ -54,7 +54,7 @@ The tests use a locally installed SQL CE engine (via ODBC) to generate `.sdf` fi
 
 The documentation is currently concise but includes usage examples and tests.
 
-[Documentation](docs/en/python.md)
+[Documentation](https://github.com/boykopovar/sqlce/blob/main/docs/en/python.md)
 
 
 [Code Style Conventions](docs/CONVENTIONS.md) (Pull requests are welcome.)

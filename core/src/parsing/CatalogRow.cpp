@@ -1,5 +1,7 @@
 #include "sdf/parsing/CatalogRow.hpp"
 
+#include "sdf/parsing/CatalogSchema.hpp"
+
 namespace sdf::parsing
 {
 
@@ -7,13 +9,13 @@ CatalogRowKind CatalogRowKindFromSysObjectType(std::uint16_t sysObjectType)
 {
     switch (sysObjectType)
     {
-        case 1:
+        case CatalogTableIdTable:
             return CatalogRowKind::Table;
-        case 2:
+        case CatalogTableIdIndex:
             return CatalogRowKind::Index;
-        case 4:
+        case CatalogTableIdColumn:
             return CatalogRowKind::Column;
-        case 8:
+        case CatalogTableIdConstraint:
             return CatalogRowKind::Constraint;
         default:
             return CatalogRowKind::Unknown;

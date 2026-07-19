@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 
+#include "sdf/domain/PageLayout.hpp"
 #include "sdf/infrastructure/PageView.hpp"
 
 namespace sdf::parsing
@@ -101,9 +102,8 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
             std::size_t nextPageNumber = slice.continuationPageNumber;
             std::size_t nextSlotIndex = slice.continuationSlotIndex;
             std::size_t hops = 0;
-            constexpr std::size_t MaxContinuationHops = 64;
 
-            while (continued && hops < MaxContinuationHops && nextPageNumber < pageCount)
+            while (continued && hops < domain::MaxRowContinuationHops && nextPageNumber < pageCount)
             {
                 ++hops;
                 const infrastructure::PageView nextPage(storage.PageBytes(nextPageNumber));

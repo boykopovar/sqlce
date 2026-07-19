@@ -13,7 +13,7 @@ namespace
 
 std::uint32_t LogicalPageIdOf(std::span<const std::uint8_t> pageBytes)
 {
-    return infrastructure::ReadUInt32LE(pageBytes, 4) & 0xFFFFFu;
+    return infrastructure::ReadUInt32LE(pageBytes, domain::LogicalPageIdOffset) & domain::LogicalPageIdMask;
 }
 
 }
@@ -25,7 +25,7 @@ LobChainRegistry::LobChainRegistry(const domain::IPageStorage& storage) : _stora
     {
         const std::span<const std::uint8_t> pageBytes = storage.PageBytes(pageNumber);
         const std::uint32_t logicalId = LogicalPageIdOf(pageBytes);
-        _pageByLogicalId[logicalId] = PageEntry{pageNumber, pageBytes[6]};
+        _pageByLogicalId[logicalId] = PageEntry{pageNumber, pageBytes[domain::PageTypeOffset]};
     }
 }
 
@@ -57,7 +57,7 @@ std::vector<std::uint32_t> LobChainRegistry::ReadPackedSlots(
         }
 
         const std::uint64_t word = infrastructure::ReadUInt64LE(bytes, wordByteOffset);
-        const auto value = static_cast<std::uint32_t>((word >> bitOffset) & 0xFFFFFu);
+        const auto value = static_cast<std::uint32_t>((word >> bitOffset) & domain::LvSlotValueMask);
 
         if (value == domain::LvNullSlot)
         {
@@ -157,7 +157,7 @@ std::shared_ptr<domain::ILazyLobSource> LobChainRegistry::ResolveLob(
             if (const std::optional<std::size_t> mapPhysicalPage = PhysicalPageOf(mapPageId.front()))
             {
                 const std::span<const std::uint8_t> mapPageBytes = _storage->PageBytes(*mapPhysicalPage);
-                if (mapPageBytes.size() > 6 && mapPageBytes[6] == domain::LvMapPageType)
+                if (mapPageBytes.size() > domain::PageTypeOffset && mapPageBytes[domain::PageTypeOffset] == domain::LvMapPageType)
                 {
                     logicalIds = ReadPackedSlots(
                         mapPageBytes, domain::LobPageHeaderLength,

@@ -1,5 +1,7 @@
 #include "sdf/application/TableRowRange.hpp"
 
+#include "sdf/domain/PageLayout.hpp"
+
 namespace sdf::application
 {
 
@@ -60,9 +62,8 @@ std::vector<std::uint8_t> TableRowRange::Iterator::AssembleRowBytes() const
     std::size_t nextPageNumber = first.continuationPageNumber;
     std::size_t nextSlotIndex = first.continuationSlotIndex;
     std::size_t hops = 0;
-    constexpr std::size_t MaxContinuationHops = 64;
 
-    while (continued && hops < MaxContinuationHops)
+    while (continued && hops < domain::MaxRowContinuationHops)
     {
         ++hops;
         const infrastructure::PageView nextPage(_storage->PageBytes(nextPageNumber));

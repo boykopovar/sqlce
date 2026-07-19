@@ -6,6 +6,7 @@
 
 #include "include/sdf/application/SqlceDatabase.hpp"
 #include "include/sdf/domain/EncryptionMode.hpp"
+#include "include/sdf/domain/PageLayout.hpp"
 
 namespace
 {
@@ -30,7 +31,8 @@ void PrintTableRows(const std::vector<std::string>& columnNames, const std::vect
         for (const std::string& columnName : columnNames)
         {
             const sdf::domain::ColumnValue* value = row.Find(columnName);
-            stringRow.push_back(Truncate(value != nullptr ? value->ToDisplayString() : "", 20));
+            stringRow.push_back(
+                Truncate(value != nullptr ? value->ToDisplayString() : "", sdf::domain::DisplayTruncationLength));
         }
         stringRows.push_back(std::move(stringRow));
     }

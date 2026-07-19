@@ -3,6 +3,7 @@
 #include <array>
 #include <vector>
 
+#include "sdf/domain/PageLayout.hpp"
 #include "sdf/infrastructure/BinaryReader.hpp"
 #include "sdf/parsing/CatalogSchema.hpp"
 
@@ -12,12 +13,9 @@ namespace sdf::parsing
 namespace
 {
 
-constexpr std::size_t HeaderLength = 4;
-constexpr std::size_t BitRegionBytes = 2;
-
 std::size_t FixedRegionEndOffset()
 {
-    std::size_t total = HeaderLength + CatalogPresenceBytes + BitRegionBytes;
+    std::size_t total = domain::CatalogRowHeaderLength + CatalogPresenceBytes + domain::CatalogBitRegionBytes;
     for (const CatalogFieldDescriptor& field : CatalogSchema)
     {
         if (!IsVarLikeKind(field.kind) && !IsBitKind(field.kind))
@@ -90,35 +88,36 @@ bool CatalogRowDecoder::IsFieldNull(std::span<const std::uint8_t> presence, std:
     {
         return true;
     }
-    return ((presence[byteIndex] >> bitIndex) & 0x01u) != 0;
+    return ((presence[byteIndex] >> bitIndex) & domain::SingleBitMask) != 0;
 }
 
 std::optional<CatalogRow> CatalogRowDecoder::Decode(std::span<const std::uint8_t> rowBytes) const
 {
-    if (rowBytes.size() < HeaderLength + CatalogPresenceBytes)
+    if (rowBytes.size() < domain::CatalogRowHeaderLength + CatalogPresenceBytes)
     {
         return std::nullopt;
     }
 
-    const std::span<const std::uint8_t> presence = rowBytes.subspan(HeaderLength, CatalogPresenceBytes);
+    const std::span<const std::uint8_t> presence
+        = rowBytes.subspan(domain::CatalogRowHeaderLength, CatalogPresenceBytes);
     const bool sysObjectTypeIsNull = IsFieldNull(presence, 0);
     if (sysObjectTypeIsNull)
     {
         return std::nullopt;
     }
 
-    std::size_t offset = HeaderLength + CatalogPresenceBytes;
-    if (offset + BitRegionBytes > rowBytes.size())
+    std::size_t offset = domain::CatalogRowHeaderLength + CatalogPresenceBytes;
+    if (offset + domain::CatalogBitRegionBytes > rowBytes.size())
     {
         return std::nullopt;
     }
 
     const std::uint16_t bitRegionValue = infrastructure::ReadUInt16LE(rowBytes, offset);
-    offset += BitRegionBytes;
+    offset += domain::CatalogBitRegionBytes;
 
     (void)bitRegionValue;
 
-    if (offset + 2 > rowBytes.size())
+    if (offset + domain::CedbInfoOrdinalOffset > rowBytes.size())
     {
         return std::nullopt;
     }
@@ -170,7 +169,7 @@ std::optional<CatalogRow> CatalogRowDecoder::Decode(std::span<const std::uint8_t
         if (field.name == "SysObjectCedbInfo")
         {
             row.cedbInfoDbType = infrastructure::ReadUInt16LE(rowBytes, offset);
-            row.cedbInfoOrdinal = infrastructure::ReadUInt16LE(rowBytes, offset + 2);
+            row.cedbInfoOrdinal = infrastructure::ReadUInt16LE(rowBytes, offset + domain::CedbInfoOrdinalOffset);
         }
         else
         {
@@ -200,7 +199,7 @@ std::optional<CatalogRow> CatalogRowDecoder::Decode(std::span<const std::uint8_t
 
     const std::size_t fixedRegionEnd = FixedRegionEndOffset();
     const std::size_t varColumnCount = VarColumnCountInSchema();
-    const std::size_t directoryLength = 2 * varColumnCount;
+    const std::size_t directoryLength = domain::VarDirectoryEntryLength * varColumnCount;
 
     if (fixedRegionEnd + directoryLength > rowBytes.size())
     {
@@ -211,7 +210,7 @@ std::optional<CatalogRow> CatalogRowDecoder::Decode(std::span<const std::uint8_t
     std::vector<std::uint16_t> entries(varColumnCount);
     for (std::size_t i = 0; i < varColumnCount; ++i)
     {
-        entries[i] = infrastructure::ReadUInt16LE(directoryBytes, 2 * i);
+        entries[i] = infrastructure::ReadUInt16LE(directoryBytes, domain::VarDirectoryEntryLength * i);
     }
 
     const std::size_t varDataStart = fixedRegionEnd + directoryLength;
@@ -236,7 +235,7 @@ std::optional<CatalogRow> CatalogRowDecoder::Decode(std::span<const std::uint8_t
         }
         else
         {
-            cumulativeEnd = entries[1 + varColumnIndex] & 0x7FFFu;
+            cumulativeEnd = entries[1 + varColumnIndex] & domain::VarDirectoryOffsetMask;
         }
 
         const bool applicable = field.tableId == CatalogTableIdCommon || field.tableId == applicableTableId;

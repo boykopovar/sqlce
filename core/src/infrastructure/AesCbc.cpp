@@ -112,7 +112,7 @@ void AddRoundKey(std::uint8_t* state, const std::uint32_t* roundKey)
 
 void InverseSubBytes(std::uint8_t* state)
 {
-    for (std::size_t i = 0; i < 16; ++i)
+    for (std::size_t i = 0; i < AesBlockLength; ++i)
     {
         state[i] = InverseSBox[state[i]];
     }
@@ -120,8 +120,8 @@ void InverseSubBytes(std::uint8_t* state)
 
 void InverseShiftRows(std::uint8_t* state)
 {
-    std::uint8_t temp[16];
-    for (std::size_t i = 0; i < 16; ++i)
+    std::uint8_t temp[AesBlockLength];
+    for (std::size_t i = 0; i < AesBlockLength; ++i)
     {
         temp[i] = state[i];
     }
@@ -155,16 +155,17 @@ void InverseMixColumns(std::uint8_t* state)
 
 }
 
-AesCbcDecryptor::AesCbcDecryptor(std::span<const std::uint8_t> key, std::span<const std::uint8_t, 16> iv)
+AesCbcDecryptor::AesCbcDecryptor(
+    std::span<const std::uint8_t> key, std::span<const std::uint8_t, AesBlockLength> iv)
 {
-    if (key.size() != 16 && key.size() != 32)
+    if (key.size() != Aes128KeyLength && key.size() != Aes256KeyLength)
     {
         throw std::invalid_argument("AesCbcDecryptor supports only 128-bit or 256-bit keys");
     }
 
-    _roundCount = (key.size() == 16) ? 10 : 14;
+    _roundCount = (key.size() == Aes128KeyLength) ? Aes128RoundCount : Aes256RoundCount;
     _roundKeys = ExpandKey(key, _roundCount);
-    for (std::size_t i = 0; i < 16; ++i)
+    for (std::size_t i = 0; i < AesBlockLength; ++i)
     {
         _iv[i] = iv[i];
     }
@@ -172,8 +173,8 @@ AesCbcDecryptor::AesCbcDecryptor(std::span<const std::uint8_t> key, std::span<co
 
 void AesCbcDecryptor::DecryptBlock(const std::uint8_t* in, std::uint8_t* out) const
 {
-    std::uint8_t state[16];
-    for (std::size_t i = 0; i < 16; ++i)
+    std::uint8_t state[AesBlockLength];
+    for (std::size_t i = 0; i < AesBlockLength; ++i)
     {
         state[i] = in[i];
     }
@@ -192,7 +193,7 @@ void AesCbcDecryptor::DecryptBlock(const std::uint8_t* in, std::uint8_t* out) co
     InverseSubBytes(state);
     AddRoundKey(state, &_roundKeys[0]);
 
-    for (std::size_t i = 0; i < 16; ++i)
+    for (std::size_t i = 0; i < AesBlockLength; ++i)
     {
         out[i] = state[i];
     }
@@ -200,25 +201,25 @@ void AesCbcDecryptor::DecryptBlock(const std::uint8_t* in, std::uint8_t* out) co
 
 std::vector<std::uint8_t> AesCbcDecryptor::Decrypt(std::span<const std::uint8_t> ciphertext) const
 {
-    if (ciphertext.size() % 16 != 0)
+    if (ciphertext.size() % AesBlockLength != 0)
     {
         throw std::invalid_argument("AES-CBC ciphertext length must be a multiple of 16 bytes");
     }
 
     std::vector<std::uint8_t> plaintext(ciphertext.size());
-    std::array<std::uint8_t, 16> previousBlock = _iv;
+    std::array<std::uint8_t, AesBlockLength> previousBlock = _iv;
 
-    for (std::size_t offset = 0; offset < ciphertext.size(); offset += 16)
+    for (std::size_t offset = 0; offset < ciphertext.size(); offset += AesBlockLength)
     {
-        std::uint8_t decrypted[16];
+        std::uint8_t decrypted[AesBlockLength];
         DecryptBlock(ciphertext.data() + offset, decrypted);
 
-        for (std::size_t i = 0; i < 16; ++i)
+        for (std::size_t i = 0; i < AesBlockLength; ++i)
         {
             plaintext[offset + i] = static_cast<std::uint8_t>(decrypted[i] ^ previousBlock[i]);
         }
 
-        for (std::size_t i = 0; i < 16; ++i)
+        for (std::size_t i = 0; i < AesBlockLength; ++i)
         {
             previousBlock[i] = ciphertext[offset + i];
         }
