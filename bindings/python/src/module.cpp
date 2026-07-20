@@ -11,6 +11,7 @@
 #include "sdf/application/SqlceDatabase.hpp"
 #include "sdf/application/TableRowRange.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
+#include "sdf/domain/FormatVersion.hpp"
 #include "sdf/domain/LazyLob.hpp"
 #include "sdf/domain/Row.hpp"
 
@@ -46,6 +47,10 @@ constexpr char GetEncryptionModeName[] = "get_encryption_mode";
 constexpr char GetEncryptionModeDoc[] = "Return the encryption mode the database file was opened with.";
 constexpr char GetEncryptionModeStaticName[] = "get_encryption_mode_from_file";
 constexpr char GetEncryptionModeStaticDoc[] = "Return the encryption mode of a .sdf file without opening it.";
+constexpr char GetFormatVersionName[] = "get_format_version";
+constexpr char GetFormatVersionDoc[] = "Return the format version of the database file.";
+constexpr char GetFormatVersionStaticName[] = "get_format_version_from_file";
+constexpr char GetFormatVersionStaticDoc[] = "Return the format version of a .sdf file without opening it.";
 
 constexpr char EncryptionModeClassName[] = "EncryptionMode";
 constexpr char EncryptionModeDoc[] = "Encryption mode of a .sdf database file.";
@@ -54,6 +59,14 @@ constexpr char EncryptionModeRc4Sha1Name[] = "RC4_SHA1";
 constexpr char EncryptionModeAes128Sha1Name[] = "AES128_SHA1";
 constexpr char EncryptionModeAes128Sha256Name[] = "AES128_SHA256";
 constexpr char EncryptionModeAes256Sha512Name[] = "AES256_SHA512";
+
+constexpr char FormatVersionClassName[] = "FormatVersion";
+constexpr char FormatVersionDoc[] = "Format version of a .sdf database file.";
+constexpr char FormatVersionUnknownName[] = "UNKNOWN";
+constexpr char FormatVersionSqlCe30Name[] = "SQLCE_30";
+constexpr char FormatVersionSqlCe35Name[] = "SQLCE_35";
+constexpr char FormatVersionSqlCe35Sp2Name[] = "SQLCE_35_SP2";
+constexpr char FormatVersionSqlCe40Name[] = "SQLCE_40";
 
 constexpr char SchemaClassName[] = "ColumnSchema";
 constexpr char SchemaDoc[] = "Describes a single column of a table.";
@@ -173,6 +186,13 @@ PYBIND11_MODULE(_sqlce_native, module)
         .value(EncryptionModeAes128Sha256Name, domain::EncryptionMode::Aes128Sha256)
         .value(EncryptionModeAes256Sha512Name, domain::EncryptionMode::Aes256Sha512);
 
+    py::enum_<domain::FormatVersion>(module, FormatVersionClassName, FormatVersionDoc)
+        .value(FormatVersionUnknownName, domain::FormatVersion::Unknown)
+        .value(FormatVersionSqlCe30Name, domain::FormatVersion::SqlCe30)
+        .value(FormatVersionSqlCe35Name, domain::FormatVersion::SqlCe35)
+        .value(FormatVersionSqlCe35Sp2Name, domain::FormatVersion::SqlCe35Sp2)
+        .value(FormatVersionSqlCe40Name, domain::FormatVersion::SqlCe40);
+
     const auto readLob = [](const domain::LazyLob& lob) -> py::object {
         if (lob.IsText())
         {
@@ -264,7 +284,16 @@ PYBIND11_MODULE(_sqlce_native, module)
             GetEncryptionModeStaticName,
             py::overload_cast<const std::string&>(&application::SqlceDatabase::GetEncryptionMode),
             py::arg(PathArgName),
-            GetEncryptionModeStaticDoc);
+            GetEncryptionModeStaticDoc)
+        .def(
+            GetFormatVersionName,
+            py::overload_cast<>(&application::SqlceDatabase::GetFormatVersion, py::const_),
+            GetFormatVersionDoc)
+        .def_static(
+            GetFormatVersionStaticName,
+            py::overload_cast<const std::string&>(&application::SqlceDatabase::GetFormatVersion),
+            py::arg(PathArgName),
+            GetFormatVersionStaticDoc);
 }
 
 }

@@ -7,6 +7,7 @@
 #include "sdf/application/SqlceDatabase.hpp"
 #include "sdf/domain/ColumnValue.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
+#include "sdf/domain/FormatVersion.hpp"
 #include "sdf/domain/Row.hpp"
 
 namespace sdf::wasm
@@ -214,6 +215,28 @@ public:
         }
     }
 
+    std::uint32_t formatVersion() const
+    {
+        return static_cast<std::uint32_t>(_database->GetFormatVersion());
+    }
+
+    static std::string formatVersionOfFile(const std::string& path)
+    {
+        try
+        {
+            const std::uint32_t version = static_cast<std::uint32_t>(application::SqlceDatabase::GetFormatVersion(path));
+            std::string json;
+            json += "{\"ok\":true,\"data\":";
+            json += std::to_string(version);
+            json += "}";
+            return json;
+        }
+        catch (const std::exception& error)
+        {
+            return ErrorResultJson(error.what());
+        }
+    }
+
 private:
     explicit SqlceDatabaseWasm(std::unique_ptr<application::SqlceDatabase> database) : _database(std::move(database))
     {
@@ -302,6 +325,16 @@ public:
         return SqlceDatabaseWasm::encryptionModeOfFile(path);
     }
 
+    static std::string formatVersionJson(const std::string& handleKey)
+    {
+        return withInstance(handleKey, [](const SqlceDatabaseWasm& db) { return std::to_string(db.formatVersion()); });
+    }
+
+    static std::string formatVersionOfFile(const std::string& path)
+    {
+        return SqlceDatabaseWasm::formatVersionOfFile(path);
+    }
+
     static void close(const std::string& handleKey)
     {
         SqlceDatabaseWasm::registry().erase(handleKey);
@@ -345,5 +378,7 @@ EMSCRIPTEN_BINDINGS(sqlce)
         .class_function("tableDataJson", &sdf::wasm::SqlceDatabaseHandle::tableDataJson)
         .class_function("encryptionModeJson", &sdf::wasm::SqlceDatabaseHandle::encryptionModeJson)
         .class_function("encryptionModeOfFile", &sdf::wasm::SqlceDatabaseHandle::encryptionModeOfFile)
+        .class_function("formatVersionJson", &sdf::wasm::SqlceDatabaseHandle::formatVersionJson)
+        .class_function("formatVersionOfFile", &sdf::wasm::SqlceDatabaseHandle::formatVersionOfFile)
         .class_function("close", &sdf::wasm::SqlceDatabaseHandle::close);
 }
