@@ -120,8 +120,8 @@ def _literal_key_value(value: Any) -> str:
 
 
 def build_table(connection, spec: TableSpec, version: str = "4.0") -> None:
-    from tests.sdf_factory import execute_non_query
-    from tests.sdf_factory import execute_parameterized_non_query
+    from tests.utils.sdf_factory import execute_non_query
+    from tests.utils.sdf_factory import execute_parameterized_non_query
 
     execute_non_query(connection, spec.create_table_sql())
 

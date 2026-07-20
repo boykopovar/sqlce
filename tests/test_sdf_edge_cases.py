@@ -1,4 +1,4 @@
-from tests.conftest import SdfScenario
+from tests.utils.scenarios import SdfScenario
 from tests.edge_case_tables import DATETIME_EXTREMES_TABLE_SPEC
 from tests.edge_case_tables import FLOAT_EXTREMES_TABLE_SPEC
 from tests.edge_case_tables import GUID_EXTREMES_TABLE_SPEC
@@ -12,8 +12,8 @@ from tests.edge_case_tables import NULLABLE_EXTREMES_TABLE_SPEC
 from tests.edge_case_tables import NUMERIC_EXTREMES_TABLE_SPEC
 from tests.edge_case_tables import WIDE_MIXED_TYPES_TABLE_SPEC
 from tests.edge_case_tables import WIDE_ROW_PAGE_SPLIT_TABLE_SPEC
-from tests.table_spec import assert_table_matches
-from tests.table_spec import build_table
+from tests.utils.table_spec import assert_table_matches
+from tests.utils.table_spec import build_table
 
 
 def test_sdf_edge_case_integer_extremes_full_structure_matches_source(sdf_scenario: SdfScenario) -> None:

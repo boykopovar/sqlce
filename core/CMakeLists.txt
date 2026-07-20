@@ -23,8 +23,11 @@ add_library(libsqlce
         src/infrastructure/AesCbc.cpp
         src/infrastructure/BinaryReader.cpp
         src/infrastructure/FileStorage.cpp
+        src/infrastructure/Sha1.cpp
+        src/infrastructure/Sha1KeyDerivation.cpp
         src/infrastructure/Sha256.cpp
         src/infrastructure/Sha512.cpp
+        src/infrastructure/TripleDesCbc.cpp
         src/parsing/CatalogPageScanner.cpp
         src/parsing/CatalogRow.cpp
         src/parsing/CatalogRowDecoder.cpp

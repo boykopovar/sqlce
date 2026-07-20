@@ -4,8 +4,10 @@
 
 #include "sdf/infrastructure/AesCbc.hpp"
 #include "sdf/infrastructure/BinaryReader.hpp"
+#include "sdf/infrastructure/Sha1KeyDerivation.hpp"
 #include "sdf/infrastructure/Sha256.hpp"
 #include "sdf/infrastructure/Sha512.hpp"
+#include "sdf/infrastructure/TripleDesCbc.hpp"
 #include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::parsing
@@ -26,21 +28,22 @@ std::vector<std::uint8_t> ToUtf16Le(const std::string& password)
     return encoded;
 }
 
-std::vector<std::uint8_t> Concat(std::span<const std::uint8_t> first, std::span<const std::uint8_t> second)
-{
-    std::vector<std::uint8_t> result;
-    result.reserve(first.size() + second.size());
-    result.insert(result.end(), first.begin(), first.end());
-    result.insert(result.end(), second.begin(), second.end());
-    return result;
-}
-
-std::array<std::uint8_t, infrastructure::AesBlockLength> ZeroIv()
+std::array<std::uint8_t, infrastructure::AesBlockLength> ZeroAesIv()
 {
     std::array<std::uint8_t, infrastructure::AesBlockLength> iv{};
     iv.fill(0);
     return iv;
 }
+
+std::array<std::uint8_t, infrastructure::DesBlockLength> ZeroDesIv()
+{
+    std::array<std::uint8_t, infrastructure::DesBlockLength> iv{};
+    iv.fill(0);
+    return iv;
+}
+
+constexpr std::array<CipherAlgorithm, 4> AllCipherAlgorithms
+    = {CipherAlgorithm::TripleDesSha1, CipherAlgorithm::Aes128Sha1, CipherAlgorithm::Aes128Sha256, CipherAlgorithm::Aes256Sha512};
 
 }
 
@@ -50,17 +53,12 @@ domain::EncryptionMode SdfPageCipher::ReadMode(std::span<const std::uint8_t> pag
     return static_cast<domain::EncryptionMode>(rawMode);
 }
 
-SdfPageCipher::SdfPageCipher(std::span<const std::uint8_t> page0, std::string password) : _password(std::move(password))
+SdfPageCipher::SdfPageCipher(std::span<const std::uint8_t> page0, std::string password)
+    : _password(std::move(password)), _algorithm(CipherAlgorithm::TripleDesSha1), _algorithmResolved(false)
 {
     if (_password.size() > MaxPasswordLength)
     {
         throw std::invalid_argument("password exceeds maximum supported length");
-    }
-
-    _mode = ReadMode(page0);
-    if (_mode != domain::EncryptionMode::Aes128Sha256 && _mode != domain::EncryptionMode::Aes256Sha512)
-    {
-        throw domain::UnsupportedEncryptionModeException(_mode);
     }
 
     _passwordUtf16Le = ToUtf16Le(_password);
@@ -75,11 +73,21 @@ SdfPageCipher::SdfPageCipher(std::span<const std::uint8_t> page0, std::string pa
     }
 }
 
-std::vector<std::uint8_t> SdfPageCipher::HashPasswordWith(std::span<const std::uint8_t> keyParam) const
+std::vector<std::uint8_t> SdfPageCipher::HashPasswordWith(CipherAlgorithm algorithm, std::span<const std::uint8_t> keyParam) const
 {
-    const std::vector<std::uint8_t> hashInput = Concat(_passwordUtf16Le, keyParam);
+    if (algorithm == CipherAlgorithm::TripleDesSha1 || algorithm == CipherAlgorithm::Aes128Sha1)
+    {
+        const std::array<std::uint8_t, infrastructure::Sha1KeyDerivationLength> digest
+            = infrastructure::Sha1KeyDerivation(_passwordUtf16Le, keyParam);
+        return std::vector<std::uint8_t>(digest.begin(), digest.end());
+    }
 
-    if (_mode == domain::EncryptionMode::Aes128Sha256)
+    std::vector<std::uint8_t> hashInput;
+    hashInput.reserve(_passwordUtf16Le.size() + keyParam.size());
+    hashInput.insert(hashInput.end(), _passwordUtf16Le.begin(), _passwordUtf16Le.end());
+    hashInput.insert(hashInput.end(), keyParam.begin(), keyParam.end());
+
+    if (algorithm == CipherAlgorithm::Aes128Sha256)
     {
         const std::array<std::uint8_t, 32> digest = infrastructure::Sha256(hashInput);
         return std::vector<std::uint8_t>(digest.begin(), digest.end());
@@ -89,19 +97,41 @@ std::vector<std::uint8_t> SdfPageCipher::HashPasswordWith(std::span<const std::u
     return std::vector<std::uint8_t>(digest.begin(), digest.end());
 }
 
-std::vector<std::uint8_t> SdfPageCipher::DeriveKey(std::span<const std::uint8_t> keyParam) const
+std::vector<std::uint8_t> SdfPageCipher::DeriveKey(CipherAlgorithm algorithm, std::span<const std::uint8_t> keyParam) const
 {
-    const std::vector<std::uint8_t> hash = HashPasswordWith(keyParam);
-    const std::size_t keyLength
-        = (_mode == domain::EncryptionMode::Aes128Sha256) ? infrastructure::Aes128KeyLength : infrastructure::Aes256KeyLength;
+    const std::vector<std::uint8_t> hash = HashPasswordWith(algorithm, keyParam);
+
+    std::size_t keyLength = infrastructure::Aes256KeyLength;
+    if (algorithm == CipherAlgorithm::TripleDesSha1)
+    {
+        keyLength = infrastructure::TripleDesKeyLength;
+    }
+    else if (algorithm == CipherAlgorithm::Aes128Sha1 || algorithm == CipherAlgorithm::Aes128Sha256)
+    {
+        keyLength = infrastructure::Aes128KeyLength;
+    }
+
     return std::vector<std::uint8_t>(hash.begin(), hash.begin() + static_cast<std::ptrdiff_t>(keyLength));
 }
 
-bool SdfPageCipher::VerifyPassword() const
+std::vector<std::uint8_t> SdfPageCipher::DecryptTail(
+    CipherAlgorithm algorithm, std::span<const std::uint8_t> keyParam, std::span<const std::uint8_t> ciphertext) const
 {
-    const std::vector<std::uint8_t> key = DeriveKey(_page0KeyParam);
-    const infrastructure::AesCbcDecryptor decryptor(key, ZeroIv());
-    const std::vector<std::uint8_t> plaintext = decryptor.Decrypt(_page0Ciphertext);
+    const std::vector<std::uint8_t> key = DeriveKey(algorithm, keyParam);
+
+    if (algorithm == CipherAlgorithm::TripleDesSha1)
+    {
+        const infrastructure::TripleDesCbcDecryptor decryptor(key, ZeroDesIv());
+        return decryptor.Decrypt(ciphertext);
+    }
+
+    const infrastructure::AesCbcDecryptor decryptor(key, ZeroAesIv());
+    return decryptor.Decrypt(ciphertext);
+}
+
+bool SdfPageCipher::VerifyWith(CipherAlgorithm algorithm) const
+{
+    const std::vector<std::uint8_t> plaintext = DecryptTail(algorithm, _page0KeyParam, _page0Ciphertext);
 
     std::vector<std::uint8_t> expected = _passwordUtf16Le;
     expected.resize(Page0VerifierLength, 0x00);
@@ -109,11 +139,39 @@ bool SdfPageCipher::VerifyPassword() const
     return plaintext == expected;
 }
 
+bool SdfPageCipher::ResolveAlgorithm() const
+{
+    if (_algorithmResolved)
+    {
+        return true;
+    }
+
+    for (const CipherAlgorithm candidate : AllCipherAlgorithms)
+    {
+        if (VerifyWith(candidate))
+        {
+            _algorithm = candidate;
+            _algorithmResolved = true;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool SdfPageCipher::VerifyPassword() const
+{
+    return ResolveAlgorithm();
+}
+
 std::vector<std::uint8_t> SdfPageCipher::DecryptPage0(std::span<const std::uint8_t> page0) const
 {
-    const std::vector<std::uint8_t> key = DeriveKey(_page0KeyParam);
-    const infrastructure::AesCbcDecryptor decryptor(key, ZeroIv());
-    const std::vector<std::uint8_t> plaintext = decryptor.Decrypt(_page0Ciphertext);
+    if (!ResolveAlgorithm())
+    {
+        throw domain::InvalidPasswordException();
+    }
+
+    const std::vector<std::uint8_t> plaintext = DecryptTail(_algorithm, _page0KeyParam, _page0Ciphertext);
 
     std::vector<std::uint8_t> result(page0.begin(), page0.end());
     for (std::size_t i = 0; i < plaintext.size(); ++i)
@@ -137,12 +195,13 @@ std::vector<std::uint8_t> SdfPageCipher::DecryptPage(std::size_t pageNumber, std
         return std::vector<std::uint8_t>(page.begin(), page.end());
     }
 
-    const auto keyParam = page.subspan(0, Page0KeyParamLength);
-    const std::vector<std::uint8_t> key = DeriveKey(keyParam);
-    const infrastructure::AesCbcDecryptor decryptor(key, ZeroIv());
+    if (!ResolveAlgorithm())
+    {
+        throw domain::InvalidPasswordException();
+    }
 
-    const auto tailCiphertext = page.subspan(PlaintextHeaderLength);
-    const std::vector<std::uint8_t> tailPlaintext = decryptor.Decrypt(tailCiphertext);
+    const auto keyParam = page.subspan(0, Page0KeyParamLength);
+    const std::vector<std::uint8_t> tailPlaintext = DecryptTail(_algorithm, keyParam, page.subspan(PlaintextHeaderLength));
 
     std::vector<std::uint8_t> result(page.begin(), page.begin() + PlaintextHeaderLength);
     result.insert(result.end(), tailPlaintext.begin(), tailPlaintext.end());

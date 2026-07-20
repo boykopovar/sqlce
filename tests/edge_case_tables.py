@@ -2,8 +2,8 @@ import datetime
 import decimal
 import uuid
 
-from tests.table_spec import ColumnSpec
-from tests.table_spec import TableSpec
+from tests.utils.table_spec import ColumnSpec
+from tests.utils.table_spec import TableSpec
 
 HUGE_TEXT_CHAR_COUNT = 50000
 HUGE_BINARY_BYTE_COUNT = 4096 * 20

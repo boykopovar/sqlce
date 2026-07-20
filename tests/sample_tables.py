@@ -1,5 +1,5 @@
-from tests.table_spec import ColumnSpec
-from tests.table_spec import TableSpec
+from tests.utils.table_spec import ColumnSpec
+from tests.utils.table_spec import TableSpec
 
 SAMPLE_TABLE_SPEC = TableSpec(
     name="Sample",

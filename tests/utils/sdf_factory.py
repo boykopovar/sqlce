@@ -239,28 +239,31 @@ def create_password_protected_database(
     sdf_dir: Path,
     password: str,
     encryption_mode: str,
-    prefix: str = "protected40",
+    prefix: str = "protected",
+    version: str = SDF_VERSION_40,
 ) -> Path:
     path = make_sdf_path(sdf_dir, prefix)
-    create_sdf_database(path, password=password, encryption_mode=encryption_mode)
+    create_sdf_database(path, password=password, encryption_mode=encryption_mode, version=version)
     return path
 
 
 def create_platform_default_encrypted_database(
     sdf_dir: Path,
     password: str,
-    prefix: str = "platform_default40",
+    prefix: str = "platform_default",
+    version: str = SDF_VERSION_40,
 ) -> Path:
     return create_password_protected_database(
-        sdf_dir, password, ENCRYPTION_MODE_PLATFORM_DEFAULT, prefix
+        sdf_dir, password, ENCRYPTION_MODE_PLATFORM_DEFAULT, prefix, version
     )
 
 
 def create_engine_default_encrypted_database(
     sdf_dir: Path,
     password: str,
-    prefix: str = "engine_default40",
+    prefix: str = "engine_default",
+    version: str = SDF_VERSION_40,
 ) -> Path:
     return create_password_protected_database(
-        sdf_dir, password, ENCRYPTION_MODE_ENGINE_DEFAULT, prefix
+        sdf_dir, password, ENCRYPTION_MODE_ENGINE_DEFAULT, prefix, version
     )

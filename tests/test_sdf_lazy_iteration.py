@@ -4,10 +4,10 @@ import pytest
 
 from sqlce import LazyLob
 from sqlce import TableRowIterator
-from tests.conftest import SdfScenario
-from tests.table_spec import ColumnSpec
-from tests.table_spec import TableSpec
-from tests.table_spec import build_table
+from tests.utils.scenarios import SdfScenario
+from tests.utils.table_spec import ColumnSpec
+from tests.utils.table_spec import TableSpec
+from tests.utils.table_spec import build_table
 
 LAZY_MANY_ROWS_COUNT = 500
 
