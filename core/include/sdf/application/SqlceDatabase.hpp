@@ -9,6 +9,7 @@
 #include "sdf/application/ColumnSchema.hpp"
 #include "sdf/application/TableRowRange.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
+#include "sdf/domain/FormatVersion.hpp"
 #include "sdf/domain/interfaces/IPageStorage.hpp"
 #include "sdf/domain/Row.hpp"
 #include "sdf/domain/TableDef.hpp"
@@ -34,9 +35,12 @@ public:
     [[nodiscard]] std::vector<domain::Row> ReadTable(const std::string& tableName) const;
     [[nodiscard]] domain::EncryptionMode GetEncryptionMode() const;
     [[nodiscard]] static domain::EncryptionMode GetEncryptionMode(const std::string& path);
+    [[nodiscard]] domain::FormatVersion GetFormatVersion() const;
+    [[nodiscard]] static domain::FormatVersion GetFormatVersion(const std::string& path);
 
 private:
     domain::EncryptionMode _encryptionMode;
+    domain::FormatVersion _formatVersion;
     std::unique_ptr<domain::IPageStorage> _storage;
     std::shared_ptr<parsing::ICatalogPageScanner> _pageScanner;
     std::shared_ptr<parsing::ITableCatalogBuilder> _tableCatalogBuilder;

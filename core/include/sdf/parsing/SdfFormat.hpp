@@ -46,6 +46,7 @@ constexpr std::uint32_t LvNullSlot = 0xFFFFF;
 constexpr std::uint64_t LvSlotValueMask = 0xFFFFFu;
 
 constexpr std::size_t PlaintextHeaderLength = 16;
+constexpr std::size_t Page0FormatVersionOffset = 16;
 constexpr std::size_t Page0ModeOffset = 184;
 constexpr std::size_t Page0VerifierOffset = 76;
 constexpr std::size_t Page0VerifierLength = 96;

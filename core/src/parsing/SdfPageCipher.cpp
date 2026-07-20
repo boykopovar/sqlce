@@ -53,6 +53,22 @@ domain::EncryptionMode SdfPageCipher::ReadMode(std::span<const std::uint8_t> pag
     return static_cast<domain::EncryptionMode>(rawMode);
 }
 
+domain::FormatVersion SdfPageCipher::ReadFormatVersion(std::span<const std::uint8_t> page0)
+{
+    const std::uint32_t rawVersion = infrastructure::ReadUInt32LE(page0, Page0FormatVersionOffset);
+
+    switch (static_cast<domain::FormatVersion>(rawVersion))
+    {
+    case domain::FormatVersion::SqlCe30:
+    case domain::FormatVersion::SqlCe35:
+    case domain::FormatVersion::SqlCe35Sp2:
+    case domain::FormatVersion::SqlCe40:
+        return static_cast<domain::FormatVersion>(rawVersion);
+    default:
+        return domain::FormatVersion::Unknown;
+    }
+}
+
 SdfPageCipher::SdfPageCipher(std::span<const std::uint8_t> page0, std::string password)
     : _password(std::move(password)), _algorithm(CipherAlgorithm::TripleDesSha1), _algorithmResolved(false)
 {

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "sdf/domain/EncryptionMode.hpp"
+#include "sdf/domain/FormatVersion.hpp"
 #include "sdf/domain/interfaces/IPageCipher.hpp"
 
 namespace sdf::parsing
@@ -28,6 +29,7 @@ public:
     SdfPageCipher(std::span<const std::uint8_t> page0, std::string password);
 
     static domain::EncryptionMode ReadMode(std::span<const std::uint8_t> page0);
+    static domain::FormatVersion ReadFormatVersion(std::span<const std::uint8_t> page0);
 
     [[nodiscard]] bool VerifyPassword() const override;
     [[nodiscard]] std::vector<std::uint8_t> DecryptPage(std::size_t pageNumber, std::span<const std::uint8_t> page) const override;

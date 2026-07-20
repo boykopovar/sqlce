@@ -22,12 +22,14 @@ struct OpenedStorage
 {
     std::unique_ptr<domain::IPageStorage> storage;
     domain::EncryptionMode encryptionMode;
+    domain::FormatVersion formatVersion;
 };
 
 OpenedStorage OpenStorage(const std::string& path, const std::string& password)
 {
     const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
     const domain::EncryptionMode mode = ReadSdfEncryptionMode(path);
+    const domain::FormatVersion version = SdfPageCipher::ReadFormatVersion(firstPage);
 
     if (password.empty())
     {
@@ -35,11 +37,11 @@ OpenedStorage OpenStorage(const std::string& path, const std::string& password)
         {
             throw std::runtime_error("file is password-protected, password required");
         }
-        return OpenedStorage{std::make_unique<infrastructure::FileStorage>(path), mode};
+        return OpenedStorage{std::make_unique<infrastructure::FileStorage>(path), mode, version};
     }
 
     auto cipher = std::make_shared<SdfPageCipher>(firstPage, password);
-    return OpenedStorage{std::make_unique<infrastructure::FileStorage>(path, cipher), mode};
+    return OpenedStorage{std::make_unique<infrastructure::FileStorage>(path, cipher), mode, version};
 }
 
 }
@@ -48,6 +50,12 @@ domain::EncryptionMode ReadSdfEncryptionMode(const std::string& path)
 {
     const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
     return SdfPageCipher::ReadMode(firstPage);
+}
+
+domain::FormatVersion ReadSdfFormatVersion(const std::string& path)
+{
+    const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
+    return SdfPageCipher::ReadFormatVersion(firstPage);
 }
 
 SdfDatabaseComponents OpenSdfFile(const std::string& path, const std::string& password)
@@ -62,8 +70,9 @@ SdfDatabaseComponents OpenSdfFile(const std::string& path, const std::string& pa
     auto rowFragmentReassembler = std::make_shared<RowFragmentReassembler>();
 
     return SdfDatabaseComponents{
-        std::move(opened.storage), opened.encryptionMode, std::move(pageScanner), std::move(tableCatalogBuilder),
-        std::move(lobChainRegistry), std::move(rowDecoder), std::move(rowFragmentReassembler)};
+        std::move(opened.storage), opened.encryptionMode, opened.formatVersion, std::move(pageScanner),
+        std::move(tableCatalogBuilder), std::move(lobChainRegistry), std::move(rowDecoder),
+        std::move(rowFragmentReassembler)};
 }
 
 }
