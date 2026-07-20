@@ -120,27 +120,30 @@ def _literal_key_value(value: Any) -> str:
 
 
 def build_table(connection, spec: TableSpec, version: str = "4.0") -> None:
-    from tests.utils.sdf_factory import execute_non_query
-    from tests.utils.sdf_factory import execute_parameterized_non_query
+    from tests.utils.sdf_factory import encode_parameterized_operation
+    from tests.utils.sdf_factory import encode_sql_operation
+    from tests.utils.sdf_factory import execute_batch
 
-    execute_non_query(connection, spec.create_table_sql())
+    operations = [encode_sql_operation(spec.create_table_sql())]
 
     key_column = spec.columns[0].name
     for row in spec.rows:
         plan = spec.insert_row_parameters(row)
         if plan.has_parameterized_part():
-            execute_parameterized_non_query(
-                connection,
-                plan.parameterized_insert_sql(),
-                plan.parameter_columns,
-                plan.parameter_names,
-                plan.parameter_values,
-                version,
+            operations.append(
+                encode_parameterized_operation(
+                    plan.parameterized_insert_sql(),
+                    plan.parameter_columns,
+                    plan.parameter_names,
+                    plan.parameter_values,
+                )
             )
             for statement in plan.literal_update_sql_statements(key_column, row[0]):
-                execute_non_query(connection, statement)
+                operations.append(encode_sql_operation(statement))
         else:
-            execute_non_query(connection, plan.literal_only_insert_sql())
+            operations.append(encode_sql_operation(plan.literal_only_insert_sql()))
+
+    execute_batch(connection, operations, version)
 
 
 def assert_table_matches(db, spec: TableSpec) -> None:
