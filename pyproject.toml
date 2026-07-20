@@ -61,7 +61,6 @@ dev = [
     "twine",
     "pytest",
     "pytest-cov",
-    "pytest-xdist",
     "pythonnet",
     "mypy"
 ]
