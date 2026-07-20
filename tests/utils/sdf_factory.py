@@ -3,7 +3,6 @@ import shutil
 import uuid
 from pathlib import Path
 from typing import Any
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -28,7 +27,8 @@ ENCRYPTION_MODE_ENGINE_DEFAULT = "Engine Default"
 
 SDF_DIR_NAME = "sdf"
 
-_sqlserverce_by_version: Dict[str, Any] = {}
+_loaded_sqlserverce_version: Optional[str] = None
+_loaded_sqlserverce_module: Any = None
 
 
 def _assembly_candidates(version: str) -> List[str]:
@@ -39,8 +39,16 @@ def _assembly_candidates(version: str) -> List[str]:
 
 
 def _load_sqlserverce(version: str = SDF_VERSION_40):
-    if version in _sqlserverce_by_version:
-        return _sqlserverce_by_version[version]
+    global _loaded_sqlserverce_version, _loaded_sqlserverce_module
+
+    if _loaded_sqlserverce_version is not None:
+        if _loaded_sqlserverce_version != version:
+            raise RuntimeError(
+                f"{ASSEMBLY_NAME} {_loaded_sqlserverce_version} is already loaded in this "
+                f"process; cannot load {version} in the same process. Run different SDF "
+                f"versions in separate OS processes."
+            )
+        return _loaded_sqlserverce_module
 
     last_error: Optional[Exception] = None
     for candidate in [*_assembly_candidates(version), ASSEMBLY_NAME]:
@@ -56,7 +64,8 @@ def _load_sqlserverce(version: str = SDF_VERSION_40):
 
     import System.Data.SqlServerCe as sqlserverce
 
-    _sqlserverce_by_version[version] = sqlserverce
+    _loaded_sqlserverce_version = version
+    _loaded_sqlserverce_module = sqlserverce
     return sqlserverce
 
 
@@ -78,9 +87,9 @@ def make_sdf_path(sdf_dir: Path, prefix: str) -> Path:
 
 
 def build_connection_string(
-    path: Path,
-    password: Optional[str] = None,
-    encryption_mode: Optional[str] = None,
+        path: Path,
+        password: Optional[str] = None,
+        encryption_mode: Optional[str] = None,
 ) -> str:
     parts = [f"Data Source='{path}'"]
     if password is not None:
@@ -91,10 +100,10 @@ def build_connection_string(
 
 
 def create_sdf_database(
-    path: Path,
-    password: Optional[str] = None,
-    encryption_mode: Optional[str] = None,
-    version: str = SDF_VERSION_40,
+        path: Path,
+        password: Optional[str] = None,
+        encryption_mode: Optional[str] = None,
+        version: str = SDF_VERSION_40,
 ) -> Path:
     sqlserverce = _load_sqlserverce(version)
 
@@ -125,12 +134,12 @@ def execute_non_query(connection, command_text: str) -> None:
 
 
 def execute_parameterized_non_query(
-    connection,
-    command_text: str,
-    parameter_columns: Sequence[Any],
-    parameter_names: Sequence[str],
-    parameter_values: Sequence[Any],
-    version: str = SDF_VERSION_40,
+        connection,
+        command_text: str,
+        parameter_columns: Sequence[Any],
+        parameter_names: Sequence[str],
+        parameter_values: Sequence[Any],
+        version: str = SDF_VERSION_40,
 ) -> None:
     sqlserverce = _load_sqlserverce(version)
 
@@ -219,7 +228,7 @@ def _to_clr_value(value: Any, sql_type: str) -> Any:
             value.minute,
             value.second,
             value.microsecond // 1000,
-        )
+            )
     if base_type == "bit":
         return System.Boolean(value)
     if base_type == "uniqueidentifier":
@@ -236,11 +245,11 @@ def create_plain_database(sdf_dir: Path, prefix: str = "plain", version: str = S
 
 
 def create_password_protected_database(
-    sdf_dir: Path,
-    password: str,
-    encryption_mode: str,
-    prefix: str = "protected",
-    version: str = SDF_VERSION_40,
+        sdf_dir: Path,
+        password: str,
+        encryption_mode: str,
+        prefix: str = "protected",
+        version: str = SDF_VERSION_40,
 ) -> Path:
     path = make_sdf_path(sdf_dir, prefix)
     create_sdf_database(path, password=password, encryption_mode=encryption_mode, version=version)
@@ -248,10 +257,10 @@ def create_password_protected_database(
 
 
 def create_platform_default_encrypted_database(
-    sdf_dir: Path,
-    password: str,
-    prefix: str = "platform_default",
-    version: str = SDF_VERSION_40,
+        sdf_dir: Path,
+        password: str,
+        prefix: str = "platform_default",
+        version: str = SDF_VERSION_40,
 ) -> Path:
     return create_password_protected_database(
         sdf_dir, password, ENCRYPTION_MODE_PLATFORM_DEFAULT, prefix, version
@@ -259,10 +268,10 @@ def create_platform_default_encrypted_database(
 
 
 def create_engine_default_encrypted_database(
-    sdf_dir: Path,
-    password: str,
-    prefix: str = "engine_default",
-    version: str = SDF_VERSION_40,
+        sdf_dir: Path,
+        password: str,
+        prefix: str = "engine_default",
+        version: str = SDF_VERSION_40,
 ) -> Path:
     return create_password_protected_database(
         sdf_dir, password, ENCRYPTION_MODE_ENGINE_DEFAULT, prefix, version

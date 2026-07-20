@@ -80,3 +80,17 @@ _SCENARIO_BUILDERS: Dict[str, Callable[[Path], SdfScenario]] = {
 
 def build_scenario(name: str, sdf_dir: Path) -> SdfScenario:
     return _SCENARIO_BUILDERS[name](sdf_dir)
+
+
+_SCENARIO_VERSION_BY_NAME: Dict[str, str] = {
+    PLAIN_35: SDF_VERSION_35,
+    PLAIN_40: SDF_VERSION_40,
+    PLATFORM_DEFAULT_35: SDF_VERSION_35,
+    ENGINE_DEFAULT_35: SDF_VERSION_35,
+    PLATFORM_DEFAULT_40: SDF_VERSION_40,
+    ENGINE_DEFAULT_40: SDF_VERSION_40,
+}
+
+
+def scenario_version(name: str) -> str:
+    return _SCENARIO_VERSION_BY_NAME[name]
