@@ -265,7 +265,15 @@ async function handleUnlock() {
     state.handle = handle;
     await loadTableList();
     renderTableSelect();
-    setStatus(t("status.done", { count: state.tables.length, tableWord: pluralize(state.tables.length, "table") }), false);
+    const resolvedRawJson = state.module.SqlceDatabase.resolvedEncryptionModeJson(state.handle);
+    const resolvedMode = parseDataResult(resolvedRawJson);
+    setStatus(
+        t("status.doneWithAlgorithm", {
+          count: state.tables.length,
+          tableWord: pluralize(state.tables.length, "table"),
+          algorithm: encryptionModeName(resolvedMode),
+        }),
+        false);
   } catch (error) {
     setStatus(String(error.message || error), true);
   }

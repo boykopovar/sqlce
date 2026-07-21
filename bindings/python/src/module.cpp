@@ -47,6 +47,9 @@ constexpr char GetEncryptionModeName[] = "get_encryption_mode";
 constexpr char GetEncryptionModeDoc[] = "Return the encryption mode the database file was opened with.";
 constexpr char GetEncryptionModeStaticName[] = "get_encryption_mode_from_file";
 constexpr char GetEncryptionModeStaticDoc[] = "Return the encryption mode of a .sdf file without opening it.";
+constexpr char ResolvedEncryptionModeName[] = "resolved_encryption_mode";
+constexpr char ResolvedEncryptionModeDoc[]
+    = "Return the encryption mode that was actually resolved by matching the password against the file.";
 constexpr char GetFormatVersionName[] = "get_format_version";
 constexpr char GetFormatVersionDoc[] = "Return the format version of the database file.";
 constexpr char GetFormatVersionStaticName[] = "get_format_version_from_file";
@@ -285,6 +288,10 @@ PYBIND11_MODULE(_sqlce_native, module)
             py::overload_cast<const std::string&>(&application::SqlceDatabase::GetEncryptionMode),
             py::arg(PathArgName),
             GetEncryptionModeStaticDoc)
+        .def(
+            ResolvedEncryptionModeName,
+            &application::SqlceDatabase::ResolvedEncryptionMode,
+            ResolvedEncryptionModeDoc)
         .def(
             GetFormatVersionName,
             py::overload_cast<>(&application::SqlceDatabase::GetFormatVersion, py::const_),

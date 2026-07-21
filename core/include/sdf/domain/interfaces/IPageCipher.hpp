@@ -6,6 +6,8 @@
 #include <span>
 #include <vector>
 
+#include "sdf/domain/EncryptionMode.hpp"
+
 namespace sdf::domain
 {
 
@@ -16,6 +18,7 @@ public:
 
     virtual bool VerifyPassword() const = 0;
     virtual std::vector<std::uint8_t> DecryptPage(std::size_t pageNumber, std::span<const std::uint8_t> page) const = 0;
+    virtual EncryptionMode ResolvedEncryptionMode() const = 0;
 };
 
 }

@@ -20,6 +20,7 @@ struct SdfDatabaseComponents
 {
     std::unique_ptr<domain::IPageStorage> storage;
     domain::EncryptionMode encryptionMode;
+    domain::EncryptionMode resolvedEncryptionMode;
     domain::FormatVersion formatVersion;
     std::shared_ptr<ICatalogPageScanner> pageScanner;
     std::shared_ptr<ITableCatalogBuilder> tableCatalogBuilder;

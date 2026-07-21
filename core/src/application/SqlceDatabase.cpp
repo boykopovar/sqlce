@@ -17,6 +17,7 @@ SqlceDatabase::SqlceDatabase(const std::string& path, const std::string& passwor
 
 SqlceDatabase::SqlceDatabase(parsing::SdfDatabaseComponents components)
     : _encryptionMode(components.encryptionMode)
+    , _resolvedEncryptionMode(components.resolvedEncryptionMode)
     , _formatVersion(components.formatVersion)
     , _storage(std::move(components.storage))
     , _pageScanner(std::move(components.pageScanner))
@@ -106,6 +107,11 @@ domain::EncryptionMode SqlceDatabase::GetEncryptionMode() const
 domain::EncryptionMode SqlceDatabase::GetEncryptionMode(const std::string& path)
 {
     return parsing::ReadSdfEncryptionMode(path);
+}
+
+domain::EncryptionMode SqlceDatabase::ResolvedEncryptionMode() const
+{
+    return _resolvedEncryptionMode;
 }
 
 domain::FormatVersion SqlceDatabase::GetFormatVersion() const

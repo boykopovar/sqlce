@@ -215,6 +215,11 @@ public:
         }
     }
 
+    std::uint32_t resolvedEncryptionMode() const
+    {
+        return static_cast<std::uint32_t>(_database->ResolvedEncryptionMode());
+    }
+
     std::uint32_t formatVersion() const
     {
         return static_cast<std::uint32_t>(_database->GetFormatVersion());
@@ -325,6 +330,11 @@ public:
         return SqlceDatabaseWasm::encryptionModeOfFile(path);
     }
 
+    static std::string resolvedEncryptionModeJson(const std::string& handleKey)
+    {
+        return withInstance(handleKey, [](const SqlceDatabaseWasm& db) { return std::to_string(db.resolvedEncryptionMode()); });
+    }
+
     static std::string formatVersionJson(const std::string& handleKey)
     {
         return withInstance(handleKey, [](const SqlceDatabaseWasm& db) { return std::to_string(db.formatVersion()); });
@@ -378,6 +388,7 @@ EMSCRIPTEN_BINDINGS(sqlce)
         .class_function("tableDataJson", &sdf::wasm::SqlceDatabaseHandle::tableDataJson)
         .class_function("encryptionModeJson", &sdf::wasm::SqlceDatabaseHandle::encryptionModeJson)
         .class_function("encryptionModeOfFile", &sdf::wasm::SqlceDatabaseHandle::encryptionModeOfFile)
+        .class_function("resolvedEncryptionModeJson", &sdf::wasm::SqlceDatabaseHandle::resolvedEncryptionModeJson)
         .class_function("formatVersionJson", &sdf::wasm::SqlceDatabaseHandle::formatVersionJson)
         .class_function("formatVersionOfFile", &sdf::wasm::SqlceDatabaseHandle::formatVersionOfFile)
         .class_function("close", &sdf::wasm::SqlceDatabaseHandle::close);

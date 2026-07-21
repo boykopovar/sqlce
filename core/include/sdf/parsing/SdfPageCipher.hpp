@@ -25,6 +25,7 @@ public:
 
     [[nodiscard]] bool VerifyPassword() const override;
     [[nodiscard]] std::vector<std::uint8_t> DecryptPage(std::size_t pageNumber, std::span<const std::uint8_t> page) const override;
+    [[nodiscard]] domain::EncryptionMode ResolvedEncryptionMode() const override;
 
 private:
     std::string _password;

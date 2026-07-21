@@ -22,6 +22,7 @@ struct OpenedStorage
 {
     std::unique_ptr<domain::IPageStorage> storage;
     domain::EncryptionMode encryptionMode;
+    domain::EncryptionMode resolvedEncryptionMode;
     domain::FormatVersion formatVersion;
 };
 
@@ -37,11 +38,13 @@ OpenedStorage OpenStorage(const std::string& path, const std::string& password)
         {
             throw std::runtime_error("file is password-protected, password required");
         }
-        return OpenedStorage{std::make_unique<infrastructure::FileStorage>(path), mode, version};
+        return OpenedStorage{std::make_unique<infrastructure::FileStorage>(path), mode, domain::EncryptionMode::None, version};
     }
 
     auto cipher = std::make_shared<SdfPageCipher>(firstPage, password);
-    return OpenedStorage{std::make_unique<infrastructure::FileStorage>(path, cipher), mode, version};
+    const domain::EncryptionMode resolvedMode = cipher->ResolvedEncryptionMode();
+    return OpenedStorage{
+        std::make_unique<infrastructure::FileStorage>(path, cipher), mode, resolvedMode, version};
 }
 
 }
@@ -70,8 +73,8 @@ SdfDatabaseComponents OpenSdfFile(const std::string& path, const std::string& pa
     auto rowFragmentReassembler = std::make_shared<RowFragmentReassembler>();
 
     return SdfDatabaseComponents{
-        std::move(opened.storage), opened.encryptionMode, opened.formatVersion, std::move(pageScanner),
-        std::move(tableCatalogBuilder), std::move(lobChainRegistry), std::move(rowDecoder),
+        std::move(opened.storage), opened.encryptionMode, opened.resolvedEncryptionMode, opened.formatVersion,
+        std::move(pageScanner), std::move(tableCatalogBuilder), std::move(lobChainRegistry), std::move(rowDecoder),
         std::move(rowFragmentReassembler)};
 }
 

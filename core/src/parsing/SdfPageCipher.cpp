@@ -188,6 +188,16 @@ bool SdfPageCipher::VerifyPassword() const
     return ResolveAlgorithm();
 }
 
+domain::EncryptionMode SdfPageCipher::ResolvedEncryptionMode() const
+{
+    if (!ResolveAlgorithm())
+    {
+        throw domain::InvalidPasswordException();
+    }
+
+    return _algorithm;
+}
+
 std::vector<std::uint8_t> SdfPageCipher::DecryptPage0(std::span<const std::uint8_t> page0) const
 {
     if (!ResolveAlgorithm())
