@@ -1,6 +1,7 @@
 #ifndef SDF_APPLICATION_SDF_DATABASE_HPP
 #define SDF_APPLICATION_SDF_DATABASE_HPP
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -33,6 +34,7 @@ public:
     [[nodiscard]] std::vector<ColumnSchema> TableSchema(const std::string& tableName) const;
     [[nodiscard]] TableRowRange IterateTable(const std::string& tableName) const;
     [[nodiscard]] std::vector<domain::Row> ReadTable(const std::string& tableName) const;
+    [[nodiscard]] std::vector<std::uint8_t> ExportDecrypted() const;
     [[nodiscard]] domain::EncryptionMode GetEncryptionMode() const;
     [[nodiscard]] static domain::EncryptionMode GetEncryptionMode(const std::string& path);
     [[nodiscard]] domain::EncryptionMode ResolvedEncryptionMode() const;
@@ -56,6 +58,7 @@ private:
 
     void AssignDataPages();
     [[nodiscard]] const domain::TableDef& RequireTable(const std::string& tableName) const;
+    static void ClearPage0EncryptionFields(std::vector<std::uint8_t>& pages);
 };
 
 }

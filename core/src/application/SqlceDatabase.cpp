@@ -1,6 +1,11 @@
 #include "sdf/application/SqlceDatabase.hpp"
 
+#include <algorithm>
+#include <span>
 #include <stdexcept>
+
+#include "sdf/domain/PageSize.hpp"
+#include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::application
 {
@@ -97,6 +102,34 @@ std::vector<domain::Row> SqlceDatabase::ReadTable(const std::string& tableName) 
 {
     const TableRowRange range = IterateTable(tableName);
     return std::vector<domain::Row>(range.begin(), range.end());
+}
+
+std::vector<std::uint8_t> SqlceDatabase::ExportDecrypted() const
+{
+    const std::size_t pageCount = _storage->PageCount();
+
+    std::vector<std::uint8_t> result;
+    result.reserve(pageCount * domain::PageSize);
+
+    for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
+    {
+        const std::span<const std::uint8_t> page = _storage->PageBytes(pageNumber);
+        result.insert(result.end(), page.begin(), page.end());
+    }
+
+    if (_resolvedEncryptionMode != domain::EncryptionMode::None)
+    {
+        ClearPage0EncryptionFields(result);
+    }
+
+    return result;
+}
+
+void SqlceDatabase::ClearPage0EncryptionFields(std::vector<std::uint8_t>& pages)
+{
+    std::fill_n(pages.begin() + parsing::Page0ModeOffset, sizeof(std::uint32_t), std::uint8_t(0));
+    std::fill_n(pages.begin() + parsing::Page0VerifierOffset, parsing::Page0VerifierLength, std::uint8_t(0));
+    std::fill_n(pages.begin() + parsing::Page0KeyParamOffset, parsing::Page0KeyParamLength, std::uint8_t(0));
 }
 
 domain::EncryptionMode SqlceDatabase::GetEncryptionMode() const
