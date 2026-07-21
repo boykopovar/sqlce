@@ -45,6 +45,9 @@ tests/sdf/
 .cache/
 
 sqlce_wasm.js
+sqlce_wasm.wasm
+emsdk/
+build-wasm/
 
 .idea/
 .vscode/

@@ -292,6 +292,12 @@ a {
   font-weight: 700;
 }
 
+.file-meta {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
 .trust-line {
   text-align: center;
   color: var(--ink-soft);

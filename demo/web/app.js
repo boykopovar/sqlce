@@ -15,6 +15,7 @@ const el = {
   passwordInput: document.getElementById("passwordInput"),
   unlockBtn: document.getElementById("unlockBtn"),
   status: document.getElementById("status"),
+  fileMeta: document.getElementById("fileMeta"),
   dataPanel: document.getElementById("dataPanel"),
   tableSelect: document.getElementById("tableSelect"),
   dataThead: document.getElementById("dataThead"),
@@ -32,6 +33,8 @@ function resetResultPanels() {
   el.tableSelect.innerHTML = "";
   el.dataThead.innerHTML = "";
   el.dataTbody.innerHTML = "";
+  el.fileMeta.hidden = true;
+  el.fileMeta.textContent = "";
   state.tables = [];
   state.activeTable = null;
   state.activeRows = [];
@@ -220,6 +223,29 @@ function encryptionModeName(mode) {
   return names[mode] !== undefined ? names[mode] : String(mode);
 }
 
+function formatVersionName(version) {
+  const names = {
+    0: "Unknown",
+    3004180: "SQL CE 3.0",
+    3505053: "SQL CE 3.5",
+    3505625: "SQL CE 3.5 SP2",
+    4000000: "SQL CE 4.0",
+  };
+  return names[version] !== undefined ? names[version] : String(version);
+}
+
+function showFileFormatVersion(module, path) {
+  try {
+    const rawJson = module.SqlceDatabase.formatVersionOfFile(path);
+    const version = parseDataResult(rawJson);
+    el.fileMeta.textContent = t("file.formatVersion", { version: formatVersionName(version) });
+    el.fileMeta.hidden = false;
+  } catch (error) {
+    el.fileMeta.hidden = true;
+    el.fileMeta.textContent = "";
+  }
+}
+
 async function handleFile(file) {
   resetResultPanels();
   closeCurrentHandle();
@@ -230,9 +256,14 @@ async function handleFile(file) {
   const arrayBuffer = await file.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
 
+  const module = await ensureModule();
+  const path = writeFileToVirtualFs(module, bytes);
+  showFileFormatVersion(module, path);
+
   try {
     setStatus(t("status.opening", { fileName: file.name }), false);
-    const { module, handle } = await openDatabase(bytes, null);
+    const rawResult = module.SqlceDatabase.open(path);
+    const handle = parseOpenResult(rawResult);
     state.module = module;
     state.handle = handle;
     await loadTableList();
@@ -242,8 +273,6 @@ async function handleFile(file) {
     if (String(error.message || "").toLowerCase().includes("password")) {
       el.passwordRow.hidden = false;
       state.pendingBytes = bytes;
-      const module = await ensureModule();
-      const path = writeFileToVirtualFs(module, bytes);
       const modeRawJson = module.SqlceDatabase.encryptionModeOfFile(path);
       const mode = parseDataResult(modeRawJson);
       setStatus(t("status.passwordRequired", { algorithm: encryptionModeName(mode) }), false);

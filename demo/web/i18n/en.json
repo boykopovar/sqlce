@@ -12,6 +12,7 @@
   "table.label": "Table:",
   "table.export": "Download CSV",
   "footer.wasm": "Powered by WebAssembly",
+  "file.formatVersion": "SDF format: {version}.",
   "status.opening": "Opening {fileName}…",
   "status.done": "Done. Found {count} {tableWord}.",
   "status.doneWithAlgorithm": "Done. Found {count} {tableWord}. Algorithm: {algorithm}.",

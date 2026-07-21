@@ -12,6 +12,7 @@
   "table.label": "Таблица:",
   "table.export": "Скачать CSV",
   "footer.wasm": "Работает на WebAssembly",
+  "file.formatVersion": "Формат SDF: {version}.",
   "status.opening": "Открытие {fileName}…",
   "status.done": "Готово. Найдено {count} {tableWord}.",
   "status.doneWithAlgorithm": "Готово. Найдено {count} {tableWord}. Алгоритм: {algorithm}.",
