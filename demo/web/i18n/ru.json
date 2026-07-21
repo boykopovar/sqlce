@@ -11,6 +11,7 @@
   "trust.implLink": "текущей реализации",
   "table.label": "Таблица:",
   "table.export": "Скачать CSV",
+  "table.exportDecrypted": "Скачать расшифрованное",
   "footer.wasm": "Работает на WebAssembly",
   "file.formatVersion": "Формат SDF: {version}.",
   "status.opening": "Открытие {fileName}…",

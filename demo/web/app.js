@@ -5,6 +5,7 @@ const state = {
   tables: [],
   activeTable: null,
   activeRows: [],
+  openedWithPassword: false,
 };
 
 const el = {
@@ -21,6 +22,7 @@ const el = {
   dataThead: document.getElementById("dataThead"),
   dataTbody: document.getElementById("dataTbody"),
   exportBtn: document.getElementById("exportBtn"),
+  exportDecryptedBtn: document.getElementById("exportDecryptedBtn"),
 };
 
 function setStatus(message, isError) {
@@ -38,6 +40,8 @@ function resetResultPanels() {
   state.tables = [];
   state.activeTable = null;
   state.activeRows = [];
+  state.openedWithPassword = false;
+  el.exportDecryptedBtn.hidden = true;
 }
 
 async function ensureModule() {
@@ -218,6 +222,27 @@ function exportActiveTableAsCsv() {
   URL.revokeObjectURL(url);
 }
 
+function exportDecryptedDatabase() {
+  if (!state.handle || !state.openedWithPassword) {
+    return;
+  }
+  const result = state.module.SqlceDatabase.exportDecrypted(state.handle);
+  if (!result.ok) {
+    setStatus(String(result.error), true);
+    return;
+  }
+
+  const blob = new Blob([result.data], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = (state.fileName || "db.sdf").replace(/\.sdf$/i, "") + "_decrypted.sdf";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 function encryptionModeName(mode) {
   const names = ["NONE", "TRIPLE_DES_SHA1", "AES128_SHA1", "AES128_SHA256", "AES256_SHA512"];
   return names[mode] !== undefined ? names[mode] : String(mode);
@@ -292,6 +317,8 @@ async function handleUnlock() {
     const { module, handle } = await openDatabase(state.pendingBytes, password);
     state.module = module;
     state.handle = handle;
+    state.openedWithPassword = true;
+    el.exportDecryptedBtn.hidden = false;
     await loadTableList();
     renderTableSelect();
     const resolvedRawJson = state.module.SqlceDatabase.resolvedEncryptionModeJson(state.handle);
@@ -342,4 +369,5 @@ async function handleUnlock() {
 
   el.unlockBtn.addEventListener("click", handleUnlock);
   el.exportBtn.addEventListener("click", exportActiveTableAsCsv);
+  el.exportDecryptedBtn.addEventListener("click", exportDecryptedDatabase);
 })();

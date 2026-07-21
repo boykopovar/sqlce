@@ -54,6 +54,8 @@ constexpr char GetFormatVersionName[] = "get_format_version";
 constexpr char GetFormatVersionDoc[] = "Return the format version of the database file.";
 constexpr char GetFormatVersionStaticName[] = "get_format_version_from_file";
 constexpr char GetFormatVersionStaticDoc[] = "Return the format version of a .sdf file without opening it.";
+constexpr char ExportDecryptedName[] = "export_decrypted";
+constexpr char ExportDecryptedDoc[] = "Return the raw bytes of the database file with encryption removed.";
 
 constexpr char EncryptionModeClassName[] = "EncryptionMode";
 constexpr char EncryptionModeDoc[] = "Encryption mode of a .sdf database file.";
@@ -137,6 +139,12 @@ std::vector<py::dict> ReadTableAsDicts(const application::SqlceDatabase& databas
         result.push_back(RowToDict(row));
     }
     return result;
+}
+
+py::bytes ExportDecryptedAsBytes(const application::SqlceDatabase& database)
+{
+    const std::vector<std::uint8_t> bytes = database.ExportDecrypted();
+    return py::bytes(reinterpret_cast<const char*>(bytes.data()), bytes.size());
 }
 
 std::optional<int> OptionalByteToInt(std::optional<std::uint8_t> value)
@@ -300,7 +308,8 @@ PYBIND11_MODULE(_sqlce_native, module)
             GetFormatVersionStaticName,
             py::overload_cast<const std::string&>(&application::SqlceDatabase::GetFormatVersion),
             py::arg(PathArgName),
-            GetFormatVersionStaticDoc);
+            GetFormatVersionStaticDoc)
+        .def(ExportDecryptedName, &ExportDecryptedAsBytes, ExportDecryptedDoc);
 }
 
 }

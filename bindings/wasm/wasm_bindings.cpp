@@ -1,4 +1,5 @@
 #include <emscripten/bind.h>
+#include <emscripten/val.h>
 
 #include <memory>
 #include <string>
@@ -242,6 +243,15 @@ public:
         }
     }
 
+    emscripten::val exportDecrypted() const
+    {
+        const std::vector<std::uint8_t> bytes = _database->ExportDecrypted();
+        emscripten::val result = emscripten::val::global("Uint8Array").new_(bytes.size());
+        emscripten::val memoryView(emscripten::typed_memory_view(bytes.size(), bytes.data()));
+        result.call<void>("set", memoryView);
+        return result;
+    }
+
 private:
     explicit SqlceDatabaseWasm(std::unique_ptr<application::SqlceDatabase> database) : _database(std::move(database))
     {
@@ -345,6 +355,33 @@ public:
         return SqlceDatabaseWasm::formatVersionOfFile(path);
     }
 
+    static emscripten::val exportDecrypted(const std::string& handleKey)
+    {
+        auto& registry = SqlceDatabaseWasm::registry();
+        auto it = registry.find(handleKey);
+        if (it == registry.end())
+        {
+            emscripten::val result = emscripten::val::object();
+            result.set("ok", false);
+            result.set("error", std::string("unknown database handle"));
+            return result;
+        }
+        try
+        {
+            emscripten::val result = emscripten::val::object();
+            result.set("ok", true);
+            result.set("data", it->second.exportDecrypted());
+            return result;
+        }
+        catch (const std::exception& error)
+        {
+            emscripten::val result = emscripten::val::object();
+            result.set("ok", false);
+            result.set("error", std::string(error.what()));
+            return result;
+        }
+    }
+
     static void close(const std::string& handleKey)
     {
         SqlceDatabaseWasm::registry().erase(handleKey);
@@ -391,5 +428,6 @@ EMSCRIPTEN_BINDINGS(sqlce)
         .class_function("resolvedEncryptionModeJson", &sdf::wasm::SqlceDatabaseHandle::resolvedEncryptionModeJson)
         .class_function("formatVersionJson", &sdf::wasm::SqlceDatabaseHandle::formatVersionJson)
         .class_function("formatVersionOfFile", &sdf::wasm::SqlceDatabaseHandle::formatVersionOfFile)
+        .class_function("exportDecrypted", &sdf::wasm::SqlceDatabaseHandle::exportDecrypted)
         .class_function("close", &sdf::wasm::SqlceDatabaseHandle::close);
 }

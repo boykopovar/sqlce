@@ -11,6 +11,7 @@
   "trust.implLink": "current implementation",
   "table.label": "Table:",
   "table.export": "Download CSV",
+  "table.exportDecrypted": "Download decrypted",
   "footer.wasm": "Powered by WebAssembly",
   "file.formatVersion": "SDF format: {version}.",
   "status.opening": "Opening {fileName}…",
