@@ -11,7 +11,7 @@ namespace sdf::domain
 enum class EncryptionMode : std::uint32_t
 {
     None = 0,
-    Rc4Sha1 = 1,
+    TripleDesSha1 = 1,
     Aes128Sha1 = 2,
     Aes128Sha256 = 3,
     Aes256Sha512 = 4

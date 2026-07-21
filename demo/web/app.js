@@ -216,7 +216,7 @@ function exportActiveTableAsCsv() {
 }
 
 function encryptionModeName(mode) {
-  const names = ["NONE", "RC4_SHA1", "AES128_SHA1", "AES128_SHA256", "AES256_SHA512"];
+  const names = ["NONE", "TRIPLE_DES_SHA1", "AES128_SHA1", "AES128_SHA256", "AES256_SHA512"];
   return names[mode] !== undefined ? names[mode] : String(mode);
 }
 

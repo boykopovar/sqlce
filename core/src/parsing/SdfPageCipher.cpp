@@ -42,8 +42,11 @@ std::array<std::uint8_t, infrastructure::DesBlockLength> ZeroDesIv()
     return iv;
 }
 
-constexpr std::array<CipherAlgorithm, 4> AllCipherAlgorithms
-    = {CipherAlgorithm::TripleDesSha1, CipherAlgorithm::Aes128Sha1, CipherAlgorithm::Aes128Sha256, CipherAlgorithm::Aes256Sha512};
+constexpr std::array<domain::EncryptionMode, 4> AllCipherAlgorithms = {
+    domain::EncryptionMode::TripleDesSha1,
+    domain::EncryptionMode::Aes128Sha1,
+    domain::EncryptionMode::Aes128Sha256,
+    domain::EncryptionMode::Aes256Sha512};
 
 }
 
@@ -70,7 +73,7 @@ domain::FormatVersion SdfPageCipher::ReadFormatVersion(std::span<const std::uint
 }
 
 SdfPageCipher::SdfPageCipher(std::span<const std::uint8_t> page0, std::string password)
-    : _password(std::move(password)), _algorithm(CipherAlgorithm::TripleDesSha1), _algorithmResolved(false)
+    : _password(std::move(password)), _algorithm(domain::EncryptionMode::TripleDesSha1), _algorithmResolved(false)
 {
     if (_password.size() > MaxPasswordLength)
     {
@@ -89,9 +92,14 @@ SdfPageCipher::SdfPageCipher(std::span<const std::uint8_t> page0, std::string pa
     }
 }
 
-std::vector<std::uint8_t> SdfPageCipher::HashPasswordWith(CipherAlgorithm algorithm, std::span<const std::uint8_t> keyParam) const
+std::vector<std::uint8_t> SdfPageCipher::HashPasswordWith(domain::EncryptionMode algorithm, std::span<const std::uint8_t> keyParam) const
 {
-    if (algorithm == CipherAlgorithm::TripleDesSha1 || algorithm == CipherAlgorithm::Aes128Sha1)
+    if (algorithm == domain::EncryptionMode::None)
+    {
+        throw domain::UnsupportedEncryptionModeException(algorithm);
+    }
+
+    if (algorithm == domain::EncryptionMode::TripleDesSha1 || algorithm == domain::EncryptionMode::Aes128Sha1)
     {
         const std::array<std::uint8_t, infrastructure::Sha1KeyDerivationLength> digest
             = infrastructure::Sha1KeyDerivation(_passwordUtf16Le, keyParam);
@@ -103,7 +111,7 @@ std::vector<std::uint8_t> SdfPageCipher::HashPasswordWith(CipherAlgorithm algori
     hashInput.insert(hashInput.end(), _passwordUtf16Le.begin(), _passwordUtf16Le.end());
     hashInput.insert(hashInput.end(), keyParam.begin(), keyParam.end());
 
-    if (algorithm == CipherAlgorithm::Aes128Sha256)
+    if (algorithm == domain::EncryptionMode::Aes128Sha256)
     {
         const std::array<std::uint8_t, 32> digest = infrastructure::Sha256(hashInput);
         return std::vector<std::uint8_t>(digest.begin(), digest.end());
@@ -113,16 +121,16 @@ std::vector<std::uint8_t> SdfPageCipher::HashPasswordWith(CipherAlgorithm algori
     return std::vector<std::uint8_t>(digest.begin(), digest.end());
 }
 
-std::vector<std::uint8_t> SdfPageCipher::DeriveKey(CipherAlgorithm algorithm, std::span<const std::uint8_t> keyParam) const
+std::vector<std::uint8_t> SdfPageCipher::DeriveKey(domain::EncryptionMode algorithm, std::span<const std::uint8_t> keyParam) const
 {
     const std::vector<std::uint8_t> hash = HashPasswordWith(algorithm, keyParam);
 
     std::size_t keyLength = infrastructure::Aes256KeyLength;
-    if (algorithm == CipherAlgorithm::TripleDesSha1)
+    if (algorithm == domain::EncryptionMode::TripleDesSha1)
     {
         keyLength = infrastructure::TripleDesKeyLength;
     }
-    else if (algorithm == CipherAlgorithm::Aes128Sha1 || algorithm == CipherAlgorithm::Aes128Sha256)
+    else if (algorithm == domain::EncryptionMode::Aes128Sha1 || algorithm == domain::EncryptionMode::Aes128Sha256)
     {
         keyLength = infrastructure::Aes128KeyLength;
     }
@@ -131,11 +139,11 @@ std::vector<std::uint8_t> SdfPageCipher::DeriveKey(CipherAlgorithm algorithm, st
 }
 
 std::vector<std::uint8_t> SdfPageCipher::DecryptTail(
-    CipherAlgorithm algorithm, std::span<const std::uint8_t> keyParam, std::span<const std::uint8_t> ciphertext) const
+    domain::EncryptionMode algorithm, std::span<const std::uint8_t> keyParam, std::span<const std::uint8_t> ciphertext) const
 {
     const std::vector<std::uint8_t> key = DeriveKey(algorithm, keyParam);
 
-    if (algorithm == CipherAlgorithm::TripleDesSha1)
+    if (algorithm == domain::EncryptionMode::TripleDesSha1)
     {
         const infrastructure::TripleDesCbcDecryptor decryptor(key, ZeroDesIv());
         return decryptor.Decrypt(ciphertext);
@@ -145,7 +153,7 @@ std::vector<std::uint8_t> SdfPageCipher::DecryptTail(
     return decryptor.Decrypt(ciphertext);
 }
 
-bool SdfPageCipher::VerifyWith(CipherAlgorithm algorithm) const
+bool SdfPageCipher::VerifyWith(domain::EncryptionMode algorithm) const
 {
     const std::vector<std::uint8_t> plaintext = DecryptTail(algorithm, _page0KeyParam, _page0Ciphertext);
 
@@ -162,7 +170,7 @@ bool SdfPageCipher::ResolveAlgorithm() const
         return true;
     }
 
-    for (const CipherAlgorithm candidate : AllCipherAlgorithms)
+    for (const domain::EncryptionMode candidate : AllCipherAlgorithms)
     {
         if (VerifyWith(candidate))
         {

@@ -55,7 +55,7 @@ constexpr char GetFormatVersionStaticDoc[] = "Return the format version of a .sd
 constexpr char EncryptionModeClassName[] = "EncryptionMode";
 constexpr char EncryptionModeDoc[] = "Encryption mode of a .sdf database file.";
 constexpr char EncryptionModeNoneName[] = "NONE";
-constexpr char EncryptionModeRc4Sha1Name[] = "RC4_SHA1";
+constexpr char EncryptionModeTripleDesSha1Name[] = "TRIPLE_DES_SHA1";
 constexpr char EncryptionModeAes128Sha1Name[] = "AES128_SHA1";
 constexpr char EncryptionModeAes128Sha256Name[] = "AES128_SHA256";
 constexpr char EncryptionModeAes256Sha512Name[] = "AES256_SHA512";
@@ -181,7 +181,7 @@ PYBIND11_MODULE(_sqlce_native, module)
 
     py::enum_<domain::EncryptionMode>(module, EncryptionModeClassName, EncryptionModeDoc)
         .value(EncryptionModeNoneName, domain::EncryptionMode::None)
-        .value(EncryptionModeRc4Sha1Name, domain::EncryptionMode::Rc4Sha1)
+        .value(EncryptionModeTripleDesSha1Name, domain::EncryptionMode::TripleDesSha1)
         .value(EncryptionModeAes128Sha1Name, domain::EncryptionMode::Aes128Sha1)
         .value(EncryptionModeAes128Sha256Name, domain::EncryptionMode::Aes128Sha256)
         .value(EncryptionModeAes256Sha512Name, domain::EncryptionMode::Aes256Sha512);
