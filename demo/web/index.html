@@ -67,8 +67,14 @@
     <div class="panel data" id="dataPanel" hidden>
       <div class="data-header">
         <div class="data-header-left">
-          <label class="panel-title" for="tableSelect" data-i18n="table.label">Таблица:</label>
-          <select class="table-select" id="tableSelect"></select>
+          <div class="table-select-row">
+            <label class="panel-title" for="tableSelect" data-i18n="table.label">Таблица:</label>
+            <select class="table-select" id="tableSelect"></select>
+          </div>
+          <div class="row-limit-row" id="rowLimitRow" hidden>
+            <label class="panel-title" for="rowLimitSelect" data-i18n="rowLimit.label">Показать:</label>
+            <select class="table-select" id="rowLimitSelect"></select>
+          </div>
         </div>
         <button class="btn btn-outline" id="exportBtn" data-i18n="table.export">Скачать CSV</button>
         <button class="btn btn-outline" id="exportDecryptedBtn" data-i18n="table.exportDecrypted" hidden>Скачать расшифрованное</button>
@@ -95,8 +101,13 @@
   </div>
 </footer>
 
-<script src="sqlce_wasm.js"></script>
+<script src="src/native/sqlce_wasm.js"></script>
 <script src="i18n.js"></script>
-<script src="app.js"></script>
+<script src="src/state.js"></script>
+<script src="src/status.js"></script>
+<script src="src/sqlce_db.js"></script>
+<script src="src/table.js"></script>
+<script src="src/csv.js"></script>
+<script src="src/main.js"></script>
 </body>
 </html>

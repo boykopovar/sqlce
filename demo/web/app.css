@@ -336,7 +336,7 @@ a {
 
 .data-header {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
@@ -345,9 +345,38 @@ a {
 
 .data-header-left {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 10px;
   flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+
+.table-select-row,
+.row-limit-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  flex: 1 1 220px;
+}
+
+.table-select-row > .panel-title,
+.row-limit-row > .panel-title {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.table-select-row > .table-select,
+.row-limit-row > .table-select {
+  flex: 1 1 auto;
+}
+
+.data-header > .btn {
+  flex: 1 1 100px;
+}
+
+.row-limit-row[hidden] {
+  display: none;
 }
 
 .table-select {
@@ -401,6 +430,22 @@ tbody td {
 tbody td.is-null {
   color: var(--ink-soft);
   font-style: italic;
+}
+
+.cell-ellipsis {
+  display: inline;
+  border: none;
+  background: none;
+  padding: 0 2px;
+  margin: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.cell-ellipsis:hover {
+  color: var(--accent-strong, var(--accent));
 }
 
 tbody tr:nth-child(even) {

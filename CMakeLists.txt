@@ -12,5 +12,8 @@ endif()
 
 if(SQLCE_BUILD_WASM)
     add_subdirectory(bindings/wasm)
+    set_target_properties(sqlce_wasm PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/demo/web/src/native"
+    )
 endif()
 
