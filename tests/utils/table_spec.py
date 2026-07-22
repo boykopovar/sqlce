@@ -119,13 +119,11 @@ def _literal_key_value(value: Any) -> str:
     raise TypeError(f"unsupported key value type for literal update: {type(value)!r}")
 
 
-def build_table(connection, spec: TableSpec, version: str = "4.0") -> None:
+def _row_insert_operations(spec: "TableSpec"):
     from tests.utils.sdf_factory import encode_parameterized_operation
     from tests.utils.sdf_factory import encode_sql_operation
-    from tests.utils.sdf_factory import execute_batch
 
-    operations = [encode_sql_operation(spec.create_table_sql())]
-
+    operations = []
     key_column = spec.columns[0].name
     for row in spec.rows:
         plan = spec.insert_row_parameters(row)
@@ -142,6 +140,81 @@ def build_table(connection, spec: TableSpec, version: str = "4.0") -> None:
                 operations.append(encode_sql_operation(statement))
         else:
             operations.append(encode_sql_operation(plan.literal_only_insert_sql()))
+    return operations
+
+
+def build_table(connection, spec: TableSpec, version: str = "4.0") -> None:
+    from tests.utils.sdf_factory import encode_sql_operation
+    from tests.utils.sdf_factory import execute_batch
+
+    operations = [encode_sql_operation(spec.create_table_sql())]
+    operations.extend(_row_insert_operations(spec))
+
+    execute_batch(connection, operations, version)
+
+
+_DECOY_COLUMN_SQL_TYPE = "int"
+
+
+def _decoy_column_name(slot: int) -> str:
+    return f"ZzDecoyCol{slot}"
+
+
+def build_table_via_column_history(connection, spec: TableSpec, version: str = "4.0") -> None:
+    from tests.utils.sdf_factory import encode_sql_operation
+    from tests.utils.sdf_factory import execute_batch
+
+    real_columns = spec.columns
+    operations = []
+    decoy_slot = 0
+
+    def add_decoy() -> str:
+        nonlocal decoy_slot
+        decoy_slot += 1
+        name = _decoy_column_name(decoy_slot)
+        operations.append(
+            encode_sql_operation(f"ALTER TABLE {spec.name} ADD {name} {_DECOY_COLUMN_SQL_TYPE}")
+        )
+        return name
+
+    def drop_column(name: str) -> None:
+        operations.append(encode_sql_operation(f"ALTER TABLE {spec.name} DROP COLUMN {name}"))
+
+    first_column = real_columns[0]
+    create_columns_sql = ", ".join(
+        [
+            f"{first_column.name} {first_column.sql_type}",
+            f"{_decoy_column_name(1)} {_DECOY_COLUMN_SQL_TYPE}",
+            f"{_decoy_column_name(2)} {_DECOY_COLUMN_SQL_TYPE}",
+        ]
+    )
+    operations.append(encode_sql_operation(f"CREATE TABLE {spec.name} ({create_columns_sql})"))
+    decoy_slot = 2
+
+    decoy_a = _decoy_column_name(1)
+    decoy_b = _decoy_column_name(2)
+    drop_column(decoy_b)
+
+    surviving_decoys = [decoy_a]
+
+    for column in real_columns[1:]:
+        operations.append(
+            encode_sql_operation(f"ALTER TABLE {spec.name} ADD {column.name} {column.sql_type}")
+        )
+        fresh_decoy = add_decoy()
+        surviving_decoys.append(fresh_decoy)
+
+        drop_column(fresh_decoy)
+        surviving_decoys.remove(fresh_decoy)
+
+        if len(surviving_decoys) > 1:
+            oldest_surviving = surviving_decoys.pop(0)
+            drop_column(oldest_surviving)
+
+    for remaining_decoy in surviving_decoys:
+        drop_column(remaining_decoy)
+
+    operations.extend(_row_insert_operations(spec))
 
     execute_batch(connection, operations, version)
 
