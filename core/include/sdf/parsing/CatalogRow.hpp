@@ -25,6 +25,7 @@ struct CatalogRow
     std::optional<std::string> objectName;
     std::optional<std::uint16_t> cedbInfoDbType;
     std::optional<std::uint16_t> cedbInfoOrdinal;
+    std::optional<std::uint16_t> sysObjectOrdinal;
 
     std::optional<std::uint32_t> tablePageId;
 

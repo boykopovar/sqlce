@@ -91,7 +91,7 @@ std::map<std::string, domain::TableDef> TableCatalogBuilder::BuildTables(const d
         }
         else if (row.kind == CatalogRowKind::Column)
         {
-            if (!row.objectOwner.has_value() || !row.objectName.has_value() || !row.cedbInfoOrdinal.has_value()
+            if (!row.objectOwner.has_value() || !row.objectName.has_value() || !row.sysObjectOrdinal.has_value()
                 || !row.columnType.has_value() || !row.columnSize.has_value())
             {
                 continue;
@@ -103,7 +103,7 @@ std::map<std::string, domain::TableDef> TableCatalogBuilder::BuildTables(const d
 
             domain::ColumnDef columnDef(
                 *row.objectName,
-                row.cedbInfoOrdinal.value(),
+                row.sysObjectOrdinal.value(),
                 dbType,
                 ToColumnType(row.columnType.value()),
                 row.columnSize.value(),

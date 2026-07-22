@@ -61,6 +61,10 @@ void AssignField(CatalogRow& row, std::string_view name, std::uint64_t rawValue)
     {
         row.tablePageId = static_cast<std::uint32_t>(rawValue);
     }
+    else if (name == "SysObjectOrdinal")
+    {
+        row.sysObjectOrdinal = static_cast<std::uint16_t>(rawValue);
+    }
 }
 
 std::string DecodeNarrowFromWide(std::span<const std::uint8_t> chunk)
