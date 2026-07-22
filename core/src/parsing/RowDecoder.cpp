@@ -98,7 +98,7 @@ domain::Row RowDecoder::Decode(const domain::TableDef& table, std::span<const st
     for (const domain::ColumnDef* column : fixedColumns)
     {
         const std::size_t size = column->FixedSize();
-        const bool isNull = IsNull(presence, column->Ordinal() - 1);
+        const bool isNull = IsNull(presence, column->Ordinal());
 
         domain::ColumnValue value;
         if (!isNull && offset + size <= rowBytes.size())
@@ -120,7 +120,7 @@ domain::Row RowDecoder::Decode(const domain::TableDef& table, std::span<const st
     for (std::size_t bitIndex = 0; bitIndex < bitColumns.size(); ++bitIndex)
     {
         const domain::ColumnDef* column = bitColumns[bitIndex];
-        const bool isNull = IsNull(presence, column->Ordinal() - 1);
+        const bool isNull = IsNull(presence, column->Ordinal());
 
         domain::ColumnValue value;
         if (!isNull)
@@ -150,7 +150,7 @@ domain::Row RowDecoder::Decode(const domain::TableDef& table, std::span<const st
         bool allNull = true;
         for (const domain::ColumnDef* column : varColumns)
         {
-            if (!IsNull(presence, column->Ordinal() - 1))
+            if (!IsNull(presence, column->Ordinal()))
             {
                 allNull = false;
                 break;
@@ -180,7 +180,7 @@ domain::Row RowDecoder::Decode(const domain::TableDef& table, std::span<const st
                 for (std::size_t i = 0; i < varColumns.size(); ++i)
                 {
                     const domain::ColumnDef* column = varColumns[i];
-                    const bool isNull = IsNull(presence, column->Ordinal() - 1);
+                    const bool isNull = IsNull(presence, column->Ordinal());
 
                     domain::ColumnValue value;
                     if (!isNull)
