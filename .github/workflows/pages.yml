@@ -2,12 +2,12 @@ name: Pages Wasm Demo
 
 on:
   workflow_call:
-#  push:
-#    branches:
-#      - main
-#    paths:
-#      - 'demo/**'
-#      - 'bindings/wasm/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'demo/**'
+      - 'bindings/wasm/**'
 #      - 'core/**'
 
 permissions:
@@ -39,14 +39,17 @@ jobs:
 
       - name: Assemble demo site
         run: |
-          mkdir -p site
-          cp demo/web/index.html demo/web/app.js demo/web/app.css demo/web/i18n.js site/
+          mkdir -p site/src/native
+          cp demo/web/index.html demo/web/app.css demo/web/i18n.js site/
           cp -r demo/web/i18n site/i18n
-          cp build-wasm/bindings/wasm/sqlce_wasm.js site/
-          cp build-wasm/bindings/wasm/sqlce_wasm.wasm site/
+          cp -r demo/web/src/. site/src/
+          cp build-wasm/bindings/wasm/sqlce_wasm.js site/src/native/
+          cp build-wasm/bindings/wasm/sqlce_wasm.wasm site/src/native/
           touch site/.nojekyll
           echo "site/ is ready:"
           ls -la site
+          ls -la site/src
+          ls -la site/src/native
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
