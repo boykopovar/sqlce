@@ -2,9 +2,9 @@ name: Pages Wasm Demo
 
 on:
   workflow_call:
-  push:
-    branches:
-      - main
+#  push:
+#    branches:
+#      - main
 #    paths:
 #      - 'demo/**'
 #      - 'bindings/wasm/**'
