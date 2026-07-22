@@ -5,9 +5,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'demo/**'
-      - 'bindings/wasm/**'
+#    paths:
+#      - 'demo/**'
+#      - 'bindings/wasm/**'
 #      - 'core/**'
 
 permissions:
@@ -43,8 +43,6 @@ jobs:
           cp demo/web/index.html demo/web/app.css demo/web/i18n.js site/
           cp -r demo/web/i18n site/i18n
           cp -r demo/web/src/. site/src/
-          cp build-wasm/bindings/wasm/sqlce_wasm.js site/src/native/
-          cp build-wasm/bindings/wasm/sqlce_wasm.wasm site/src/native/
           touch site/.nojekyll
           echo "site/ is ready:"
           ls -la site
