@@ -103,7 +103,7 @@ std::map<std::string, domain::TableDef> TableCatalogBuilder::BuildTables(const d
 
             domain::ColumnDef columnDef(
                 *row.objectName,
-                row.sysObjectOrdinal.value(),
+                static_cast<std::uint16_t>(row.sysObjectOrdinal.value() + 1),
                 dbType,
                 ToColumnType(row.columnType.value()),
                 row.columnSize.value(),
