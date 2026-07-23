@@ -59,6 +59,7 @@ private:
     void AssignDataPages();
     [[nodiscard]] const domain::TableDef& RequireTable(const std::string& tableName) const;
     static void ClearPage0EncryptionFields(std::vector<std::uint8_t>& pages);
+    static void RecomputePage0Checksum(std::vector<std::uint8_t>& pages);
 };
 
 }

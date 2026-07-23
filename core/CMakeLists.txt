@@ -23,6 +23,7 @@ add_library(libsqlce
         src/infrastructure/AesCbc.cpp
         src/infrastructure/BinaryReader.cpp
         src/infrastructure/FileStorage.cpp
+        src/infrastructure/PageChecksum.cpp
         src/infrastructure/Sha1.cpp
         src/infrastructure/Sha1KeyDerivation.cpp
         src/infrastructure/Sha256.cpp

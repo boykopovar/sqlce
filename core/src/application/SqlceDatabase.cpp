@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "sdf/domain/PageSize.hpp"
+#include "sdf/infrastructure/PageChecksum.hpp"
 #include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::application
@@ -120,6 +121,7 @@ std::vector<std::uint8_t> SqlceDatabase::ExportDecrypted() const
     if (_resolvedEncryptionMode != domain::EncryptionMode::None)
     {
         ClearPage0EncryptionFields(result);
+        RecomputePage0Checksum(result);
     }
 
     return result;
@@ -130,6 +132,20 @@ void SqlceDatabase::ClearPage0EncryptionFields(std::vector<std::uint8_t>& pages)
     std::fill_n(pages.begin() + parsing::Page0ModeOffset, sizeof(std::uint32_t), std::uint8_t(0));
     std::fill_n(pages.begin() + parsing::Page0VerifierOffset, parsing::Page0VerifierLength, std::uint8_t(0));
     std::fill_n(pages.begin() + parsing::Page0KeyParamOffset, parsing::Page0KeyParamLength, std::uint8_t(0));
+    std::fill_n(pages.begin() + parsing::Page0ProviderInfoOffset, parsing::Page0ProviderInfoLength, std::uint8_t(0));
+}
+
+void SqlceDatabase::RecomputePage0Checksum(std::vector<std::uint8_t>& pages)
+{
+    const std::span<std::uint8_t> page0(pages.data(), domain::PageSize);
+    std::fill_n(page0.begin(), sizeof(std::uint32_t), std::uint8_t(0));
+
+    const std::uint32_t checksum = infrastructure::ComputePageChecksum(page0);
+
+    page0[0] = static_cast<std::uint8_t>(checksum & 0xFF);
+    page0[1] = static_cast<std::uint8_t>((checksum >> 8) & 0xFF);
+    page0[2] = static_cast<std::uint8_t>((checksum >> 16) & 0xFF);
+    page0[3] = static_cast<std::uint8_t>((checksum >> 24) & 0xFF);
 }
 
 domain::EncryptionMode SqlceDatabase::GetEncryptionMode() const
