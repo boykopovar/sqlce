@@ -133,6 +133,7 @@ void SqlceDatabase::ClearPage0EncryptionFields(std::vector<std::uint8_t>& pages)
     std::fill_n(pages.begin() + parsing::Page0VerifierOffset, parsing::Page0VerifierLength, std::uint8_t(0));
     std::fill_n(pages.begin() + parsing::Page0KeyParamOffset, parsing::Page0KeyParamLength, std::uint8_t(0));
     std::fill_n(pages.begin() + parsing::Page0ProviderInfoOffset, parsing::Page0ProviderInfoLength, std::uint8_t(0));
+    std::fill_n(pages.begin() + parsing::Page0WasEncryptedFlagOffset, parsing::Page0WasEncryptedFlagLength, std::uint8_t(0));
 }
 
 void SqlceDatabase::RecomputePage0Checksum(std::vector<std::uint8_t>& pages)

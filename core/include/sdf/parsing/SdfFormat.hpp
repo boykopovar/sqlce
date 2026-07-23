@@ -56,6 +56,8 @@ constexpr std::size_t MaxPasswordLength = 40;
 
 constexpr std::size_t Page0ProviderInfoOffset = 196;
 constexpr std::size_t Page0ProviderInfoLength = 124;
+constexpr std::size_t Page0WasEncryptedFlagOffset = 508;
+constexpr std::size_t Page0WasEncryptedFlagLength = 4;
 
 constexpr std::size_t EncryptedPageTypeWordOffset = 4;
 constexpr unsigned int EncryptedPageTypeShift = 20;
