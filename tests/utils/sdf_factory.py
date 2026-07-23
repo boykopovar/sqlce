@@ -14,6 +14,9 @@ from tests.utils.sqlce_runtime import prewarm_runtimes
 ENCRYPTION_MODE_PLATFORM_DEFAULT = "Platform Default"
 ENCRYPTION_MODE_ENGINE_DEFAULT = "Engine Default"
 
+PLATFORM_DEFAULT_MODE = ENCRYPTION_MODE_PLATFORM_DEFAULT
+ENGINE_DEFAULT_MODE = ENCRYPTION_MODE_ENGINE_DEFAULT
+
 SDF_DIR_NAME = "sdf"
 
 
@@ -64,6 +67,16 @@ def create_sdf_database(
         version: str = SDF_VERSION_40,
 ) -> Path:
     runtime_call(version, "create_database", str(path), password, encryption_mode)
+    return path
+
+
+def compact_database(
+        path: Path,
+        password: Optional[str] = None,
+        encryption_mode: Optional[str] = None,
+        version: str = SDF_VERSION_40,
+) -> Path:
+    runtime_call(version, "compact_database", str(path), password, encryption_mode)
     return path
 
 

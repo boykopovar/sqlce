@@ -36,6 +36,7 @@ class _Dispatcher:
             "execute_non_query": self._execute_non_query,
             "execute_parameterized_non_query": self._execute_parameterized_non_query,
             "execute_batch": self._execute_batch,
+            "compact_database": self._compact_database,
         }
 
     def dispatch(self, method_name: str, *args: Any, **kwargs: Any) -> Any:
@@ -167,6 +168,15 @@ class _Dispatcher:
         engine = sqlserverce.SqlCeEngine(connection_string)
         try:
             engine.CreateDatabase()
+        finally:
+            engine.Dispose()
+
+    def _compact_database(self, path: str, password: Optional[str], encryption_mode: Optional[str]) -> None:
+        sqlserverce = self._load()
+        connection_string = self._build_connection_string(path, password, encryption_mode)
+        engine = sqlserverce.SqlCeEngine(connection_string)
+        try:
+            engine.Compact(None)
         finally:
             engine.Dispose()
 

@@ -4,8 +4,11 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 
+from tests.utils.sdf_factory import ENGINE_DEFAULT_MODE
+from tests.utils.sdf_factory import PLATFORM_DEFAULT_MODE
 from tests.utils.sdf_factory import SDF_VERSION_35
 from tests.utils.sdf_factory import SDF_VERSION_40
+from tests.utils.sdf_factory import compact_database as sdf_compact_database
 from tests.utils.sdf_factory import create_engine_default_encrypted_database
 from tests.utils.sdf_factory import create_platform_default_encrypted_database
 from tests.utils.sdf_factory import create_plain_database
@@ -37,6 +40,7 @@ class SdfScenario:
     path: Path
     password: Optional[str]
     version: str
+    encryption_mode: Optional[str] = None
 
     def open_connection(self):
         return sdf_open_connection(self.path, self.password, self.version)
@@ -48,6 +52,9 @@ class SdfScenario:
             return SqlceDatabase(str(self.path))
         return SqlceDatabase(str(self.path), self.password)
 
+    def compact(self) -> None:
+        sdf_compact_database(self.path, self.password, self.encryption_mode, self.version)
+
 
 def _build_plain(sdf_dir: Path, name: str, version: str) -> SdfScenario:
     path = create_plain_database(sdf_dir, prefix=name, version=version)
@@ -58,14 +65,26 @@ def _build_platform_default(sdf_dir: Path, name: str, version: str) -> SdfScenar
     path = create_platform_default_encrypted_database(
         sdf_dir, PLATFORM_DEFAULT_PASSWORD, prefix=name, version=version
     )
-    return SdfScenario(name=name, path=path, password=PLATFORM_DEFAULT_PASSWORD, version=version)
+    return SdfScenario(
+        name=name,
+        path=path,
+        password=PLATFORM_DEFAULT_PASSWORD,
+        version=version,
+        encryption_mode=PLATFORM_DEFAULT_MODE,
+    )
 
 
 def _build_engine_default(sdf_dir: Path, name: str, version: str) -> SdfScenario:
     path = create_engine_default_encrypted_database(
         sdf_dir, ENGINE_DEFAULT_PASSWORD, prefix=name, version=version
     )
-    return SdfScenario(name=name, path=path, password=ENGINE_DEFAULT_PASSWORD, version=version)
+    return SdfScenario(
+        name=name,
+        path=path,
+        password=ENGINE_DEFAULT_PASSWORD,
+        version=version,
+        encryption_mode=ENGINE_DEFAULT_MODE,
+    )
 
 
 _SCENARIO_BUILDERS: Dict[str, Callable[[Path], SdfScenario]] = {
