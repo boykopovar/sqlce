@@ -1,10 +1,46 @@
 #include "sdf/parsing/CatalogPageScanner.hpp"
 
+#include <unordered_map>
+
+#include "sdf/infrastructure/BinaryReader.hpp"
 #include "sdf/parsing/PageView.hpp"
 #include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::parsing
 {
+
+namespace
+{
+
+std::uint32_t LogicalPageIdOf(std::span<const std::uint8_t> pageBytes)
+{
+    return infrastructure::ReadUInt32LE(pageBytes, LogicalPageIdOffset) & LogicalPageIdMask;
+}
+
+std::set<std::size_t> FindCurrentPhysicalPages(const domain::IPageStorage& storage)
+{
+    const std::size_t pageCount = storage.PageCount();
+
+    std::unordered_map<std::uint32_t, std::size_t> latestPhysicalPageByLogicalId;
+    for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
+    {
+        const std::uint32_t logicalId = LogicalPageIdOf(storage.PageBytes(pageNumber));
+        auto [it, inserted] = latestPhysicalPageByLogicalId.try_emplace(logicalId, pageNumber);
+        if (!inserted && pageNumber > it->second)
+        {
+            it->second = pageNumber;
+        }
+    }
+
+    std::set<std::size_t> currentPages;
+    for (const auto& [logicalId, physicalPage] : latestPhysicalPageByLogicalId)
+    {
+        currentPages.insert(physicalPage);
+    }
+    return currentPages;
+}
+
+}
 
 std::set<std::uint8_t> CatalogPageScanner::FindCatalogObjectIds(const domain::IPageStorage& storage) const
 {
@@ -17,9 +53,15 @@ void CatalogPageScanner::AssignDataPages(
 {
     const std::set<std::uint8_t> catalogObjectIds = FindCatalogObjectIds(storage);
     const std::size_t pageCount = storage.PageCount();
+    const std::set<std::size_t> currentPages = FindCurrentPhysicalPages(storage);
 
     for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
     {
+        if (currentPages.find(pageNumber) == currentPages.end())
+        {
+            continue;
+        }
+
         const PageView page(storage.PageBytes(pageNumber));
         if (!page.IsDataPage())
         {
@@ -43,9 +85,14 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
 {
     const std::set<std::uint8_t> catalogObjectIds = FindCatalogObjectIds(storage);
     const std::size_t pageCount = storage.PageCount();
+    const std::set<std::size_t> currentPages = FindCurrentPhysicalPages(storage);
 
     auto isCatalogPage = [&](std::size_t pageNumber) -> bool
     {
+        if (currentPages.find(pageNumber) == currentPages.end())
+        {
+            return false;
+        }
         const PageView page(storage.PageBytes(pageNumber));
         return page.IsDataPage() && catalogObjectIds.find(page.OwnerObjectId()) != catalogObjectIds.end();
     };
