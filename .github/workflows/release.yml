@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.23.4
         env:
           CIBW_ARCHS_LINUX: x86_64
           CIBW_BUILD_VERBOSITY: 1
@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.23.4
         env:
           CIBW_ARCHS_WINDOWS: AMD64
           CIBW_BUILD_VERBOSITY: 1
