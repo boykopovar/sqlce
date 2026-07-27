@@ -3,12 +3,12 @@ from typing import Iterator
 
 import pytest
 
-from tests.utils.scenarios import ALL_SCENARIO_NAMES
-from tests.utils.scenarios import SdfScenario
-from tests.utils.scenarios import build_scenario
-from tests.utils.sdf_factory import cleanup_sdf_dir
-from tests.utils.sdf_factory import get_sdf_dir
-from tests.utils.sdf_factory import prewarm_workers
+from tests.infrastructure.scenarios import ALL_SCENARIO_NAMES
+from tests.infrastructure.scenarios import SdfScenario
+from tests.infrastructure.scenarios import build_scenario
+from tests.infrastructure.sdf_factory import cleanup_sdf_dir
+from tests.infrastructure.sdf_factory import get_sdf_dir
+from tests.infrastructure.sdf_factory import prewarm_workers
 
 BASE_DIR = Path(__file__).parent
 

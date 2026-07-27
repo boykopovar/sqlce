@@ -4,16 +4,16 @@ import pytest
 
 from sqlce import EncryptionMode
 from sqlce import SqlceDatabase
-from tests.sample_tables import SAMPLE_TABLE_SPEC
-from tests.utils.scenarios import ENGINE_DEFAULT_35
-from tests.utils.scenarios import ENGINE_DEFAULT_40
-from tests.utils.scenarios import PLATFORM_DEFAULT_35
-from tests.utils.scenarios import PLATFORM_DEFAULT_40
-from tests.utils.scenarios import build_scenario
-from tests.utils.table_spec import ColumnSpec
-from tests.utils.table_spec import TableSpec
-from tests.utils.table_spec import assert_table_matches
-from tests.utils.table_spec import build_table
+from tests.tables.sample_tables import SAMPLE_TABLE_SPEC
+from tests.infrastructure.scenarios import ENGINE_DEFAULT_35
+from tests.infrastructure.scenarios import ENGINE_DEFAULT_40
+from tests.infrastructure.scenarios import PLATFORM_DEFAULT_35
+from tests.infrastructure.scenarios import PLATFORM_DEFAULT_40
+from tests.infrastructure.scenarios import build_scenario
+from tests.infrastructure.table_spec import ColumnSpec
+from tests.infrastructure.table_spec import TableSpec
+from tests.infrastructure.table_spec import assert_table_matches
+from tests.infrastructure.table_spec import build_table
 
 SECOND_TABLE_SPEC = TableSpec(
     name="Second",

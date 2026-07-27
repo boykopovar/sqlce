@@ -1,9 +1,9 @@
 import pytest
 
-from tests.sample_tables import SAMPLE_TABLE_SPEC
-from tests.utils.scenarios import SdfScenario
-from tests.utils.table_spec import assert_table_matches
-from tests.utils.table_spec import build_table
+from tests.tables.sample_tables import SAMPLE_TABLE_SPEC
+from tests.infrastructure.scenarios import SdfScenario
+from tests.infrastructure.table_spec import assert_table_matches
+from tests.infrastructure.table_spec import build_table
 
 
 @pytest.mark.parametrize("do_compact", [False, True])

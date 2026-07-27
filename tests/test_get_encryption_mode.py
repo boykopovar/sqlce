@@ -4,9 +4,9 @@ import pytest
 
 from sqlce import EncryptionMode
 from sqlce import SqlceDatabase
-from tests.utils.scenarios import ENGINE_DEFAULT_40
-from tests.utils.scenarios import PLATFORM_DEFAULT_40
-from tests.utils.scenarios import build_scenario
+from tests.infrastructure.scenarios import ENGINE_DEFAULT_40
+from tests.infrastructure.scenarios import PLATFORM_DEFAULT_40
+from tests.infrastructure.scenarios import build_scenario
 
 ENCRYPTED_SCENARIOS_WITH_EXPECTED_MODE = (
     (ENGINE_DEFAULT_40, EncryptionMode.AES256_SHA512),

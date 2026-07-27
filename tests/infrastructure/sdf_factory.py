@@ -6,10 +6,10 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
-from tests.utils.sqlce_runtime import SDF_VERSION_35
-from tests.utils.sqlce_runtime import SDF_VERSION_40
-from tests.utils.sqlce_runtime import call as runtime_call
-from tests.utils.sqlce_runtime import prewarm_runtimes
+from tests.infrastructure.sqlce_runtime import SDF_VERSION_35
+from tests.infrastructure.sqlce_runtime import SDF_VERSION_40
+from tests.infrastructure.sqlce_runtime import call as runtime_call
+from tests.infrastructure.sqlce_runtime import prewarm_runtimes
 
 ENCRYPTION_MODE_PLATFORM_DEFAULT = "Platform Default"
 ENCRYPTION_MODE_ENGINE_DEFAULT = "Engine Default"

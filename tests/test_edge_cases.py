@@ -1,19 +1,19 @@
-from tests.utils.scenarios import SdfScenario
-from tests.edge_case_tables import DATETIME_EXTREMES_TABLE_SPEC
-from tests.edge_case_tables import FLOAT_EXTREMES_TABLE_SPEC
-from tests.edge_case_tables import GUID_EXTREMES_TABLE_SPEC
-from tests.edge_case_tables import HUGE_BINARY_TABLE_SPEC
-from tests.edge_case_tables import HUGE_TEXT_TABLE_SPEC
-from tests.edge_case_tables import INTEGER_EXTREMES_TABLE_SPEC
-from tests.edge_case_tables import MANY_BIT_COLUMNS_TABLE_SPEC
-from tests.edge_case_tables import MANY_ROWS_TABLE_SPEC
-from tests.edge_case_tables import MANY_TABLES_IN_ONE_FILE_SPECS
-from tests.edge_case_tables import NULLABLE_EXTREMES_TABLE_SPEC
-from tests.edge_case_tables import NUMERIC_EXTREMES_TABLE_SPEC
-from tests.edge_case_tables import WIDE_MIXED_TYPES_TABLE_SPEC
-from tests.edge_case_tables import WIDE_ROW_PAGE_SPLIT_TABLE_SPEC
-from tests.utils.table_spec import assert_table_matches
-from tests.utils.table_spec import build_table
+from tests.infrastructure.scenarios import SdfScenario
+from tests.tables.edge_case_tables import DATETIME_EXTREMES_TABLE_SPEC
+from tests.tables.edge_case_tables import FLOAT_EXTREMES_TABLE_SPEC
+from tests.tables.edge_case_tables import GUID_EXTREMES_TABLE_SPEC
+from tests.tables.edge_case_tables import HUGE_BINARY_TABLE_SPEC
+from tests.tables.edge_case_tables import HUGE_TEXT_TABLE_SPEC
+from tests.tables.edge_case_tables import INTEGER_EXTREMES_TABLE_SPEC
+from tests.tables.edge_case_tables import MANY_BIT_COLUMNS_TABLE_SPEC
+from tests.tables.edge_case_tables import MANY_ROWS_TABLE_SPEC
+from tests.tables.edge_case_tables import MANY_TABLES_IN_ONE_FILE_SPECS
+from tests.tables.edge_case_tables import NULLABLE_EXTREMES_TABLE_SPEC
+from tests.tables.edge_case_tables import NUMERIC_EXTREMES_TABLE_SPEC
+from tests.tables.edge_case_tables import WIDE_MIXED_TYPES_TABLE_SPEC
+from tests.tables.edge_case_tables import WIDE_ROW_PAGE_SPLIT_TABLE_SPEC
+from tests.infrastructure.table_spec import assert_table_matches
+from tests.infrastructure.table_spec import build_table
 
 
 def test_sdf_edge_case_integer_extremes_full_structure_matches_source(sdf_scenario: SdfScenario) -> None:

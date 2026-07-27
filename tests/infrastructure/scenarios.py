@@ -4,15 +4,15 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 
-from tests.utils.sdf_factory import ENGINE_DEFAULT_MODE
-from tests.utils.sdf_factory import PLATFORM_DEFAULT_MODE
-from tests.utils.sdf_factory import SDF_VERSION_35
-from tests.utils.sdf_factory import SDF_VERSION_40
-from tests.utils.sdf_factory import compact_database as sdf_compact_database
-from tests.utils.sdf_factory import create_engine_default_encrypted_database
-from tests.utils.sdf_factory import create_platform_default_encrypted_database
-from tests.utils.sdf_factory import create_plain_database
-from tests.utils.sdf_factory import open_connection as sdf_open_connection
+from tests.infrastructure.sdf_factory import ENGINE_DEFAULT_MODE
+from tests.infrastructure.sdf_factory import PLATFORM_DEFAULT_MODE
+from tests.infrastructure.sdf_factory import SDF_VERSION_35
+from tests.infrastructure.sdf_factory import SDF_VERSION_40
+from tests.infrastructure.sdf_factory import compact_database as sdf_compact_database
+from tests.infrastructure.sdf_factory import create_engine_default_encrypted_database
+from tests.infrastructure.sdf_factory import create_platform_default_encrypted_database
+from tests.infrastructure.sdf_factory import create_plain_database
+from tests.infrastructure.sdf_factory import open_connection as sdf_open_connection
 
 PLAIN_35 = "plain35"
 PLAIN_40 = "plain40"

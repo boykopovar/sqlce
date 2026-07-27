@@ -1,7 +1,7 @@
-from tests.catalog_continuation_tables import WIDE_CATALOG_TABLE_SPECS
-from tests.utils.scenarios import SdfScenario
-from tests.utils.table_spec import assert_table_matches
-from tests.utils.table_spec import build_table
+from tests.tables.catalog_continuation_tables import WIDE_CATALOG_TABLE_SPECS
+from tests.infrastructure.scenarios import SdfScenario
+from tests.infrastructure.table_spec import assert_table_matches
+from tests.infrastructure.table_spec import build_table
 
 
 def test_sdf_catalog_survives_many_wide_tables_with_indexes(sdf_scenario: SdfScenario) -> None:

@@ -1,10 +1,10 @@
 import pytest
 
 from sqlce import InvalidPasswordError
-from tests.sample_tables import SAMPLE_TABLE_SPEC
-from tests.utils.scenarios import SdfScenario
-from tests.utils.table_spec import assert_table_matches
-from tests.utils.table_spec import build_table
+from tests.tables.sample_tables import SAMPLE_TABLE_SPEC
+from tests.infrastructure.scenarios import SdfScenario
+from tests.infrastructure.table_spec import assert_table_matches
+from tests.infrastructure.table_spec import build_table
 
 
 def test_sdf_scenario_database_created_file_exists(sdf_scenario: SdfScenario) -> None:

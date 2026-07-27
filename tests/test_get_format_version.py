@@ -4,10 +4,10 @@ import pytest
 
 from sqlce import FormatVersion
 from sqlce import SqlceDatabase
-from tests.utils.sdf_factory import SDF_VERSION_35
-from tests.utils.sdf_factory import SDF_VERSION_40
-from tests.utils.scenarios import ALL_SCENARIO_NAMES
-from tests.utils.scenarios import build_scenario
+from tests.infrastructure.sdf_factory import SDF_VERSION_35
+from tests.infrastructure.sdf_factory import SDF_VERSION_40
+from tests.infrastructure.scenarios import ALL_SCENARIO_NAMES
+from tests.infrastructure.scenarios import build_scenario
 
 SDF_VERSION_BY_FORMAT_VERSION = {
     FormatVersion.SQLCE_35: SDF_VERSION_35,

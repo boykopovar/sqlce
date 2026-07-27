@@ -148,8 +148,8 @@ def _literal_key_value(value: Any) -> str:
 
 
 def _row_insert_operations(spec: "TableSpec"):
-    from tests.utils.sdf_factory import encode_parameterized_operation
-    from tests.utils.sdf_factory import encode_sql_operation
+    from tests.infrastructure.sdf_factory import encode_parameterized_operation
+    from tests.infrastructure.sdf_factory import encode_sql_operation
 
     operations = []
     key_column = spec.columns[0].name
@@ -172,7 +172,7 @@ def _row_insert_operations(spec: "TableSpec"):
 
 
 def _schema_operations(spec: "TableSpec"):
-    from tests.utils.sdf_factory import encode_sql_operation
+    from tests.infrastructure.sdf_factory import encode_sql_operation
 
     operations = [encode_sql_operation(spec.create_table_sql())]
 
@@ -187,7 +187,7 @@ def _schema_operations(spec: "TableSpec"):
 
 
 def build_table(connection, spec: TableSpec, version: str = "4.0") -> None:
-    from tests.utils.sdf_factory import execute_batch
+    from tests.infrastructure.sdf_factory import execute_batch
 
     operations = _schema_operations(spec)
     operations.extend(_row_insert_operations(spec))
@@ -203,8 +203,8 @@ def _decoy_column_name(slot: int) -> str:
 
 
 def build_table_via_column_history(connection, spec: TableSpec, version: str = "4.0") -> None:
-    from tests.utils.sdf_factory import encode_sql_operation
-    from tests.utils.sdf_factory import execute_batch
+    from tests.infrastructure.sdf_factory import encode_sql_operation
+    from tests.infrastructure.sdf_factory import execute_batch
 
     real_columns = spec.columns
     operations = []

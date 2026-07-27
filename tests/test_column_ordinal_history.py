@@ -1,8 +1,8 @@
-from tests.utils.scenarios import SdfScenario
-from tests.utils.table_spec import ColumnSpec
-from tests.utils.table_spec import TableSpec
-from tests.utils.table_spec import assert_table_matches
-from tests.utils.table_spec import build_table_via_column_history
+from tests.infrastructure.scenarios import SdfScenario
+from tests.infrastructure.table_spec import ColumnSpec
+from tests.infrastructure.table_spec import TableSpec
+from tests.infrastructure.table_spec import assert_table_matches
+from tests.infrastructure.table_spec import build_table_via_column_history
 
 ORDINAL_HISTORY_TABLE_SPEC = TableSpec(
     name="OrdinalHistoryAlpha",

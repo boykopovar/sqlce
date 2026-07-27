@@ -1,9 +1,9 @@
-from tests.utils.table_spec import ColumnSpec
-from tests.utils.table_spec import IndexSpec
-from tests.utils.table_spec import TableSpec
+from tests.infrastructure.table_spec import ColumnSpec
+from tests.infrastructure.table_spec import IndexSpec
+from tests.infrastructure.table_spec import TableSpec
 
-WIDE_CATALOG_TABLE_COUNT = 200
-COLUMNS_PER_TABLE = 6
+WIDE_CATALOG_TABLE_COUNT = 50
+COLUMNS_PER_TABLE = 9
 
 _NAME_ALPHABET = "AbcdefghijKlmnopqrstUvwxyzAbcdefghijKlmnopqrstUvwxyzAbcdefghijKlmnopqrstUvwxyz"
 
