@@ -56,7 +56,8 @@ std::set<std::uint8_t> CatalogPageScanner::FindCatalogObjectIds(const domain::IP
 }
 
 void CatalogPageScanner::AssignDataPages(
-    const domain::IPageStorage& storage, const std::map<std::uint8_t, domain::TableDef*>& tableByObjectId) const
+    const domain::IPageStorage& storage,
+    const std::map<std::pair<std::uint8_t, std::uint8_t>, domain::TableDef*>& tableByObjectKey) const
 {
     const std::set<std::uint8_t> catalogObjectIds = FindCatalogObjectIds(storage);
     const std::size_t pageCount = storage.PageCount();
@@ -79,8 +80,8 @@ void CatalogPageScanner::AssignDataPages(
             continue;
         }
 
-        const auto it = tableByObjectId.find(page.OwnerObjectId());
-        if (it != tableByObjectId.end())
+        const auto it = tableByObjectKey.find({page.OwnerObjectId(), page.OwnerObjectGeneration()});
+        if (it != tableByObjectKey.end())
         {
             it->second->DataPageNumbers().push_back(pageNumber);
         }

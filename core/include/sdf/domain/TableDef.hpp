@@ -13,10 +13,11 @@ namespace sdf::domain
 class TableDef
 {
 public:
-    TableDef(std::string name, std::uint8_t objectId);
+    TableDef(std::string name, std::uint8_t objectId, std::uint8_t objectGeneration);
 
     [[nodiscard]] const std::string& Name() const;
     [[nodiscard]] std::uint8_t ObjectId() const;
+    [[nodiscard]] std::uint8_t ObjectGeneration() const;
 
     std::vector<ColumnDef>& Columns();
     [[nodiscard]] const std::vector<ColumnDef>& Columns() const;
@@ -27,6 +28,7 @@ public:
 private:
     std::string _name;
     std::uint8_t _objectId;
+    std::uint8_t _objectGeneration;
     std::vector<ColumnDef> _columns;
     std::vector<std::size_t> _dataPageNumbers;
 };

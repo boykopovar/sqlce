@@ -38,13 +38,13 @@ SqlceDatabase::SqlceDatabase(parsing::SdfDatabaseComponents components)
 
 void SqlceDatabase::AssignDataPages()
 {
-    std::map<std::uint8_t, domain::TableDef*> tableByObjectId;
+    std::map<std::pair<std::uint8_t, std::uint8_t>, domain::TableDef*> tableByObjectKey;
     for (auto& [name, table] : _tables)
     {
-        tableByObjectId[table.ObjectId()] = &table;
+        tableByObjectKey[{table.ObjectId(), table.ObjectGeneration()}] = &table;
     }
 
-    _pageScanner->AssignDataPages(*_storage, tableByObjectId);
+    _pageScanner->AssignDataPages(*_storage, tableByObjectKey);
 }
 
 std::vector<std::string> SqlceDatabase::ListTables() const

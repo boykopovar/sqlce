@@ -60,36 +60,44 @@ struct PendingColumn
     domain::ColumnDef columnDef;
 };
 
-std::optional<std::uint8_t> ResolveTableObjectId(
+struct TableObjectKey
+{
+    std::uint8_t objectId;
+    std::uint8_t objectGeneration;
+};
+
+TableObjectKey ResolveTableObjectKey(
     const domain::IPageStorage& storage, const ILogicalPageResolver& logicalPageResolver,
     std::uint32_t tablePageId)
 {
     const std::optional<std::size_t> rootPhysicalPage = logicalPageResolver.ResolvePhysicalPage(storage, tablePageId);
     if (!rootPhysicalPage.has_value())
     {
-        return std::nullopt;
+        return TableObjectKey{0, 0};
     }
 
     const PageView rootPage(storage.PageBytes(*rootPhysicalPage));
     if (rootPage.PageType() != TableRootPageType)
     {
-        return rootPage.OwnerObjectId();
+        return TableObjectKey{rootPage.OwnerObjectId(), rootPage.OwnerObjectGeneration()};
     }
 
-    const std::uint32_t ownerPageId = infrastructure::ReadUInt32LE(rootPage.Bytes(), TableRootOwnerPageIdOffset) & TableRootOwnerPageIdMask;
+    const std::uint32_t ownerPageId
+        = infrastructure::ReadUInt32LE(rootPage.Bytes(), TableRootOwnerPageIdOffset) & TableRootOwnerPageIdMask;
     if (ownerPageId == 0)
     {
-        return std::nullopt;
+        return TableObjectKey{0, 0};
     }
 
     const std::optional<std::size_t> ownerPhysicalPage
         = logicalPageResolver.ResolvePhysicalPage(storage, ownerPageId);
     if (!ownerPhysicalPage.has_value())
     {
-        return std::nullopt;
+        return TableObjectKey{0, 0};
     }
 
-    return PageView(storage.PageBytes(*ownerPhysicalPage)).OwnerObjectId();
+    const PageView ownerPage(storage.PageBytes(*ownerPhysicalPage));
+    return TableObjectKey{ownerPage.OwnerObjectId(), ownerPage.OwnerObjectGeneration()};
 }
 
 }
@@ -125,12 +133,8 @@ std::map<std::string, domain::TableDef> TableCatalogBuilder::BuildTables(const d
             {
                 continue;
             }
-            const std::optional<std::uint8_t> objectId = ResolveTableObjectId(storage, *_logicalPageResolver, row.tablePageId.value());
-            if (!objectId.has_value())
-            {
-                continue;
-            }
-            tablesByName.emplace(*row.objectName, domain::TableDef(*row.objectName, *objectId));
+            const TableObjectKey objectKey = ResolveTableObjectKey(storage, *_logicalPageResolver, row.tablePageId.value());
+            tablesByName.emplace(*row.objectName, domain::TableDef(*row.objectName, objectKey.objectId, objectKey.objectGeneration));
         }
         else if (row.kind == CatalogRowKind::Column)
         {

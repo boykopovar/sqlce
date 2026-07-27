@@ -19,6 +19,7 @@ constexpr std::size_t RowContinuationDwordOffset = 24;
 
 constexpr std::size_t PageTypeOffset = 6;
 constexpr std::size_t OwnerObjectIdOffset = 16;
+constexpr std::size_t OwnerObjectGenerationOffset = 17;
 constexpr std::uint8_t SystemCatalogObjectId = 3;
 constexpr std::size_t SlotCountFieldOffset = 20;
 constexpr std::uint32_t SlotCountFieldMask = 0xFFFu;

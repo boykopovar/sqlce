@@ -33,6 +33,7 @@ public:
 
     [[nodiscard]] std::uint8_t PageType() const;
     [[nodiscard]] std::uint8_t OwnerObjectId() const;
+    [[nodiscard]] std::uint8_t OwnerObjectGeneration() const;
     [[nodiscard]] bool IsDataPage() const;
     [[nodiscard]] std::size_t SlotCount() const;
 

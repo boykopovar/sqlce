@@ -19,7 +19,7 @@ public:
 
     void AssignDataPages(
         const domain::IPageStorage& storage,
-        const std::map<std::uint8_t, domain::TableDef*>& tableByObjectId) const override;
+        const std::map<std::pair<std::uint8_t, std::uint8_t>, domain::TableDef*>& tableByObjectKey) const override;
 
 private:
     std::shared_ptr<ILogicalPageResolver> _logicalPageResolver;

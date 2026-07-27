@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <map>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "sdf/domain/interfaces/IPageStorage.hpp"
@@ -22,8 +23,8 @@ public:
     virtual std::vector<std::vector<std::uint8_t>> CollectCatalogRows(const domain::IPageStorage& storage) const = 0;
 
     virtual void AssignDataPages(
-        const domain::IPageStorage& storage, const std::map<std::uint8_t, domain::TableDef*>& tableByObjectId) const
-        = 0;
+        const domain::IPageStorage& storage,
+        const std::map<std::pair<std::uint8_t, std::uint8_t>, domain::TableDef*>& tableByObjectKey) const = 0;
 };
 
 }

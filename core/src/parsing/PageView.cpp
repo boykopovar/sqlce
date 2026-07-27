@@ -11,7 +11,7 @@ namespace sdf::parsing
 namespace
 {
 
-std::uint32_t ReadU32(std::span<const std::uint8_t> bytes, std::size_t offset)
+std::uint32_t ReadU32(const std::span<const std::uint8_t> bytes, const std::size_t offset)
 {
     return static_cast<std::uint32_t>(bytes[offset]) | (static_cast<std::uint32_t>(bytes[offset + 1]) << 8)
         | (static_cast<std::uint32_t>(bytes[offset + 2]) << 16)
@@ -32,6 +32,11 @@ std::uint8_t PageView::PageType() const
 std::uint8_t PageView::OwnerObjectId() const
 {
     return _bytes[OwnerObjectIdOffset];
+}
+
+std::uint8_t PageView::OwnerObjectGeneration() const
+{
+    return _bytes[OwnerObjectGenerationOffset];
 }
 
 bool PageView::IsDataPage() const
