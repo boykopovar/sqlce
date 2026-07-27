@@ -1,5 +1,6 @@
 #include "sdf/parsing/RowFragmentReassembler.hpp"
 
+#include <optional>
 #include <utility>
 
 #include "sdf/parsing/SdfFormat.hpp"
@@ -16,6 +17,18 @@ std::vector<ContinuedRowSlice> RowsOnPage(const domain::IPageStorage& storage, s
     return PageView(pageBytes).RowsWithContinuation();
 }
 
+const ContinuedRowSlice* FindBySlotIndex(const std::vector<ContinuedRowSlice>& pageRows, std::size_t slotIndex)
+{
+    for (const ContinuedRowSlice& slice : pageRows)
+    {
+        if (slice.slotIndex == slotIndex)
+        {
+            return &slice;
+        }
+    }
+    return nullptr;
+}
+
 }
 
 RowFragmentReassembler::RowFragmentReassembler(std::shared_ptr<ILogicalPageResolver> logicalPageResolver)
@@ -27,7 +40,12 @@ std::vector<std::uint8_t> RowFragmentReassembler::AssembleRowBytes(
     const domain::IPageStorage& storage, std::uint8_t expectedOwnerObjectId, std::size_t slotIndex,
     const std::vector<ContinuedRowSlice>& pageRows) const
 {
-    const ContinuedRowSlice& first = pageRows[slotIndex];
+    const ContinuedRowSlice* firstPtr = FindBySlotIndex(pageRows, slotIndex);
+    if (firstPtr == nullptr)
+    {
+        return {};
+    }
+    const ContinuedRowSlice& first = *firstPtr;
     std::vector<std::uint8_t> assembled(first.bytes.begin(), first.bytes.end());
 
     auto resolveContinuationTarget = [&](const ContinuedRowSlice& slice) -> std::optional<std::size_t>
@@ -95,16 +113,21 @@ std::optional<AssembledRow> RowFragmentReassembler::FindAtOrAfter(
         const std::uint8_t expectedOwnerObjectId = currentPage.OwnerObjectId();
         const std::vector<ContinuedRowSlice> pageRows = RowsOnPage(storage, physicalPageNumber);
 
-        while (slotIndex < pageRows.size() && !pageRows[slotIndex].isFirstFragment)
+        std::optional<std::size_t> foundSlotIndex;
+        for (const ContinuedRowSlice& slice : pageRows)
         {
-            ++slotIndex;
+            if (slice.slotIndex >= slotIndex && slice.isFirstFragment
+                && (!foundSlotIndex.has_value() || slice.slotIndex < *foundSlotIndex))
+            {
+                foundSlotIndex = slice.slotIndex;
+            }
         }
 
-        if (slotIndex < pageRows.size())
+        if (foundSlotIndex.has_value())
         {
             AssembledRow result;
-            result.cursor = RowCursor{pageIndex, slotIndex};
-            result.bytes = AssembleRowBytes(storage, expectedOwnerObjectId, slotIndex, pageRows);
+            result.cursor = RowCursor{pageIndex, *foundSlotIndex};
+            result.bytes = AssembleRowBytes(storage, expectedOwnerObjectId, *foundSlotIndex, pageRows);
             return result;
         }
 

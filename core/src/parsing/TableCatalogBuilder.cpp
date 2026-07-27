@@ -1,8 +1,13 @@
 #include "sdf/parsing/TableCatalogBuilder.hpp"
 
 #include <algorithm>
+#include <optional>
 #include <utility>
 #include <vector>
+
+#include "sdf/infrastructure/BinaryReader.hpp"
+#include "sdf/parsing/PageView.hpp"
+#include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::parsing
 {
@@ -55,11 +60,45 @@ struct PendingColumn
     domain::ColumnDef columnDef;
 };
 
+std::optional<std::uint8_t> ResolveTableObjectId(
+    const domain::IPageStorage& storage, const ILogicalPageResolver& logicalPageResolver,
+    std::uint32_t tablePageId)
+{
+    const std::optional<std::size_t> rootPhysicalPage = logicalPageResolver.ResolvePhysicalPage(storage, tablePageId);
+    if (!rootPhysicalPage.has_value())
+    {
+        return std::nullopt;
+    }
+
+    const PageView rootPage(storage.PageBytes(*rootPhysicalPage));
+    if (rootPage.PageType() != TableRootPageType)
+    {
+        return rootPage.OwnerObjectId();
+    }
+
+    const std::uint32_t ownerPageId = infrastructure::ReadUInt32LE(rootPage.Bytes(), TableRootOwnerPageIdOffset) & TableRootOwnerPageIdMask;
+    if (ownerPageId == 0)
+    {
+        return std::nullopt;
+    }
+
+    const std::optional<std::size_t> ownerPhysicalPage
+        = logicalPageResolver.ResolvePhysicalPage(storage, ownerPageId);
+    if (!ownerPhysicalPage.has_value())
+    {
+        return std::nullopt;
+    }
+
+    return PageView(storage.PageBytes(*ownerPhysicalPage)).OwnerObjectId();
+}
+
 }
 
 TableCatalogBuilder::TableCatalogBuilder(
-    std::shared_ptr<ICatalogPageScanner> pageScanner, std::shared_ptr<ICatalogRowDecoder> rowDecoder)
-    : _pageScanner(std::move(pageScanner)), _rowDecoder(std::move(rowDecoder))
+    std::shared_ptr<ICatalogPageScanner> pageScanner, std::shared_ptr<ICatalogRowDecoder> rowDecoder,
+    std::shared_ptr<ILogicalPageResolver> logicalPageResolver)
+    : _pageScanner(std::move(pageScanner)), _rowDecoder(std::move(rowDecoder)),
+      _logicalPageResolver(std::move(logicalPageResolver))
 {
 }
 
@@ -86,8 +125,12 @@ std::map<std::string, domain::TableDef> TableCatalogBuilder::BuildTables(const d
             {
                 continue;
             }
-            const std::uint8_t objectId = static_cast<std::uint8_t>(row.tablePageId.value() & 0xFFu);
-            tablesByName.emplace(*row.objectName, domain::TableDef(*row.objectName, objectId));
+            const std::optional<std::uint8_t> objectId = ResolveTableObjectId(storage, *_logicalPageResolver, row.tablePageId.value());
+            if (!objectId.has_value())
+            {
+                continue;
+            }
+            tablesByName.emplace(*row.objectName, domain::TableDef(*row.objectName, *objectId));
         }
         else if (row.kind == CatalogRowKind::Column)
         {

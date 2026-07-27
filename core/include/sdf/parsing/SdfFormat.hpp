@@ -8,6 +8,9 @@ namespace sdf::parsing
 {
 
 constexpr std::uint8_t DataPageType = 0x40;
+constexpr std::uint8_t TableRootPageType = 0x30;
+constexpr std::size_t TableRootOwnerPageIdOffset = 24;
+constexpr std::uint32_t TableRootOwnerPageIdMask = 0xFFFFFu;
 constexpr std::uint8_t LvMapPageType = 0x90;
 constexpr std::size_t LobPageHeaderLength = 16;
 constexpr std::size_t SlotArrayBaseIndex = 1017;
