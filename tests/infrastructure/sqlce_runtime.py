@@ -37,6 +37,8 @@ class _Dispatcher:
             "execute_parameterized_non_query": self._execute_parameterized_non_query,
             "execute_batch": self._execute_batch,
             "compact_database": self._compact_database,
+            "list_tables": self._list_tables,
+            "table_schema": self._table_schema,
         }
 
     def dispatch(self, method_name: str, *args: Any, **kwargs: Any) -> Any:
@@ -230,6 +232,59 @@ class _Dispatcher:
         self._run_parameterized(
             sqlserverce, connection, command_text, parameter_sql_types, parameter_names, parameter_values
         )
+
+    @staticmethod
+    def _clr_value_to_python(value: Any) -> Any:
+        import System
+
+        if value is None or value is System.DBNull.Value:
+            return None
+        return value
+
+    def _run_query(self, connection: Any, command_text: str) -> Sequence[Dict[str, Any]]:
+        command = connection.CreateCommand()
+        command.CommandText = command_text
+        reader = command.ExecuteReader()
+        rows = []
+        try:
+            while reader.Read():
+                row = {}
+                for index in range(reader.FieldCount):
+                    row[reader.GetName(index)] = self._clr_value_to_python(reader.GetValue(index))
+                rows.append(row)
+        finally:
+            reader.Close()
+        return rows
+
+    def _list_tables(self, handle_id: int) -> Sequence[str]:
+        connection = self._handles[handle_id]
+        rows = self._run_query(
+            connection,
+            "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'TABLE'",
+        )
+        return [str(row["TABLE_NAME"]) for row in rows]
+
+    def _table_schema(self, handle_id: int, table_name: str) -> Sequence[Dict[str, Any]]:
+        connection = self._handles[handle_id]
+        rows = self._run_query(
+            connection,
+            "SELECT ORDINAL_POSITION, COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, "
+            "NUMERIC_PRECISION, NUMERIC_SCALE FROM INFORMATION_SCHEMA.COLUMNS "
+            f"WHERE TABLE_NAME = '{table_name}'",
+        )
+        columns = [
+            {
+                "ordinal": int(row["ORDINAL_POSITION"]),
+                "name": str(row["COLUMN_NAME"]),
+                "type_name": str(row["DATA_TYPE"]),
+                "declared_size": None if row["CHARACTER_MAXIMUM_LENGTH"] is None else int(row["CHARACTER_MAXIMUM_LENGTH"]),
+                "precision": None if row["NUMERIC_PRECISION"] is None else int(row["NUMERIC_PRECISION"]),
+                "scale": None if row["NUMERIC_SCALE"] is None else int(row["NUMERIC_SCALE"]),
+            }
+            for row in rows
+        ]
+        columns.sort(key=lambda column: column["ordinal"])
+        return columns
 
     def _execute_batch(self, handle_id: int, operations: Sequence[tuple]) -> None:
         sqlserverce = self._load()

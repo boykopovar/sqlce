@@ -85,6 +85,14 @@ def open_connection(path: Path, password: Optional[str] = None, version: str = S
     return RemoteConnection(version, handle_id)
 
 
+def list_tables_via_runtime(connection: RemoteConnection) -> Sequence[str]:
+    return runtime_call(connection._version, "list_tables", connection._handle_id)
+
+
+def table_schema_via_runtime(connection: RemoteConnection, table_name: str) -> Sequence[dict]:
+    return runtime_call(connection._version, "table_schema", connection._handle_id, table_name)
+
+
 def execute_non_query(connection: RemoteConnection, command_text: str) -> None:
     runtime_call(connection._version, "execute_non_query", connection._handle_id, command_text)
 

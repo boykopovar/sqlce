@@ -273,6 +273,34 @@ def build_table_via_column_history(connection, spec: TableSpec, version: str = "
     execute_batch(connection, operations, version)
 
 
+@dataclass(frozen=True)
+class RuntimeColumnSchema:
+    ordinal: int
+    name: str
+    type_name: str
+    declared_size: Optional[int]
+    precision: Optional[int]
+    scale: Optional[int]
+
+
+def assert_schemas_equivalent(native_columns, runtime_columns: List[RuntimeColumnSchema]) -> None:
+    assert len(native_columns) == len(runtime_columns)
+
+    native_ordinals = [column.ordinal for column in native_columns]
+    runtime_ordinals = [column.ordinal for column in runtime_columns]
+    assert native_ordinals == sorted(native_ordinals)
+    assert runtime_ordinals == sorted(runtime_ordinals)
+
+    for native_column, runtime_column in zip(native_columns, runtime_columns):
+        assert native_column.ordinal == runtime_column.ordinal
+        assert native_column.name == runtime_column.name
+        assert native_column.type_name == runtime_column.type_name
+        assert native_column.precision == runtime_column.precision
+        assert native_column.scale == runtime_column.scale
+        if native_column.declared_size is not None and runtime_column.declared_size is not None:
+            assert native_column.declared_size == runtime_column.declared_size
+
+
 def assert_table_matches(db, spec: TableSpec) -> None:
     tables = db.list_tables()
     assert spec.name in tables
