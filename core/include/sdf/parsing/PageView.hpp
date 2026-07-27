@@ -22,7 +22,7 @@ struct ContinuedRowSlice
     std::span<const std::uint8_t> bytes;
     bool isFirstFragment;
     bool hasContinuation;
-    std::size_t continuationPageNumber;
+    std::uint32_t continuationLogicalPageId;
     std::size_t continuationSlotIndex;
 };
 

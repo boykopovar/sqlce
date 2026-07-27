@@ -1,5 +1,7 @@
 #include "sdf/parsing/RowFragmentReassembler.hpp"
 
+#include <utility>
+
 #include "sdf/parsing/SdfFormat.hpp"
 
 namespace sdf::parsing
@@ -16,21 +18,46 @@ std::vector<ContinuedRowSlice> RowsOnPage(const domain::IPageStorage& storage, s
 
 }
 
+RowFragmentReassembler::RowFragmentReassembler(std::shared_ptr<ILogicalPageResolver> logicalPageResolver)
+    : _logicalPageResolver(std::move(logicalPageResolver))
+{
+}
+
 std::vector<std::uint8_t> RowFragmentReassembler::AssembleRowBytes(
-    const domain::IPageStorage& storage, std::size_t slotIndex, const std::vector<ContinuedRowSlice>& pageRows) const
+    const domain::IPageStorage& storage, std::uint8_t expectedOwnerObjectId, std::size_t slotIndex,
+    const std::vector<ContinuedRowSlice>& pageRows) const
 {
     const ContinuedRowSlice& first = pageRows[slotIndex];
     std::vector<std::uint8_t> assembled(first.bytes.begin(), first.bytes.end());
 
-    bool continued = first.hasContinuation;
-    std::size_t nextPageNumber = first.continuationPageNumber;
+    auto resolveContinuationTarget = [&](const ContinuedRowSlice& slice) -> std::optional<std::size_t>
+    {
+        if (!slice.hasContinuation)
+        {
+            return std::nullopt;
+        }
+        const std::optional<std::size_t> physicalPage
+            = _logicalPageResolver->ResolvePhysicalPage(storage, slice.continuationLogicalPageId);
+        if (!physicalPage.has_value())
+        {
+            return std::nullopt;
+        }
+        const PageView targetPage(storage.PageBytes(*physicalPage));
+        if (!targetPage.IsDataPage() || targetPage.OwnerObjectId() != expectedOwnerObjectId)
+        {
+            return std::nullopt;
+        }
+        return physicalPage;
+    };
+
+    std::optional<std::size_t> nextPageNumber = resolveContinuationTarget(first);
     std::size_t nextSlotIndex = first.continuationSlotIndex;
     std::size_t hops = 0;
 
-    while (continued && hops < MaxRowContinuationHops)
+    while (nextPageNumber.has_value() && hops < MaxRowContinuationHops)
     {
         ++hops;
-        const std::vector<ContinuedRowSlice> nextPageRows = RowsOnPage(storage, nextPageNumber);
+        const std::vector<ContinuedRowSlice> nextPageRows = RowsOnPage(storage, *nextPageNumber);
 
         bool matched = false;
         for (const ContinuedRowSlice& nextSlice : nextPageRows)
@@ -41,9 +68,8 @@ std::vector<std::uint8_t> RowFragmentReassembler::AssembleRowBytes(
             }
             assembled.insert(assembled.end(), nextSlice.bytes.begin(), nextSlice.bytes.end());
             matched = true;
-            continued = nextSlice.hasContinuation;
-            nextPageNumber = nextSlice.continuationPageNumber;
             nextSlotIndex = nextSlice.continuationSlotIndex;
+            nextPageNumber = resolveContinuationTarget(nextSlice);
             break;
         }
 
@@ -64,7 +90,10 @@ std::optional<AssembledRow> RowFragmentReassembler::FindAtOrAfter(
 
     while (pageIndex < dataPageNumbers.size())
     {
-        const std::vector<ContinuedRowSlice> pageRows = RowsOnPage(storage, dataPageNumbers[pageIndex]);
+        const std::size_t physicalPageNumber = dataPageNumbers[pageIndex];
+        const PageView currentPage(storage.PageBytes(physicalPageNumber));
+        const std::uint8_t expectedOwnerObjectId = currentPage.OwnerObjectId();
+        const std::vector<ContinuedRowSlice> pageRows = RowsOnPage(storage, physicalPageNumber);
 
         while (slotIndex < pageRows.size() && !pageRows[slotIndex].isFirstFragment)
         {
@@ -75,7 +104,7 @@ std::optional<AssembledRow> RowFragmentReassembler::FindAtOrAfter(
         {
             AssembledRow result;
             result.cursor = RowCursor{pageIndex, slotIndex};
-            result.bytes = AssembleRowBytes(storage, slotIndex, pageRows);
+            result.bytes = AssembleRowBytes(storage, expectedOwnerObjectId, slotIndex, pageRows);
             return result;
         }
 

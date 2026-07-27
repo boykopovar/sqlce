@@ -7,6 +7,7 @@
 #include "sdf/parsing/CatalogPageScanner.hpp"
 #include "sdf/parsing/CatalogRowDecoder.hpp"
 #include "sdf/parsing/LobChainRegistry.hpp"
+#include "sdf/parsing/LogicalPageResolver.hpp"
 #include "sdf/parsing/RowDecoder.hpp"
 #include "sdf/parsing/RowFragmentReassembler.hpp"
 #include "sdf/parsing/SdfPageCipher.hpp"
@@ -65,12 +66,12 @@ SdfDatabaseComponents OpenSdfFile(const std::string& path, const std::string& pa
 {
     OpenedStorage opened = OpenStorage(path, password);
 
-    auto pageScanner = std::make_shared<CatalogPageScanner>();
-    auto tableCatalogBuilder
-        = std::make_shared<TableCatalogBuilder>(pageScanner, std::make_shared<CatalogRowDecoder>());
+    auto logicalPageResolver = std::make_shared<LogicalPageResolver>();
+    auto pageScanner = std::make_shared<CatalogPageScanner>(logicalPageResolver);
+    auto tableCatalogBuilder = std::make_shared<TableCatalogBuilder>(pageScanner, std::make_shared<CatalogRowDecoder>());
     auto lobChainRegistry = std::make_shared<LobChainRegistry>(*opened.storage);
     auto rowDecoder = std::make_shared<RowDecoder>(lobChainRegistry);
-    auto rowFragmentReassembler = std::make_shared<RowFragmentReassembler>();
+    auto rowFragmentReassembler = std::make_shared<RowFragmentReassembler>(logicalPageResolver);
 
     return SdfDatabaseComponents{
         std::move(opened.storage), opened.encryptionMode, opened.resolvedEncryptionMode, opened.formatVersion,

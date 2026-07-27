@@ -172,15 +172,9 @@ std::vector<ContinuedRowSlice> PageView::RowsWithContinuation() const
             false, 0, 0};
         if (continuationDword != 0)
         {
-            const std::size_t nextSlotIndex = continuationDword & ContinuationSlotIndexMask;
-            const std::size_t marker = continuationDword >> ContinuationMarkerShift;
-
-            if (marker > ContinuationPageNumberBias)
-            {
-                slice.hasContinuation = true;
-                slice.continuationPageNumber = marker - ContinuationPageNumberBias;
-                slice.continuationSlotIndex = nextSlotIndex;
-            }
+            slice.hasContinuation = true;
+            slice.continuationSlotIndex = continuationDword & ContinuationSlotIndexMask;
+            slice.continuationLogicalPageId = continuationDword >> ContinuationLogicalPageIdShift;
         }
 
         result.push_back(slice);

@@ -1,6 +1,8 @@
 #include "sdf/parsing/CatalogPageScanner.hpp"
 
+#include <optional>
 #include <unordered_map>
+#include <utility>
 
 #include "sdf/infrastructure/BinaryReader.hpp"
 #include "sdf/parsing/PageView.hpp"
@@ -40,6 +42,11 @@ std::set<std::size_t> FindCurrentPhysicalPages(const domain::IPageStorage& stora
     return currentPages;
 }
 
+}
+
+CatalogPageScanner::CatalogPageScanner(std::shared_ptr<ILogicalPageResolver> logicalPageResolver)
+    : _logicalPageResolver(std::move(logicalPageResolver))
+{
 }
 
 std::set<std::uint8_t> CatalogPageScanner::FindCatalogObjectIds(const domain::IPageStorage& storage) const
@@ -97,6 +104,20 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
         return page.IsDataPage() && catalogObjectIds.find(page.OwnerObjectId()) != catalogObjectIds.end();
     };
 
+    auto resolveCatalogContinuationTarget = [&](const ContinuedRowSlice& slice) -> std::optional<std::size_t>
+    {
+        if (!slice.hasContinuation)
+        {
+            return std::nullopt;
+        }
+        const std::optional<std::size_t> physicalPage = _logicalPageResolver->ResolvePhysicalPage(storage, slice.continuationLogicalPageId);
+        if (!physicalPage.has_value() || !isCatalogPage(*physicalPage))
+        {
+            return std::nullopt;
+        }
+        return physicalPage;
+    };
+
     std::set<std::pair<std::size_t, std::size_t>> continuationTargets;
     for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
     {
@@ -107,9 +128,10 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
         const PageView page(storage.PageBytes(pageNumber));
         for (const ContinuedRowSlice& slice : page.RowsWithContinuation())
         {
-            if (slice.hasContinuation && slice.continuationPageNumber < pageCount)
+            const std::optional<std::size_t> target = resolveCatalogContinuationTarget(slice);
+            if (target.has_value())
             {
-                continuationTargets.emplace(slice.continuationPageNumber, slice.continuationSlotIndex);
+                continuationTargets.emplace(*target, slice.continuationSlotIndex);
             }
         }
     }
@@ -136,15 +158,14 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
 
             std::vector<std::uint8_t> assembled(slice.bytes.begin(), slice.bytes.end());
 
-            bool continued = slice.hasContinuation;
-            std::size_t nextPageNumber = slice.continuationPageNumber;
+            std::optional<std::size_t> nextPageNumber = resolveCatalogContinuationTarget(slice);
             std::size_t nextSlotIndex = slice.continuationSlotIndex;
             std::size_t hops = 0;
 
-            while (continued && hops < MaxRowContinuationHops && nextPageNumber < pageCount)
+            while (nextPageNumber.has_value() && hops < MaxRowContinuationHops)
             {
                 ++hops;
-                const PageView nextPage(storage.PageBytes(nextPageNumber));
+                const PageView nextPage(storage.PageBytes(*nextPageNumber));
 
                 bool matched = false;
                 for (const ContinuedRowSlice& nextSlice : nextPage.RowsWithContinuation())
@@ -155,9 +176,8 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
                     }
                     assembled.insert(assembled.end(), nextSlice.bytes.begin(), nextSlice.bytes.end());
                     matched = true;
-                    continued = nextSlice.hasContinuation;
-                    nextPageNumber = nextSlice.continuationPageNumber;
                     nextSlotIndex = nextSlice.continuationSlotIndex;
+                    nextPageNumber = resolveCatalogContinuationTarget(nextSlice);
                     break;
                 }
 

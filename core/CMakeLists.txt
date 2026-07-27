@@ -34,6 +34,7 @@ add_library(libsqlce
         src/parsing/CatalogRowDecoder.cpp
         src/parsing/CatalogSchema.cpp
         src/parsing/LobChainRegistry.cpp
+        src/parsing/LogicalPageResolver.cpp
         src/parsing/PageView.cpp
         src/parsing/RowDecoder.cpp
         src/parsing/RowFragmentReassembler.cpp
