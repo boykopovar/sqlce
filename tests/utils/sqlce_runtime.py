@@ -259,7 +259,10 @@ def _worker_main(version: str, request_queue: "mp.Queue", response_queue: "mp.Qu
             result = dispatcher.dispatch(method_name, *args, **kwargs)
             response_queue.put((request_id, "ok", result))
         except Exception as error:
-            response_queue.put((request_id, "error", error))
+            try:
+                response_queue.put((request_id, "error", error))
+            except Exception:
+                response_queue.put((request_id, "error", RuntimeError(str(error))))
 
 
 class _LocalRuntime:
@@ -275,6 +278,7 @@ class _LocalRuntime:
 
 class _WorkerRuntime:
     def __init__(self, version: str) -> None:
+        self._version = version
         context = mp.get_context("spawn")
         self._request_queue: "mp.Queue" = context.Queue()
         self._response_queue: "mp.Queue" = context.Queue()
@@ -289,8 +293,21 @@ class _WorkerRuntime:
     def call(self, method_name: str, *args: Any, **kwargs: Any) -> Any:
         request_id = next(self._next_request_id)
         self._request_queue.put((request_id, method_name, args, kwargs))
-        response_id, status, payload = self._response_queue.get()
-        assert response_id == request_id
+        while True:
+            try:
+                response_id, status, payload = self._response_queue.get(timeout=60)
+            except Exception as error:
+                if not self._process.is_alive():
+                    exit_code = self._process.exitcode
+                    raise RuntimeError(
+                        f"worker process for sqlce {self._version} died "
+                        f"(exit code {exit_code}) while handling {method_name!r}"
+                    ) from error
+                raise RuntimeError(
+                    f"timed out waiting for worker response to {method_name!r}"
+                ) from error
+            if response_id == request_id:
+                break
         if status == "error":
             raise payload
         return payload

@@ -20,14 +20,42 @@ class ColumnSpec:
 
 
 @dataclass(frozen=True)
+class IndexSpec:
+    name: str
+    columns: Tuple[str, ...]
+    unique: bool = False
+
+    def create_index_sql(self, table_name: str) -> str:
+        column_list = ", ".join(self.columns)
+        unique_keyword = "UNIQUE " if self.unique else ""
+        return f"CREATE {unique_keyword}INDEX {self.name} ON {table_name} ({column_list})"
+
+
+@dataclass(frozen=True)
 class TableSpec:
     name: str
     columns: Tuple[ColumnSpec, ...]
     rows: Tuple[Tuple[Any, ...], ...] = field(default_factory=tuple)
+    primary_key_columns: Tuple[str, ...] = field(default_factory=tuple)
+    indexes: Tuple[IndexSpec, ...] = field(default_factory=tuple)
 
     def create_table_sql(self) -> str:
-        column_definitions = ", ".join(f"{column.name} {column.sql_type}" for column in self.columns)
+        column_definitions = ", ".join(
+            f"{column.name} {column.sql_type} NOT NULL"
+            if column.name in self.primary_key_columns
+            else f"{column.name} {column.sql_type}"
+            for column in self.columns
+        )
         return f"CREATE TABLE {self.name} ({column_definitions})"
+
+    def primary_key_sql(self) -> Optional[str]:
+        if not self.primary_key_columns:
+            return None
+        key_columns = ", ".join(self.primary_key_columns)
+        return f"ALTER TABLE {self.name} ADD CONSTRAINT PK_{self.name} PRIMARY KEY ({key_columns})"
+
+    def index_sql_statements(self) -> List[str]:
+        return [index.create_index_sql(self.name) for index in self.indexes]
 
     def insert_row_parameters(self, row: Tuple[Any, ...]) -> "InsertPlan":
         parameter_columns: List[ColumnSpec] = []
@@ -143,11 +171,25 @@ def _row_insert_operations(spec: "TableSpec"):
     return operations
 
 
-def build_table(connection, spec: TableSpec, version: str = "4.0") -> None:
+def _schema_operations(spec: "TableSpec"):
     from tests.utils.sdf_factory import encode_sql_operation
-    from tests.utils.sdf_factory import execute_batch
 
     operations = [encode_sql_operation(spec.create_table_sql())]
+
+    primary_key_sql = spec.primary_key_sql()
+    if primary_key_sql is not None:
+        operations.append(encode_sql_operation(primary_key_sql))
+
+    for index_sql in spec.index_sql_statements():
+        operations.append(encode_sql_operation(index_sql))
+
+    return operations
+
+
+def build_table(connection, spec: TableSpec, version: str = "4.0") -> None:
+    from tests.utils.sdf_factory import execute_batch
+
+    operations = _schema_operations(spec)
     operations.extend(_row_insert_operations(spec))
 
     execute_batch(connection, operations, version)
@@ -180,10 +222,15 @@ def build_table_via_column_history(connection, spec: TableSpec, version: str = "
     def drop_column(name: str) -> None:
         operations.append(encode_sql_operation(f"ALTER TABLE {spec.name} DROP COLUMN {name}"))
 
+    def _column_definition(column: ColumnSpec) -> str:
+        if column.name in spec.primary_key_columns:
+            return f"{column.name} {column.sql_type} NOT NULL"
+        return f"{column.name} {column.sql_type}"
+
     first_column = real_columns[0]
     create_columns_sql = ", ".join(
         [
-            f"{first_column.name} {first_column.sql_type}",
+            _column_definition(first_column),
             f"{_decoy_column_name(1)} {_DECOY_COLUMN_SQL_TYPE}",
             f"{_decoy_column_name(2)} {_DECOY_COLUMN_SQL_TYPE}",
         ]
@@ -199,7 +246,7 @@ def build_table_via_column_history(connection, spec: TableSpec, version: str = "
 
     for column in real_columns[1:]:
         operations.append(
-            encode_sql_operation(f"ALTER TABLE {spec.name} ADD {column.name} {column.sql_type}")
+            encode_sql_operation(f"ALTER TABLE {spec.name} ADD {_column_definition(column)}")
         )
         fresh_decoy = add_decoy()
         surviving_decoys.append(fresh_decoy)
@@ -213,6 +260,13 @@ def build_table_via_column_history(connection, spec: TableSpec, version: str = "
 
     for remaining_decoy in surviving_decoys:
         drop_column(remaining_decoy)
+
+    primary_key_sql = spec.primary_key_sql()
+    if primary_key_sql is not None:
+        operations.append(encode_sql_operation(primary_key_sql))
+
+    for index_sql in spec.index_sql_statements():
+        operations.append(encode_sql_operation(index_sql))
 
     operations.extend(_row_insert_operations(spec))
 
