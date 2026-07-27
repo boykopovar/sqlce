@@ -2,50 +2,47 @@ from tests.utils.table_spec import ColumnSpec
 from tests.utils.table_spec import IndexSpec
 from tests.utils.table_spec import TableSpec
 
-WIDE_CATALOG_TABLE_COUNT = 24
-WIDE_CATALOG_COLUMN_COUNT = 20
-COMPOSITE_KEY_COLUMN_COUNT = 4
-KEY_COLUMN_CHAR_LENGTH = 40
+WIDE_CATALOG_TABLE_COUNT = 200
+COLUMNS_PER_TABLE = 6
 
-_LONG_COLUMN_NAME_UNIT = "AbcdefghijKlmnopqrst"
+_NAME_ALPHABET = "AbcdefghijKlmnopqrstUvwxyzAbcdefghijKlmnopqrstUvwxyzAbcdefghijKlmnopqrstUvwxyz"
 
-
-def _long_table_name(table_index: int) -> str:
-    return f"WideCatalogTable_{table_index:02d}_LongIdentifierForContinuation"
+_MAX_IDENTIFIER_LENGTH = 100
 
 
-def _long_column_name(table_index: int, column_index: int) -> str:
-    return f"Col_{table_index:02d}_{column_index:02d}_{_LONG_COLUMN_NAME_UNIT}"
+def _padded_name(prefix: str, table_index: int, unit_index: int, target_length: int) -> str:
+    base = f"{prefix}{table_index:03d}_{unit_index:02d}_"
+    remaining = max(target_length - len(base), 1)
+    filler = (_NAME_ALPHABET * ((remaining // len(_NAME_ALPHABET)) + 1))[:remaining]
+    name = base + filler
+    return name[:_MAX_IDENTIFIER_LENGTH]
 
 
-def _key_column_name(table_index: int, key_index: int) -> str:
-    return f"Key_{table_index:02d}_{key_index:02d}_{_LONG_COLUMN_NAME_UNIT}"
+def _table_name_length(table_index: int) -> int:
+    return 5 + (table_index % 96)
 
 
-def _index_name(table_index: int) -> str:
-    return f"IX_WideCatalog_{table_index:02d}_Secondary"
+def _column_name_length(table_index: int, column_index: int) -> int:
+    return 5 + ((table_index * 7 + column_index * 13) % 96)
+
+
+def _index_name_length(table_index: int) -> int:
+    return 5 + ((table_index * 11) % 96)
 
 
 def _build_wide_table_spec(table_index: int) -> TableSpec:
+    table_name = _padded_name("WCT", table_index, 0, _table_name_length(table_index))
+
     columns = [ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4)]
+    key_column_names = ["Id"]
 
-    key_column_names = []
-    for key_index in range(COMPOSITE_KEY_COLUMN_COUNT):
-        name = _key_column_name(table_index, key_index)
-        key_column_names.append(name)
-        columns.append(
-            ColumnSpec(
-                name=name,
-                sql_type=f"nvarchar({KEY_COLUMN_CHAR_LENGTH})",
-                type_name="nvarchar/nchar",
-                declared_size=KEY_COLUMN_CHAR_LENGTH * 2,
-            )
+    for column_index in range(COLUMNS_PER_TABLE):
+        column_name = _padded_name(
+            "Col", table_index, column_index, _column_name_length(table_index, column_index)
         )
-
-    for column_index in range(WIDE_CATALOG_COLUMN_COUNT):
         columns.append(
             ColumnSpec(
-                name=_long_column_name(table_index, column_index),
+                name=column_name,
                 sql_type="nvarchar(80)",
                 type_name="nvarchar/nchar",
                 declared_size=160,
@@ -53,17 +50,18 @@ def _build_wide_table_spec(table_index: int) -> TableSpec:
         )
 
     row_values = [table_index]
-    for key_index in range(COMPOSITE_KEY_COLUMN_COUNT):
-        row_values.append(f"t{table_index}_k{key_index}")
-    for column_index in range(WIDE_CATALOG_COLUMN_COUNT):
+    for column_index in range(COLUMNS_PER_TABLE):
         row_values.append(f"t{table_index}_c{column_index}_value")
 
+    index_name = _padded_name("IX", table_index, 0, _index_name_length(table_index))
+    index_target_column = columns[1].name
+
     return TableSpec(
-        name=_long_table_name(table_index),
+        name=table_name,
         columns=tuple(columns),
         rows=(tuple(row_values),),
         primary_key_columns=tuple(key_column_names),
-        indexes=(IndexSpec(name=_index_name(table_index), columns=tuple(key_column_names[:2])),),
+        indexes=(IndexSpec(name=index_name, columns=(index_target_column,)),),
     )
 
 
