@@ -26,7 +26,13 @@ LobChainRegistry::LobChainRegistry(const domain::IPageStorage& storage) : _stora
     {
         const std::span<const std::uint8_t> pageBytes = storage.PageBytes(pageNumber);
         const std::uint32_t logicalId = LogicalPageIdOf(pageBytes);
-        _pageByLogicalId[logicalId] = PageEntry{pageNumber, pageBytes[PageTypeOffset]};
+        const std::uint8_t generation = pageBytes[OwnerObjectGenerationOffset];
+
+        const auto it = _pageByLogicalId.find(logicalId);
+        if (it == _pageByLogicalId.end() || generation >= it->second.generation)
+        {
+            _pageByLogicalId[logicalId] = PageEntry{pageNumber, pageBytes[PageTypeOffset], generation};
+        }
     }
 }
 

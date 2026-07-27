@@ -38,6 +38,14 @@ constexpr unsigned int ContinuationLogicalPageIdShift = 12;
 constexpr std::size_t LogicalPageIdOffset = 4;
 constexpr std::uint32_t LogicalPageIdMask = 0xFFFFFu;
 
+constexpr std::uint32_t HeaderPageLogicalId = 0;
+constexpr std::uint32_t MapAPageLogicalId = 1;
+constexpr std::uint8_t MapAPageType = 0x10;
+constexpr std::size_t MapAPageDataOffset = 16;
+constexpr std::size_t MapBPageDataOffset = 16;
+constexpr std::uint32_t MapBRangeFirstLogicalId = 1027;
+constexpr std::size_t MapBRangeLogicalIdSpan = 1527;
+
 constexpr std::size_t LvBitsPerSlot = 20;
 constexpr std::size_t LvSlotsPerWord = 3;
 constexpr std::size_t LvWordBytes = 8;
