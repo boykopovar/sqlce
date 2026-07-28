@@ -28,13 +28,13 @@ std::vector<std::uint8_t> ReadFirstPageRaw(const std::string& path)
     return page;
 }
 
-FileStorage::FileStorage(const std::string& path) : _pageCount(0), _cipher(nullptr), _pageBuffer(domain::PageSize)
+FileStorage::FileStorage(const std::string& path) : _pageCount(0), _cipher(nullptr)
 {
     Open(path);
 }
 
 FileStorage::FileStorage(const std::string& path, std::shared_ptr<const domain::IPageCipher> cipher)
-    : _pageCount(0), _cipher(std::move(cipher)), _pageBuffer(domain::PageSize)
+    : _pageCount(0), _cipher(std::move(cipher))
 {
     Open(path);
 
@@ -78,9 +78,17 @@ std::span<const std::uint8_t> FileStorage::PageBytes(std::size_t pageNumber) con
         throw std::out_of_range("page number out of range");
     }
 
+    const auto cached = _pageCache.find(pageNumber);
+    if (cached != _pageCache.end())
+    {
+        return std::span<const std::uint8_t>(cached->second.data(), domain::PageSize);
+    }
+
+    std::vector<std::uint8_t> buffer(domain::PageSize);
+
     const std::streamoff offset = static_cast<std::streamoff>(pageNumber * domain::PageSize);
     _file.seekg(offset, std::ios::beg);
-    _file.read(reinterpret_cast<char*>(_pageBuffer.data()), static_cast<std::streamsize>(domain::PageSize));
+    _file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(domain::PageSize));
     if (!_file)
     {
         throw std::runtime_error("failed to read page " + std::to_string(pageNumber));
@@ -88,11 +96,13 @@ std::span<const std::uint8_t> FileStorage::PageBytes(std::size_t pageNumber) con
 
     if (_cipher)
     {
-        const std::vector<std::uint8_t> decrypted = _cipher->DecryptPage(pageNumber, std::span<const std::uint8_t>(_pageBuffer));
-        std::copy(decrypted.begin(), decrypted.end(), _pageBuffer.begin());
+        const std::vector<std::uint8_t> decrypted = _cipher->DecryptPage(pageNumber, std::span<const std::uint8_t>(buffer));
+        std::copy(decrypted.begin(), decrypted.end(), buffer.begin());
     }
 
-    return std::span<const std::uint8_t>(_pageBuffer.data(), domain::PageSize);
+    auto [it, inserted] = _pageCache.emplace(pageNumber, std::move(buffer));
+    (void)inserted;
+    return std::span<const std::uint8_t>(it->second.data(), domain::PageSize);
 }
 
 }

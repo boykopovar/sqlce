@@ -237,7 +237,7 @@ class _Dispatcher:
     def _clr_value_to_python(value: Any) -> Any:
         import System
 
-        if value is None or value is System.DBNull.Value:
+        if value is None or isinstance(value, System.DBNull) or value == System.DBNull.Value:
             return None
         return value
 

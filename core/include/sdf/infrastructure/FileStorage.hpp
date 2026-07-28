@@ -5,6 +5,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "sdf/domain/interfaces/IPageCipher.hpp"
@@ -28,7 +29,7 @@ private:
     mutable std::ifstream _file;
     std::size_t _pageCount;
     std::shared_ptr<const domain::IPageCipher> _cipher;
-    mutable std::vector<std::uint8_t> _pageBuffer;
+    mutable std::unordered_map<std::size_t, std::vector<std::uint8_t>> _pageCache;
 
     void Open(const std::string& path);
 };
