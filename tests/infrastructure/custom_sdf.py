@@ -48,10 +48,10 @@ def assert_runtime_matches_native(path: Path) -> None:
         only_in_runtime = sorted(set(runtime_tables) - set(native_tables))
         assert native_tables == runtime_tables, (
             f"table list mismatch for {path}\n"
-            f"native tables:  {native_tables}\n"
-            f"runtime tables: {runtime_tables}\n"
-            f"only in native:  {only_in_native}\n"
-            f"only in runtime: {only_in_runtime}"
+            f"sqlce lib tables:  {native_tables}\n"
+            f"dll runtime tables: {runtime_tables}\n"
+            f"only in sqlce lib:  {only_in_native}\n"
+            f"only in dll runtime: {only_in_runtime}"
         )
 
         for table_name in native_tables:
