@@ -76,10 +76,13 @@ std::vector<ColumnSchema> SqlceDatabase::TableSchema(const std::string& tableNam
     std::vector<ColumnSchema> result;
     result.reserve(table.Columns().size());
 
+    std::uint16_t denseOrdinal = 0;
     for (const domain::ColumnDef& column : table.Columns())
     {
+        ++denseOrdinal;
+
         ColumnSchema schema;
-        schema.ordinal = column.Ordinal();
+        schema.ordinal = denseOrdinal;
         schema.name = column.Name();
         schema.typeName = domain::NameOf(column.Type());
         schema.declaredSize = column.DeclaredSize();
