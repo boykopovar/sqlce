@@ -7,9 +7,7 @@ from tests.infrastructure.sdf_factory import SDF_VERSION_35
 from tests.infrastructure.sdf_factory import SDF_VERSION_40
 from tests.infrastructure.sdf_factory import list_tables_via_runtime
 from tests.infrastructure.sdf_factory import open_connection
-from tests.infrastructure.sdf_factory import table_schema_via_runtime
-from tests.infrastructure.table_spec import RuntimeColumnSchema
-from tests.infrastructure.table_spec import assert_schemas_equivalent
+from tests.infrastructure.table_spec import assert_table_matches_runtime
 
 CUSTOM_SDF_DIR_NAME = "custom_sdf"
 
@@ -55,31 +53,9 @@ def assert_runtime_matches_native(path: Path) -> None:
         )
 
         for table_name in native_tables:
-            native_columns = native_db.table_schema(table_name)
-            runtime_raw_columns = table_schema_via_runtime(connection, table_name)
-            runtime_columns = [RuntimeColumnSchema(**column) for column in runtime_raw_columns]
-
-            native_summary = [
-                (c.ordinal, c.name, c.type_name, c.declared_size, c.precision, c.scale)
-                for c in native_columns
-            ]
-            runtime_summary = [
-                (c.ordinal, c.name, c.type_name, c.declared_size, c.precision, c.scale)
-                for c in runtime_columns
-            ]
-            assert len(native_columns) == len(runtime_columns), (
-                f"column count mismatch for table {table_name!r} in {path}\n"
-                f"native columns ({len(native_columns)}):  {native_summary}\n"
-                f"runtime columns ({len(runtime_columns)}): {runtime_summary}"
-            )
-
             try:
-                assert_schemas_equivalent(native_columns, runtime_columns)
+                assert_table_matches_runtime(connection, native_db, table_name)
             except AssertionError as error:
-                raise AssertionError(
-                    f"schema mismatch for table {table_name!r} in {path}: {error}\n"
-                    f"native columns:  {native_summary}\n"
-                    f"runtime columns: {runtime_summary}"
-                ) from error
+                raise AssertionError(f"schema mismatch for table {table_name!r} in {path}: {error}") from error
     finally:
         connection.Close()

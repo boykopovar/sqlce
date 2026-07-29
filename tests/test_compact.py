@@ -17,6 +17,9 @@ def test_sdf_compact_full_structure_matches_source(sdf_scenario: SdfScenario, do
     if do_compact:
         sdf_scenario.compact()
 
-    db = sdf_scenario.open_database()
-
-    assert_table_matches(db, SAMPLE_TABLE_SPEC)
+    connection = sdf_scenario.open_connection()
+    try:
+        db = sdf_scenario.open_database()
+        assert_table_matches(connection, db, SAMPLE_TABLE_SPEC)
+    finally:
+        connection.Close()

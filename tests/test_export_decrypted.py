@@ -10,6 +10,7 @@ from tests.infrastructure.scenarios import ENGINE_DEFAULT_40
 from tests.infrastructure.scenarios import PLATFORM_DEFAULT_35
 from tests.infrastructure.scenarios import PLATFORM_DEFAULT_40
 from tests.infrastructure.scenarios import build_scenario
+from tests.infrastructure.sdf_factory import open_connection
 from tests.infrastructure.table_spec import ColumnSpec
 from tests.infrastructure.table_spec import TableSpec
 from tests.infrastructure.table_spec import assert_table_matches
@@ -18,9 +19,9 @@ from tests.infrastructure.table_spec import build_table
 SECOND_TABLE_SPEC = TableSpec(
     name="Second",
     columns=(
-        ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
-        ColumnSpec(name="Flag", sql_type="bit", type_name="bit", declared_size=1),
-        ColumnSpec(name="Payload", sql_type="varbinary(20)", type_name="varbinary", declared_size=20),
+        ColumnSpec(name="Id", sql_type="int"),
+        ColumnSpec(name="Flag", sql_type="bit"),
+        ColumnSpec(name="Payload", sql_type="varbinary(20)"),
     ),
     rows=(
         (1, True, b"\x01\x02\x03"),
@@ -61,7 +62,11 @@ def test_export_decrypted_matches_source_data(
     decrypted_db = SqlceDatabase(str(decrypted_path))
     assert decrypted_db.get_encryption_mode() == EncryptionMode.NONE
 
-    assert_table_matches(decrypted_db, table_spec)
+    decrypted_connection = open_connection(decrypted_path, None, scenario.version)
+    try:
+        assert_table_matches(decrypted_connection, decrypted_db, table_spec)
+    finally:
+        decrypted_connection.Close()
 
     encrypted_rows = encrypted_db.read_table(table_spec.name)
     decrypted_rows = decrypted_db.read_table(table_spec.name)

@@ -12,11 +12,6 @@ from typing import Tuple
 class ColumnSpec:
     name: str
     sql_type: str
-    type_name: str
-    declared_size: int
-    precision: Optional[int] = None
-    scale: Optional[int] = None
-    check_declared_size: bool = True
 
 
 @dataclass(frozen=True)
@@ -119,6 +114,7 @@ class InsertPlan:
 
 
 def _decimal_cast_literal(value: decimal.Decimal, column: ColumnSpec) -> str:
+    precision, scale = _numeric_precision_and_scale(column.sql_type)
     digits, exponent = _decimal_digits_and_exponent(value)
     sign = "-" if value.is_signed() else ""
     if exponent >= 0:
@@ -129,8 +125,18 @@ def _decimal_cast_literal(value: decimal.Decimal, column: ColumnSpec) -> str:
             digits_text = "0." + ("0" * -split_at) + digits
         else:
             digits_text = digits[:split_at] + "." + digits[split_at:]
-    numeric_type = f"numeric({column.precision}, {column.scale})" if column.precision is not None else "numeric"
+    numeric_type = f"numeric({precision}, {scale})" if precision is not None else "numeric"
     return f"CAST({sign}{digits_text} AS {numeric_type})"
+
+
+def _numeric_precision_and_scale(sql_type: str) -> Tuple[Optional[int], Optional[int]]:
+    base_type, _, arguments = sql_type.partition("(")
+    if base_type.strip().lower() not in ("numeric", "decimal") or not arguments:
+        return None, None
+    parts = arguments.rstrip(")").split(",")
+    precision = int(parts[0].strip())
+    scale = int(parts[1].strip()) if len(parts) > 1 else 0
+    return precision, scale
 
 
 def _decimal_digits_and_exponent(value: decimal.Decimal) -> Tuple[str, int]:
@@ -283,44 +289,67 @@ class RuntimeColumnSchema:
     scale: Optional[int]
 
 
+def _column_summary(columns) -> List[Tuple[Any, ...]]:
+    return [
+        (column.ordinal, column.name, column.type_name, column.declared_size, column.precision, column.scale)
+        for column in columns
+    ]
+
+
 def assert_schemas_equivalent(native_columns, runtime_columns: List[RuntimeColumnSchema]) -> None:
-    assert len(native_columns) == len(runtime_columns)
+    native_summary = _column_summary(native_columns)
+    runtime_summary = _column_summary(runtime_columns)
+
+    assert len(native_columns) == len(runtime_columns), (
+        f"column count mismatch\n"
+        f"native columns ({len(native_columns)}):  {native_summary}\n"
+        f"runtime columns ({len(runtime_columns)}): {runtime_summary}"
+    )
 
     native_ordinals = [column.ordinal for column in native_columns]
     runtime_ordinals = [column.ordinal for column in runtime_columns]
     assert native_ordinals == sorted(native_ordinals)
     assert runtime_ordinals == sorted(runtime_ordinals)
 
-    for native_column, runtime_column in zip(native_columns, runtime_columns):
-        assert native_column.ordinal == runtime_column.ordinal
-        assert native_column.name == runtime_column.name
-        assert native_column.type_name == runtime_column.type_name
-        assert native_column.precision == runtime_column.precision
-        assert native_column.scale == runtime_column.scale
-        if native_column.declared_size is not None and runtime_column.declared_size is not None:
-            assert native_column.declared_size == runtime_column.declared_size
+    native_by_ordinal_rank = sorted(zip(native_ordinals, native_columns), key=lambda pair: pair[0])
+    runtime_by_ordinal_rank = sorted(zip(runtime_ordinals, runtime_columns), key=lambda pair: pair[0])
+
+    try:
+        for (_, native_column), (_, runtime_column) in zip(native_by_ordinal_rank, runtime_by_ordinal_rank):
+            assert native_column.name == runtime_column.name
+            assert native_column.type_name == runtime_column.type_name
+            assert native_column.precision == runtime_column.precision
+            assert native_column.scale == runtime_column.scale
+            if native_column.declared_size is not None and runtime_column.declared_size is not None:
+                assert native_column.declared_size == runtime_column.declared_size
+    except AssertionError as error:
+        raise AssertionError(
+            f"schema mismatch: {error}\n"
+            f"native columns:  {native_summary}\n"
+            f"runtime columns: {runtime_summary}"
+        ) from error
 
 
-def assert_table_matches(db, spec: TableSpec) -> None:
-    tables = db.list_tables()
+def runtime_columns_for(connection, table_name: str) -> List[RuntimeColumnSchema]:
+    from tests.infrastructure.sdf_factory import table_schema_via_runtime
+
+    raw_columns = table_schema_via_runtime(connection, table_name)
+    return [RuntimeColumnSchema(**column) for column in raw_columns]
+
+
+def assert_table_matches_runtime(connection, native_db, table_name: str) -> None:
+    native_columns = native_db.table_schema(table_name)
+    runtime_columns = runtime_columns_for(connection, table_name)
+    assert_schemas_equivalent(native_columns, runtime_columns)
+
+
+def assert_table_matches(connection, native_db, spec: TableSpec) -> None:
+    tables = native_db.list_tables()
     assert spec.name in tables
 
-    schema = db.table_schema(spec.name)
-    assert len(schema) == len(spec.columns)
+    assert_table_matches_runtime(connection, native_db, spec.name)
 
-    ordinals = [column.ordinal for column in schema]
-    assert ordinals == sorted(ordinals)
-    assert len(set(ordinals)) == len(ordinals)
-
-    for actual_column, expected_column in zip(schema, spec.columns):
-        assert actual_column.name == expected_column.name
-        assert actual_column.type_name == expected_column.type_name
-        if expected_column.check_declared_size:
-            assert actual_column.declared_size == expected_column.declared_size
-        assert actual_column.precision == expected_column.precision
-        assert actual_column.scale == expected_column.scale
-
-    actual_rows = db.read_table(spec.name)
+    actual_rows = native_db.read_table(spec.name)
     expected_rows = spec.expected_rows_as_dicts()
 
     assert len(actual_rows) == len(expected_rows)

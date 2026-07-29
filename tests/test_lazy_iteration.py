@@ -14,8 +14,8 @@ LAZY_MANY_ROWS_COUNT = 500
 LAZY_MANY_ROWS_TABLE_SPEC = TableSpec(
     name="LazyManyRows",
     columns=(
-        ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
-        ColumnSpec(name="Payload", sql_type="nvarchar(50)", type_name="nvarchar/nchar", declared_size=100),
+        ColumnSpec(name="Id", sql_type="int"),
+        ColumnSpec(name="Payload", sql_type="nvarchar(50)"),
     ),
     rows=tuple((row_index, f"row-{row_index}") for row_index in range(LAZY_MANY_ROWS_COUNT)),
 )
@@ -23,8 +23,8 @@ LAZY_MANY_ROWS_TABLE_SPEC = TableSpec(
 LAZY_EMPTY_TABLE_SPEC = TableSpec(
     name="LazyEmptyTable",
     columns=(
-        ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
-        ColumnSpec(name="Payload", sql_type="nvarchar(50)", type_name="nvarchar/nchar", declared_size=100),
+        ColumnSpec(name="Id", sql_type="int"),
+        ColumnSpec(name="Payload", sql_type="nvarchar(50)"),
     ),
     rows=(),
 )
@@ -41,9 +41,9 @@ _LOB_BINARY_C = b"\x01\x02\x03short"
 LAZY_MULTI_LOB_TABLE_SPEC = TableSpec(
     name="LazyMultiLob",
     columns=(
-        ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
-        ColumnSpec(name="Content", sql_type="ntext", type_name="ntext", declared_size=0, check_declared_size=False),
-        ColumnSpec(name="Payload", sql_type="image", type_name="image", declared_size=0, check_declared_size=False),
+        ColumnSpec(name="Id", sql_type="int"),
+        ColumnSpec(name="Content", sql_type="ntext"),
+        ColumnSpec(name="Payload", sql_type="image"),
     ),
     rows=(
         (1, _LOB_TEXT_A, _LOB_BINARY_A),
@@ -55,9 +55,9 @@ LAZY_MULTI_LOB_TABLE_SPEC = TableSpec(
 LAZY_NULL_LOB_TABLE_SPEC = TableSpec(
     name="LazyNullLob",
     columns=(
-        ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4),
-        ColumnSpec(name="Content", sql_type="ntext", type_name="ntext", declared_size=0, check_declared_size=False),
-        ColumnSpec(name="Payload", sql_type="image", type_name="image", declared_size=0, check_declared_size=False),
+        ColumnSpec(name="Id", sql_type="int"),
+        ColumnSpec(name="Content", sql_type="ntext"),
+        ColumnSpec(name="Payload", sql_type="image"),
     ),
     rows=(
         (1, None, None),
