@@ -1,7 +1,5 @@
-from typing import Callable
-
 from tests.infrastructure.scenarios import SdfScenario
-from tests.infrastructure.sdf_factory import RemoteConnection
+from tests.infrastructure.sdf_factory import open_connection
 from tests.infrastructure.table_spec import ColumnSpec
 from tests.infrastructure.table_spec import TableSpec
 from tests.infrastructure.table_spec import assert_table_matches
@@ -54,37 +52,37 @@ TWO_COLUMN_ORDINAL_HISTORY_TABLE_SPEC = TableSpec(
 )
 
 
-def _build_and_check(
-        sdf_scenario: SdfScenario, open_sdf_connection: Callable[..., RemoteConnection], spec: TableSpec,
-) -> None:
-    connection = open_sdf_connection(sdf_scenario.path, sdf_scenario.password, sdf_scenario.version)
-    build_table_via_column_history(connection, spec, sdf_scenario.version)
+def _build_and_check(sdf_scenario: SdfScenario, spec: TableSpec) -> None:
+    with open_connection(sdf_scenario.path, sdf_scenario.password, sdf_scenario.version) as connection:
+        build_table_via_column_history(connection, spec, sdf_scenario.version)
+
     db = sdf_scenario.open_database()
-    assert_table_matches(connection, db, spec)
+    with open_connection(sdf_scenario.path, sdf_scenario.password, sdf_scenario.version) as connection:
+        assert_table_matches(connection, db, spec)
 
 
 def test_sdf_column_ordinal_survives_add_drop_history(
-        sdf_scenario: SdfScenario, open_sdf_connection: Callable[..., RemoteConnection],
+        sdf_scenario: SdfScenario,
 ) -> None:
-    _build_and_check(sdf_scenario, open_sdf_connection, ORDINAL_HISTORY_TABLE_SPEC)
+    _build_and_check(sdf_scenario, ORDINAL_HISTORY_TABLE_SPEC)
 
 
 def test_sdf_column_ordinal_survives_add_drop_history_wide_table(
-        sdf_scenario: SdfScenario, open_sdf_connection: Callable[..., RemoteConnection],
+        sdf_scenario: SdfScenario,
 ) -> None:
-    _build_and_check(sdf_scenario, open_sdf_connection, WIDE_ORDINAL_HISTORY_TABLE_SPEC)
+    _build_and_check(sdf_scenario, WIDE_ORDINAL_HISTORY_TABLE_SPEC)
 
 
 def test_sdf_column_ordinal_survives_add_drop_history_two_columns(
-        sdf_scenario: SdfScenario, open_sdf_connection: Callable[..., RemoteConnection],
+        sdf_scenario: SdfScenario,
 ) -> None:
-    _build_and_check(sdf_scenario, open_sdf_connection, TWO_COLUMN_ORDINAL_HISTORY_TABLE_SPEC)
+    _build_and_check(sdf_scenario, TWO_COLUMN_ORDINAL_HISTORY_TABLE_SPEC)
 
 
-def test_sdf_column_ordinal_history_ordinals_are_dense_and_ordered(
-        sdf_scenario: SdfScenario, sdf_connection: RemoteConnection,
-) -> None:
-    build_table_via_column_history(sdf_connection, WIDE_ORDINAL_HISTORY_TABLE_SPEC, sdf_scenario.version)
+def test_sdf_column_ordinal_history_ordinals_are_dense_and_ordered(sdf_scenario: SdfScenario) -> None:
+    with open_connection(sdf_scenario.path, sdf_scenario.password, sdf_scenario.version) as connection:
+        build_table_via_column_history(connection, WIDE_ORDINAL_HISTORY_TABLE_SPEC, sdf_scenario.version)
+
     db = sdf_scenario.open_database()
     schema = db.table_schema(WIDE_ORDINAL_HISTORY_TABLE_SPEC.name)
 

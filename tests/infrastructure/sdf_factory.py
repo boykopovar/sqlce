@@ -24,9 +24,19 @@ class RemoteConnection:
     def __init__(self, version: str, handle_id: int) -> None:
         self._version = version
         self._handle_id = handle_id
+        self._closed = False
 
     def Close(self) -> None:
+        if self._closed:
+            return
         runtime_call(self._version, "close_connection", self._handle_id)
+        self._closed = True
+
+    def __enter__(self) -> "RemoteConnection":
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.Close()
 
     def CreateCommand(self) -> "_RemoteCommand":
         return _RemoteCommand(self)

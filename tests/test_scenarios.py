@@ -2,7 +2,7 @@ import pytest
 
 from sqlce import InvalidPasswordError
 from tests.infrastructure.scenarios import SdfScenario
-from tests.infrastructure.sdf_factory import RemoteConnection
+from tests.infrastructure.sdf_factory import open_connection
 from tests.infrastructure.table_spec import assert_table_matches
 from tests.infrastructure.table_spec import build_table
 from tests.tables.sample_tables import SAMPLE_TABLE_SPEC
@@ -29,9 +29,10 @@ def test_sdf_scenario_database_rejects_wrong_password(sdf_scenario: SdfScenario)
         SqlceDatabase(str(sdf_scenario.path), "wrong-password")
 
 
-def test_sdf_scenario_full_structure_matches_source(
-        sdf_scenario: SdfScenario, sdf_connection: RemoteConnection,
-) -> None:
-    build_table(sdf_connection, SAMPLE_TABLE_SPEC, sdf_scenario.version)
+def test_sdf_scenario_full_structure_matches_source(sdf_scenario: SdfScenario) -> None:
+    with open_connection(sdf_scenario.path, sdf_scenario.password, sdf_scenario.version) as connection:
+        build_table(connection, SAMPLE_TABLE_SPEC, sdf_scenario.version)
+
     db = sdf_scenario.open_database()
-    assert_table_matches(sdf_connection, db, SAMPLE_TABLE_SPEC)
+    with open_connection(sdf_scenario.path, sdf_scenario.password, sdf_scenario.version) as connection:
+        assert_table_matches(connection, db, SAMPLE_TABLE_SPEC)

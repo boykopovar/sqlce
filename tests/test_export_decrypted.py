@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Callable
 
 import pytest
 
@@ -10,7 +9,7 @@ from tests.infrastructure.scenarios import ENGINE_DEFAULT_40
 from tests.infrastructure.scenarios import PLATFORM_DEFAULT_35
 from tests.infrastructure.scenarios import PLATFORM_DEFAULT_40
 from tests.infrastructure.scenarios import build_scenario
-from tests.infrastructure.sdf_factory import RemoteConnection
+from tests.infrastructure.sdf_factory import open_connection
 from tests.infrastructure.table_spec import ColumnSpec
 from tests.infrastructure.table_spec import TableSpec
 from tests.infrastructure.table_spec import assert_table_matches
@@ -41,14 +40,13 @@ ENCRYPTED_SCENARIOS_WITH_SPECS = (
 @pytest.mark.parametrize("scenario_name, table_spec", ENCRYPTED_SCENARIOS_WITH_SPECS)
 def test_export_decrypted_matches_source_data(
         sdf_dir: Path,
-        open_sdf_connection: Callable[..., RemoteConnection],
         scenario_name: str,
         table_spec: TableSpec,
 ) -> None:
     scenario = build_scenario(scenario_name, sdf_dir)
 
-    connection = open_sdf_connection(scenario.path, scenario.password, scenario.version)
-    build_table(connection, table_spec, scenario.version)
+    with open_connection(scenario.path, scenario.password, scenario.version) as connection:
+        build_table(connection, table_spec, scenario.version)
 
     encrypted_db = scenario.open_database()
     assert encrypted_db.get_encryption_mode() != EncryptionMode.NONE
@@ -63,8 +61,8 @@ def test_export_decrypted_matches_source_data(
     decrypted_db = SqlceDatabase(str(decrypted_path))
     assert decrypted_db.get_encryption_mode() == EncryptionMode.NONE
 
-    decrypted_connection = open_sdf_connection(decrypted_path, None, scenario.version)
-    assert_table_matches(decrypted_connection, decrypted_db, table_spec)
+    with open_connection(decrypted_path, None, scenario.version) as decrypted_connection:
+        assert_table_matches(decrypted_connection, decrypted_db, table_spec)
 
     encrypted_rows = encrypted_db.read_table(table_spec.name)
     decrypted_rows = decrypted_db.read_table(table_spec.name)

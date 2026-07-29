@@ -1,15 +1,14 @@
 from tests.infrastructure.scenarios import SdfScenario
-from tests.infrastructure.sdf_factory import RemoteConnection
+from tests.infrastructure.sdf_factory import open_connection
 from tests.infrastructure.table_spec import assert_table_matches
 from tests.infrastructure.table_spec import build_table
 from tests.tables.catalog_continuation_tables import WIDE_CATALOG_TABLE_SPECS
 
 
-def test_sdf_catalog_survives_many_wide_tables_with_indexes(
-        sdf_scenario: SdfScenario, sdf_connection: RemoteConnection,
-) -> None:
-    for spec in WIDE_CATALOG_TABLE_SPECS:
-        build_table(sdf_connection, spec, sdf_scenario.version)
+def test_sdf_catalog_survives_many_wide_tables_with_indexes(sdf_scenario: SdfScenario) -> None:
+    with open_connection(sdf_scenario.path, sdf_scenario.password, sdf_scenario.version) as connection:
+        for spec in WIDE_CATALOG_TABLE_SPECS:
+            build_table(connection, spec, sdf_scenario.version)
 
     db = sdf_scenario.open_database()
 
@@ -27,5 +26,6 @@ def test_sdf_catalog_survives_many_wide_tables_with_indexes(
         assert name is not None
         assert name.strip() != ""
 
-    for spec in WIDE_CATALOG_TABLE_SPECS:
-        assert_table_matches(sdf_connection, db, spec)
+    with open_connection(sdf_scenario.path, sdf_scenario.password, sdf_scenario.version) as connection:
+        for spec in WIDE_CATALOG_TABLE_SPECS:
+            assert_table_matches(connection, db, spec)

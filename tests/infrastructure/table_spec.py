@@ -343,6 +343,15 @@ def assert_table_matches_runtime(connection, native_db, table_name: str) -> None
 
 
 def assert_table_matches(connection, native_db, spec: TableSpec) -> None:
+    """Compare native_db (reads the raw .sdf file) against `spec` and against
+    `connection` (a live SQL CE connection used for the runtime-side schema
+    comparison).
+
+    `connection` must not be the same connection that was used to write the
+    data: SQL CE only guarantees writes are durable on disk once the writing
+    connection is closed, so `native_db` must be opened only after that
+    connection is closed. Open a fresh connection here if you need one.
+    """
     tables = native_db.list_tables()
     assert spec.name in tables
 
