@@ -123,7 +123,7 @@ std::vector<ColumnSchema> SqlceDatabase::TableSchema(const std::string& tableNam
                 schema.precision = 7;
                 break;
             case domain::ColumnType::Float:
-                schema.precision = 15;
+                schema.precision = 53;
                 break;
             case domain::ColumnType::Money:
                 schema.precision = 19;
