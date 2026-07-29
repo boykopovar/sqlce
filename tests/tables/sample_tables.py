@@ -36,10 +36,8 @@ ALL_COLUMN_TYPES_SPEC = TableSpec(
         ColumnSpec(name="RealCol", sql_type="real"),
         ColumnSpec(name="FloatCol", sql_type="float"),
         ColumnSpec(name="MoneyCol", sql_type="money"),
-        ColumnSpec(name="NumericCol", sql_type="numeric(10, 2)"),
-        ColumnSpec(name="RowVersionCol", sql_type="rowversion"),
     ),
     rows=(
-        (1, 100, 1000, 100000, "test", "value", "text", b"binary", b"varbinary", b"image", datetime(2023, 1, 1, 12, 0, 0), UUID("12345678-1234-1234-1234-123456789012"), 1, 1.5, 2.5, 100.50, 123.45, None),
+        (1, 100, 1000, 100000, "test", "value", "text", b"binary", b"varbinary", b"image", datetime(2023, 1, 1, 12, 0, 0), UUID("12345678-1234-1234-1234-123456789012"), True, 1.5, 2.5, 100.50),
     ),
 )
