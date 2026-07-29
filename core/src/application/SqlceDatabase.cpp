@@ -90,10 +90,49 @@ std::vector<ColumnSchema> SqlceDatabase::TableSchema(const std::string& tableNam
         {
             schema.declaredSize = static_cast<std::uint16_t>(schema.declaredSize / 2);
         }
-        if (column.Type() == domain::ColumnType::Numeric)
+
+        switch (column.Type())
         {
-            schema.precision = column.Precision();
-            schema.scale = column.Scale();
+            case domain::ColumnType::Bit:
+                schema.precision = 1;
+                schema.scale = 0;
+                break;
+            case domain::ColumnType::TinyInt:
+                schema.precision = 3;
+                schema.scale = 0;
+                break;
+            case domain::ColumnType::SmallInt:
+                schema.precision = 5;
+                schema.scale = 0;
+                break;
+            case domain::ColumnType::Int:
+                schema.precision = 10;
+                schema.scale = 0;
+                break;
+            case domain::ColumnType::BigInt:
+                schema.precision = 19;
+                schema.scale = 0;
+                break;
+            case domain::ColumnType::Real:
+                schema.precision = 7;
+                break;
+            case domain::ColumnType::Float:
+                schema.precision = 15;
+                break;
+            case domain::ColumnType::Money:
+                schema.precision = 19;
+                schema.scale = 4;
+                break;
+            case domain::ColumnType::DateTime:
+                schema.precision = 23;
+                schema.scale = 3;
+                break;
+            case domain::ColumnType::Numeric:
+                schema.precision = column.Precision();
+                schema.scale = column.Scale();
+                break;
+            default:
+                break;
         }
         result.push_back(std::move(schema));
     }
