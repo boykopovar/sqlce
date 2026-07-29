@@ -2,6 +2,7 @@
 #include <emscripten/val.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "sdf/application/ColumnSchema.hpp"
@@ -65,13 +66,14 @@ std::string EscapeJsonString(const std::string& value)
     return result;
 }
 
-std::string OptionalByteToJson(std::optional<std::uint8_t> value)
+template <typename T>
+std::string OptionalNumberToJson(std::optional<T> value)
 {
     if (!value.has_value())
     {
         return "null";
     }
-    return std::to_string(static_cast<int>(*value));
+    return std::to_string(static_cast<long long>(*value));
 }
 
 std::string ErrorResultJson(const std::string& message)
@@ -146,11 +148,11 @@ public:
             json += ",\"type_name\":";
             AppendEscapedJsonString(json, std::string(column.typeName));
             json += ",\"declared_size\":";
-            json += std::to_string(column.declaredSize);
+            json += OptionalNumberToJson(column.declaredSize);
             json += ",\"precision\":";
-            json += OptionalByteToJson(column.precision);
+            json += OptionalNumberToJson(column.precision);
             json += ",\"scale\":";
-            json += OptionalByteToJson(column.scale);
+            json += OptionalNumberToJson(column.scale);
             json += "}";
         }
         json.push_back(']');

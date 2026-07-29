@@ -85,10 +85,20 @@ std::vector<ColumnSchema> SqlceDatabase::TableSchema(const std::string& tableNam
         schema.ordinal = denseOrdinal;
         schema.name = column.Name();
         schema.typeName = domain::NameOf(column.Type());
-        schema.declaredSize = column.DeclaredSize();
-        if (column.Type() == domain::ColumnType::NVarChar || column.Type() == domain::ColumnType::NChar)
+        switch (column.Type())
         {
-            schema.declaredSize = static_cast<std::uint16_t>(schema.declaredSize / 2);
+            case domain::ColumnType::NVarChar:
+            case domain::ColumnType::NChar:
+                schema.declaredSize = static_cast<std::uint16_t>(column.DeclaredSize() / 2);
+                break;
+            case domain::ColumnType::Binary:
+            case domain::ColumnType::VarBinary:
+            case domain::ColumnType::Image:
+            case domain::ColumnType::NText:
+                schema.declaredSize = column.DeclaredSize();
+                break;
+            default:
+                break;
         }
 
         switch (column.Type())

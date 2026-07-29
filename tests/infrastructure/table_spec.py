@@ -320,8 +320,7 @@ def assert_schemas_equivalent(native_columns, runtime_columns: List[RuntimeColum
             assert native_column.type_name == runtime_column.type_name
             assert native_column.precision == runtime_column.precision
             assert native_column.scale == runtime_column.scale
-            if native_column.declared_size is not None and runtime_column.declared_size is not None:
-                assert native_column.declared_size == runtime_column.declared_size
+            assert native_column.declared_size == runtime_column.declared_size
     except AssertionError as error:
         raise AssertionError(
             f"schema mismatch: {error}\n"

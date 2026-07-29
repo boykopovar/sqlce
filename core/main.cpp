@@ -113,7 +113,15 @@ void DumpFile(const std::filesystem::path& sdfPath, const std::string& password)
         for (const sdf::application::ColumnSchema& column : db->TableSchema(tableName))
         {
             std::cout << "  " << column.ordinal << ". " << column.name << " " << column.typeName
-                       << " size=" << column.declaredSize;
+                       << " size=";
+            if (column.declaredSize.has_value())
+            {
+                std::cout << *column.declaredSize;
+            }
+            else
+            {
+                std::cout << "null";
+            }
             if (column.precision.has_value())
             {
                 std::cout << ", precision=" << static_cast<int>(*column.precision)
