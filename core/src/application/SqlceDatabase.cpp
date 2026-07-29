@@ -109,19 +109,15 @@ std::vector<ColumnSchema> SqlceDatabase::TableSchema(const std::string& tableNam
                 break;
             case domain::ColumnType::TinyInt:
                 schema.precision = 3;
-                schema.scale = 0;
                 break;
             case domain::ColumnType::SmallInt:
                 schema.precision = 5;
-                schema.scale = 0;
                 break;
             case domain::ColumnType::Int:
                 schema.precision = 10;
-                schema.scale = 0;
                 break;
             case domain::ColumnType::BigInt:
                 schema.precision = 19;
-                schema.scale = 0;
                 break;
             case domain::ColumnType::Real:
                 schema.precision = 7;
