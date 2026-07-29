@@ -51,21 +51,21 @@ std::size_t FixedSizeOf(ColumnType type, std::uint16_t declaredSize)
         case ColumnType::SmallInt:
             return 2;
         case ColumnType::Int:
+        case ColumnType::Real:
             return 4;
         case ColumnType::BigInt:
-            return 8;
-        case ColumnType::Binary:
-            return declaredSize != 0 ? declaredSize : 1;
         case ColumnType::DateTime:
+        case ColumnType::Float:
+        case ColumnType::Money:
+        case ColumnType::RowVersion:
             return 8;
         case ColumnType::UniqueIdentifier:
             return 16;
-        case ColumnType::Float:
-            return 8;
-        case ColumnType::Money:
-            return 8;
         case ColumnType::Numeric:
             return 19;
+        case ColumnType::Binary:
+        case ColumnType::NChar:
+            return declaredSize != 0 ? declaredSize : 1;
         default:
             return declaredSize != 0 ? declaredSize : 4;
     }

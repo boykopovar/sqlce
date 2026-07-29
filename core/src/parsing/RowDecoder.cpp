@@ -244,6 +244,10 @@ domain::ColumnValue RowDecoder::DecodeFixed(const domain::ColumnDef& column, std
             return domain::ColumnValue(domain::ColumnValueStorage(static_cast<double>(raw) / 10000.0));
         }
 
+        case domain::ColumnType::Real:
+            return domain::ColumnValue(
+                domain::ColumnValueStorage(static_cast<double>(infrastructure::ReadFloatLE(chunk, 0))));
+
         case domain::ColumnType::Float:
             return domain::ColumnValue(domain::ColumnValueStorage(infrastructure::ReadDoubleLE(chunk, 0)));
 
@@ -274,8 +278,12 @@ domain::ColumnValue RowDecoder::DecodeFixed(const domain::ColumnDef& column, std
             return domain::ColumnValue(domain::ColumnValueStorage(infrastructure::ReadInt64LE(chunk, 0)));
 
         case domain::ColumnType::Binary:
+        case domain::ColumnType::RowVersion:
             return domain::ColumnValue(
                 domain::ColumnValueStorage(std::vector<std::uint8_t>(chunk.begin(), chunk.end())));
+
+        case domain::ColumnType::NChar:
+            return domain::ColumnValue(domain::ColumnValueStorage(domain::DecodeText(chunk, false)));
 
         default:
             return domain::ColumnValue(
@@ -286,7 +294,7 @@ domain::ColumnValue RowDecoder::DecodeFixed(const domain::ColumnDef& column, std
 domain::ColumnValue RowDecoder::DecodeVarLength(
     const domain::ColumnDef& column, std::span<const std::uint8_t> chunk, bool compressed) const
 {
-    if (column.Type() == domain::ColumnType::NVarChar)
+    if (column.Type() == domain::ColumnType::NVarChar || column.Type() == domain::ColumnType::NChar)
     {
         return domain::ColumnValue(domain::ColumnValueStorage(domain::DecodeText(chunk, compressed)));
     }

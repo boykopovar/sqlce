@@ -44,6 +44,8 @@ std::size_t FixedSizeOf(ColumnType type, std::uint16_t declaredSize);
 
 std::string_view NameOf(ColumnType type);
 
+ColumnType ColumnTypeFromRawCode(std::uint16_t rawCode);
+
 }
 
 #endif

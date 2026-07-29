@@ -86,6 +86,10 @@ std::vector<ColumnSchema> SqlceDatabase::TableSchema(const std::string& tableNam
         schema.name = column.Name();
         schema.typeName = domain::NameOf(column.Type());
         schema.declaredSize = column.DeclaredSize();
+        if (column.Type() == domain::ColumnType::NVarChar || column.Type() == domain::ColumnType::NChar)
+        {
+            schema.declaredSize = static_cast<std::uint16_t>(schema.declaredSize / 2);
+        }
         if (column.Type() == domain::ColumnType::Numeric)
         {
             schema.precision = column.Precision();

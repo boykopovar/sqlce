@@ -47,6 +47,15 @@ double ReadDoubleLE(std::span<const std::uint8_t> bytes, std::size_t offset)
     return result;
 }
 
+float ReadFloatLE(std::span<const std::uint8_t> bytes, std::size_t offset)
+{
+    static_assert(sizeof(float) == 4, "float must be 4 bytes on this platform");
+    float result = 0.0f;
+    std::uint32_t raw = ReadUInt32LE(bytes, offset);
+    std::memcpy(&result, &raw, sizeof(result));
+    return result;
+}
+
 std::array<std::uint8_t, 16> ReadBytes16(std::span<const std::uint8_t> bytes, std::size_t offset)
 {
     std::array<std::uint8_t, 16> result{};
