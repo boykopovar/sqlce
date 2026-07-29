@@ -1,32 +1,31 @@
-from tests.tables.catalog_continuation_tables import WIDE_CATALOG_TABLE_SPECS
 from tests.infrastructure.scenarios import SdfScenario
+from tests.infrastructure.sdf_factory import RemoteConnection
 from tests.infrastructure.table_spec import assert_table_matches
 from tests.infrastructure.table_spec import build_table
+from tests.tables.catalog_continuation_tables import WIDE_CATALOG_TABLE_SPECS
 
 
-def test_sdf_catalog_survives_many_wide_tables_with_indexes(sdf_scenario: SdfScenario) -> None:
-    connection = sdf_scenario.open_connection()
-    try:
-        for spec in WIDE_CATALOG_TABLE_SPECS:
-            build_table(connection, spec, sdf_scenario.version)
+def test_sdf_catalog_survives_many_wide_tables_with_indexes(
+        sdf_scenario: SdfScenario, sdf_connection: RemoteConnection,
+) -> None:
+    for spec in WIDE_CATALOG_TABLE_SPECS:
+        build_table(sdf_connection, spec, sdf_scenario.version)
 
-        db = sdf_scenario.open_database()
+    db = sdf_scenario.open_database()
 
-        expected_names = {spec.name for spec in WIDE_CATALOG_TABLE_SPECS}
-        actual_names = set(db.list_tables())
+    expected_names = {spec.name for spec in WIDE_CATALOG_TABLE_SPECS}
+    actual_names = set(db.list_tables())
 
-        missing_names = expected_names - actual_names
-        unexpected_names = actual_names - expected_names
+    missing_names = expected_names - actual_names
+    unexpected_names = actual_names - expected_names
 
-        assert not missing_names, f"catalog rows lost for tables: {sorted(missing_names)}"
-        assert not unexpected_names, f"phantom catalog rows found: {sorted(unexpected_names)}"
-        assert actual_names == expected_names
+    assert not missing_names, f"catalog rows lost for tables: {sorted(missing_names)}"
+    assert not unexpected_names, f"phantom catalog rows found: {sorted(unexpected_names)}"
+    assert actual_names == expected_names
 
-        for name in actual_names:
-            assert name is not None
-            assert name.strip() != ""
+    for name in actual_names:
+        assert name is not None
+        assert name.strip() != ""
 
-        for spec in WIDE_CATALOG_TABLE_SPECS:
-            assert_table_matches(connection, db, spec)
-    finally:
-        connection.Close()
+    for spec in WIDE_CATALOG_TABLE_SPECS:
+        assert_table_matches(sdf_connection, db, spec)

@@ -1,5 +1,7 @@
 from pathlib import Path
+from typing import Callable
 from typing import Iterator
+from typing import Optional
 
 import pytest
 
@@ -7,8 +9,11 @@ from tests.infrastructure.custom_sdf import discover_custom_sdf_files
 from tests.infrastructure.scenarios import ALL_SCENARIO_NAMES
 from tests.infrastructure.scenarios import SdfScenario
 from tests.infrastructure.scenarios import build_scenario
+from tests.infrastructure.sdf_factory import RemoteConnection
+from tests.infrastructure.sdf_factory import SDF_VERSION_40
 from tests.infrastructure.sdf_factory import cleanup_sdf_dir
 from tests.infrastructure.sdf_factory import get_sdf_dir
+from tests.infrastructure.sdf_factory import open_connection as sdf_open_connection
 from tests.infrastructure.sdf_factory import prewarm_workers
 
 BASE_DIR = Path(__file__).parent
@@ -81,4 +86,26 @@ def sdf_dir(no_clean: bool) -> Iterator[Path]:
 @pytest.fixture(params=ALL_SCENARIO_NAMES)
 def sdf_scenario(request, sdf_dir: Path) -> SdfScenario:
     return build_scenario(request.param, sdf_dir)
+
+
+@pytest.fixture
+def open_sdf_connection() -> Iterator[Callable[..., RemoteConnection]]:
+    opened_connections = []
+
+    def _open(path: Path, password: Optional[str] = None, version: str = SDF_VERSION_40) -> RemoteConnection:
+        connection = sdf_open_connection(path, password, version)
+        opened_connections.append(connection)
+        return connection
+
+    yield _open
+
+    for connection in opened_connections:
+        connection.Close()
+
+
+@pytest.fixture
+def sdf_connection(
+        sdf_scenario: SdfScenario, open_sdf_connection: Callable[..., RemoteConnection],
+) -> RemoteConnection:
+    return open_sdf_connection(sdf_scenario.path, sdf_scenario.password, sdf_scenario.version)
 
