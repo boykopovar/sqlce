@@ -89,13 +89,17 @@ std::vector<ColumnSchema> SqlceDatabase::TableSchema(const std::string& tableNam
         {
             case domain::ColumnType::NVarChar:
             case domain::ColumnType::NChar:
-                schema.declaredSize = static_cast<std::uint16_t>(column.DeclaredSize() / 2);
+                schema.declaredSize = static_cast<std::uint32_t>(column.DeclaredSize() / 2);
                 break;
             case domain::ColumnType::Binary:
             case domain::ColumnType::VarBinary:
-            case domain::ColumnType::Image:
-            case domain::ColumnType::NText:
                 schema.declaredSize = column.DeclaredSize();
+                break;
+            case domain::ColumnType::Image:
+                schema.declaredSize = 0x3FFFFFFF;
+                break;
+            case domain::ColumnType::NText:
+                schema.declaredSize = 0x1FFFFFFF;
                 break;
             default:
                 break;
