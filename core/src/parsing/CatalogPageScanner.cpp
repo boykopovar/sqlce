@@ -9,6 +9,7 @@
 #include "sdf/infrastructure/BinaryReader.hpp"
 #include "sdf/parsing/PageView.hpp"
 #include "sdf/parsing/SdfFormat.hpp"
+#include "sdf/parsing/interfaces/ILogicalPageResolver.hpp"
 
 namespace sdf::parsing
 {
@@ -31,7 +32,68 @@ std::uint32_t ReadPackedSlot(std::span<const std::uint8_t> pageBytes, std::size_
     return static_cast<std::uint32_t>((word >> bitOffset) & LvSlotValueMask);
 }
 
-std::vector<std::uint32_t> DecodeSpaceMapLogicalPageIds(std::span<const std::uint8_t> rootPageBytes)
+bool BitmapBitSet(std::span<const std::uint8_t> bitmapPageBytes, std::uint32_t bitPosition)
+{
+    const std::size_t byteOffset = BitmapPageBitsOffset + (bitPosition >> 3);
+    if (byteOffset >= bitmapPageBytes.size())
+    {
+        return false;
+    }
+    return ((bitmapPageBytes[byteOffset] >> (bitPosition & 7)) & 0x01u) != 0;
+}
+
+std::vector<std::uint32_t> DecodeIndirectSpaceMapLogicalPageIds(
+    const domain::IPageStorage& storage, const ILogicalPageResolver& logicalPageResolver,
+    std::span<const std::uint8_t> rootPageBytes, std::size_t slotBase, std::size_t slotRegionEnd)
+{
+    std::vector<std::uint32_t> logicalPageIds;
+
+    for (std::size_t groupIndex = 0; groupIndex < SpaceMapIndirectGroupCount; ++groupIndex)
+    {
+        const std::size_t wordIndex = (LvBitsPerSlot * groupIndex) / (LvSlotsPerWord * LvBitsPerSlot);
+        const std::size_t wordByteOffset = slotBase + wordIndex * LvWordBytes;
+        if (wordByteOffset + LvWordBytes > slotRegionEnd)
+        {
+            break;
+        }
+
+        const std::uint32_t bitmapPageLogicalId = ReadPackedSlot(rootPageBytes, slotBase, groupIndex);
+        if (bitmapPageLogicalId == 0)
+        {
+            continue;
+        }
+
+        const std::optional<std::size_t> bitmapPhysicalPage
+            = logicalPageResolver.ResolvePhysicalPage(storage, bitmapPageLogicalId);
+        if (!bitmapPhysicalPage.has_value())
+        {
+            continue;
+        }
+
+        const std::span<const std::uint8_t> bitmapPageBytes = storage.PageBytes(*bitmapPhysicalPage);
+        if (bitmapPageBytes.size() <= BitmapPageLastSetOffset + 1 || bitmapPageBytes[PageTypeOffset] != BitmapPageType)
+        {
+            continue;
+        }
+
+        const std::uint16_t firstSet = infrastructure::ReadUInt16LE(bitmapPageBytes, BitmapPageFirstSetOffset);
+        const std::uint16_t lastSet = infrastructure::ReadUInt16LE(bitmapPageBytes, BitmapPageLastSetOffset);
+
+        for (std::uint32_t bitPosition = firstSet; bitPosition <= lastSet; ++bitPosition)
+        {
+            if (BitmapBitSet(bitmapPageBytes, bitPosition))
+            {
+                logicalPageIds.push_back(bitPosition + SpaceMapIndirectGroupSpan * static_cast<std::uint32_t>(groupIndex));
+            }
+        }
+    }
+
+    return logicalPageIds;
+}
+
+std::vector<std::uint32_t> DecodeSpaceMapLogicalPageIds(
+    const domain::IPageStorage& storage, const ILogicalPageResolver& logicalPageResolver,
+    std::span<const std::uint8_t> rootPageBytes)
 {
     std::vector<std::uint32_t> logicalPageIds;
 
@@ -43,17 +105,19 @@ std::vector<std::uint32_t> DecodeSpaceMapLogicalPageIds(std::span<const std::uin
 
     const std::uint32_t count = infrastructure::ReadUInt32LE(rootPageBytes, mapOffset + SpaceMapCountOffset);
     const std::uint32_t indirect = infrastructure::ReadUInt32LE(rootPageBytes, mapOffset + SpaceMapIndirectFlagOffset);
+    const std::size_t slotBase = mapOffset + SpaceMapSlotsOffset;
+    const std::size_t slotRegionEnd = mapOffset + SpaceMapStride;
+
     if (indirect != SpaceMapIndirectModeInline)
     {
-        return logicalPageIds;
+        return DecodeIndirectSpaceMapLogicalPageIds(storage, logicalPageResolver, rootPageBytes, slotBase, slotRegionEnd);
     }
 
-    const std::size_t slotBase = mapOffset + SpaceMapSlotsOffset;
     for (std::size_t slotIndex = 0; slotIndex < count; ++slotIndex)
     {
         const std::size_t wordIndex = (LvBitsPerSlot * slotIndex) / (LvSlotsPerWord * LvBitsPerSlot);
         const std::size_t wordByteOffset = slotBase + wordIndex * LvWordBytes;
-        if (wordByteOffset + LvWordBytes > mapOffset + SpaceMapStride)
+        if (wordByteOffset + LvWordBytes > slotRegionEnd)
         {
             break;
         }
@@ -93,7 +157,7 @@ std::vector<std::size_t> CatalogPageScanner::_ResolveHeapPagesFromRoot(
         return heapPageNumbers;
     }
 
-    for (const std::uint32_t heapLogicalPageId : DecodeSpaceMapLogicalPageIds(rootPage.Bytes()))
+    for (const std::uint32_t heapLogicalPageId : DecodeSpaceMapLogicalPageIds(storage, *_logicalPageResolver, rootPage.Bytes()))
     {
         const std::optional<std::size_t> heapPhysicalPage
             = _logicalPageResolver->ResolvePhysicalPage(storage, heapLogicalPageId);

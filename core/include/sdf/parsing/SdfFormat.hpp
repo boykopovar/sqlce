@@ -19,6 +19,14 @@ constexpr std::size_t SpaceMapIndirectFlagOffset = 4;
 constexpr std::size_t SpaceMapSlotsOffset = 8;
 constexpr std::uint32_t SpaceMapIndirectModeInline = 0;
 constexpr std::size_t SystemCatalogRootLogicalPageId = 1027;
+constexpr std::size_t SpaceMapIndirectGroupCount = 32;
+constexpr std::uint32_t SpaceMapIndirectGroupSpan = 32512;
+
+constexpr std::uint8_t BitmapPageType = 0x80;
+constexpr std::size_t BitmapPageUsedCountOffset = 16;
+constexpr std::size_t BitmapPageFirstSetOffset = 18;
+constexpr std::size_t BitmapPageLastSetOffset = 20;
+constexpr std::size_t BitmapPageBitsOffset = 32;
 constexpr std::uint8_t LvMapPageType = 0x90;
 constexpr std::size_t LobPageHeaderLength = 16;
 constexpr std::size_t SlotArrayBaseIndex = 1017;
