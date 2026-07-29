@@ -2,7 +2,9 @@
 
 #include <optional>
 #include <set>
+#include <span>
 #include <utility>
+#include <vector>
 
 #include "sdf/infrastructure/BinaryReader.hpp"
 #include "sdf/parsing/PageView.hpp"
@@ -11,46 +13,107 @@
 namespace sdf::parsing
 {
 
+namespace
+{
+
+std::uint32_t ReadPackedSlot(std::span<const std::uint8_t> pageBytes, std::size_t baseOffset, std::size_t slotIndex)
+{
+    const std::size_t wordIndex = (LvBitsPerSlot * slotIndex) / (LvSlotsPerWord * LvBitsPerSlot);
+    const std::size_t bitOffset = (LvBitsPerSlot * slotIndex) % (LvSlotsPerWord * LvBitsPerSlot);
+    const std::size_t wordByteOffset = baseOffset + wordIndex * LvWordBytes;
+
+    if (wordByteOffset + LvWordBytes > pageBytes.size())
+    {
+        return 0;
+    }
+
+    const std::uint64_t word = infrastructure::ReadUInt64LE(pageBytes, wordByteOffset);
+    return static_cast<std::uint32_t>((word >> bitOffset) & LvSlotValueMask);
+}
+
+std::vector<std::uint32_t> DecodeSpaceMapLogicalPageIds(std::span<const std::uint8_t> rootPageBytes)
+{
+    std::vector<std::uint32_t> logicalPageIds;
+
+    const std::size_t mapOffset = SpaceMapBaseOffset;
+    if (mapOffset + SpaceMapStride > rootPageBytes.size())
+    {
+        return logicalPageIds;
+    }
+
+    const std::uint32_t count = infrastructure::ReadUInt32LE(rootPageBytes, mapOffset + SpaceMapCountOffset);
+    const std::uint32_t indirect = infrastructure::ReadUInt32LE(rootPageBytes, mapOffset + SpaceMapIndirectFlagOffset);
+    if (indirect != SpaceMapIndirectModeInline)
+    {
+        return logicalPageIds;
+    }
+
+    const std::size_t slotBase = mapOffset + SpaceMapSlotsOffset;
+    for (std::size_t slotIndex = 0; slotIndex < count; ++slotIndex)
+    {
+        const std::size_t wordIndex = (LvBitsPerSlot * slotIndex) / (LvSlotsPerWord * LvBitsPerSlot);
+        const std::size_t wordByteOffset = slotBase + wordIndex * LvWordBytes;
+        if (wordByteOffset + LvWordBytes > mapOffset + SpaceMapStride)
+        {
+            break;
+        }
+
+        const std::uint32_t logicalPageId = ReadPackedSlot(rootPageBytes, slotBase, slotIndex);
+        if (logicalPageId != 0)
+        {
+            logicalPageIds.push_back(logicalPageId);
+        }
+    }
+
+    return logicalPageIds;
+}
+
+}
+
 CatalogPageScanner::CatalogPageScanner(std::shared_ptr<ILogicalPageResolver> logicalPageResolver)
     : _logicalPageResolver(std::move(logicalPageResolver))
 {
 }
 
-std::set<std::uint8_t> CatalogPageScanner::FindCatalogObjectIds(const domain::IPageStorage& storage) const
+std::vector<std::size_t> CatalogPageScanner::_ResolveHeapPagesFromRoot(
+    const domain::IPageStorage& storage, std::uint32_t rootLogicalPageId) const
 {
-    (void)storage;
-    return {SystemCatalogObjectId};
+    std::vector<std::size_t> heapPageNumbers;
+
+    const std::optional<std::size_t> rootPhysicalPage
+        = _logicalPageResolver->ResolvePhysicalPage(storage, rootLogicalPageId);
+    if (!rootPhysicalPage.has_value())
+    {
+        return heapPageNumbers;
+    }
+
+    const PageView rootPage(storage.PageBytes(*rootPhysicalPage));
+    if (rootPage.PageType() != TableRootPageType)
+    {
+        return heapPageNumbers;
+    }
+
+    for (const std::uint32_t heapLogicalPageId : DecodeSpaceMapLogicalPageIds(rootPage.Bytes()))
+    {
+        const std::optional<std::size_t> heapPhysicalPage
+            = _logicalPageResolver->ResolvePhysicalPage(storage, heapLogicalPageId);
+        if (heapPhysicalPage.has_value())
+        {
+            heapPageNumbers.push_back(*heapPhysicalPage);
+        }
+    }
+
+    return heapPageNumbers;
 }
 
 void CatalogPageScanner::AssignDataPages(
-    const domain::IPageStorage& storage,
-    const std::map<std::pair<std::uint8_t, std::uint8_t>, domain::TableDef*>& tableByObjectKey) const
+    const domain::IPageStorage& storage, const std::vector<domain::TableDef*>& tables) const
 {
-    const std::set<std::uint8_t> catalogObjectIds = FindCatalogObjectIds(storage);
-    const std::size_t pageCount = storage.PageCount();
-    const std::set<std::size_t> currentPages = _logicalPageResolver->CurrentPhysicalPages(storage);
-
-    for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
+    for (domain::TableDef* table : tables)
     {
-        if (currentPages.find(pageNumber) == currentPages.end())
+        for (const std::size_t heapPageNumber : _ResolveHeapPagesFromRoot(storage, table->RootLogicalPageId()))
         {
-            continue;
-        }
-
-        const PageView page(storage.PageBytes(pageNumber));
-        if (!page.IsDataPage())
-        {
-            continue;
-        }
-        if (catalogObjectIds.find(page.OwnerObjectId()) != catalogObjectIds.end())
-        {
-            continue;
-        }
-
-        const auto it = tableByObjectKey.find({page.OwnerObjectId(), page.OwnerObjectGeneration()});
-        if (it != tableByObjectKey.end())
-        {
-            it->second->DataPageNumbers().push_back(pageNumber);
+            table->DataPageNumbers().push_back(heapPageNumber);
         }
     }
 }
@@ -58,18 +121,13 @@ void CatalogPageScanner::AssignDataPages(
 std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
     const domain::IPageStorage& storage) const
 {
-    const std::set<std::uint8_t> catalogObjectIds = FindCatalogObjectIds(storage);
-    const std::size_t pageCount = storage.PageCount();
-    const std::set<std::size_t> currentPages = _logicalPageResolver->CurrentPhysicalPages(storage);
+    const std::vector<std::size_t> catalogPageNumbers
+        = _ResolveHeapPagesFromRoot(storage, SystemCatalogRootLogicalPageId);
+    const std::set<std::size_t> catalogPageSet(catalogPageNumbers.begin(), catalogPageNumbers.end());
 
     auto isCatalogPage = [&](std::size_t pageNumber) -> bool
     {
-        if (currentPages.find(pageNumber) == currentPages.end())
-        {
-            return false;
-        }
-        const PageView page(storage.PageBytes(pageNumber));
-        return page.IsDataPage() && catalogObjectIds.find(page.OwnerObjectId()) != catalogObjectIds.end();
+        return catalogPageSet.find(pageNumber) != catalogPageSet.end();
     };
 
     auto resolveCatalogContinuationTarget = [&](const ContinuedRowSlice& slice) -> std::optional<std::size_t>
@@ -87,12 +145,8 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
     };
 
     std::set<std::pair<std::size_t, std::size_t>> continuationTargets;
-    for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
+    for (const std::size_t pageNumber : catalogPageNumbers)
     {
-        if (!isCatalogPage(pageNumber))
-        {
-            continue;
-        }
         const PageView page(storage.PageBytes(pageNumber));
         for (const ContinuedRowSlice& slice : page.RowsWithContinuation())
         {
@@ -106,12 +160,8 @@ std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
 
     std::vector<std::vector<std::uint8_t>> rows;
 
-    for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
+    for (const std::size_t pageNumber : catalogPageNumbers)
     {
-        if (!isCatalogPage(pageNumber))
-        {
-            continue;
-        }
         const PageView page(storage.PageBytes(pageNumber));
         for (const ContinuedRowSlice& slice : page.RowsWithContinuation())
         {

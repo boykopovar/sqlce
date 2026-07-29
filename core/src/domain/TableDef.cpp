@@ -3,8 +3,9 @@
 namespace sdf::domain
 {
 
-TableDef::TableDef(std::string name, std::uint8_t objectId, std::uint8_t objectGeneration)
-    : _name(std::move(name)), _objectId(objectId), _objectGeneration(objectGeneration)
+TableDef::TableDef(std::string name, std::uint8_t objectId, std::uint8_t objectGeneration, std::uint32_t rootLogicalPageId)
+    : _name(std::move(name)), _objectId(objectId), _objectGeneration(objectGeneration),
+      _rootLogicalPageId(rootLogicalPageId)
 {
 }
 
@@ -21,6 +22,11 @@ std::uint8_t TableDef::ObjectId() const
 std::uint8_t TableDef::ObjectGeneration() const
 {
     return _objectGeneration;
+}
+
+std::uint32_t TableDef::RootLogicalPageId() const
+{
+    return _rootLogicalPageId;
 }
 
 std::vector<ColumnDef>& TableDef::Columns()

@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <set>
 
 #include "sdf/domain/interfaces/IPageStorage.hpp"
 
@@ -18,8 +17,6 @@ public:
 
     virtual std::optional<std::size_t> ResolvePhysicalPage(
         const domain::IPageStorage& storage, std::uint32_t logicalPageId) const = 0;
-
-    virtual std::set<std::size_t> CurrentPhysicalPages(const domain::IPageStorage& storage) const = 0;
 };
 
 }

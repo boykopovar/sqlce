@@ -124,12 +124,6 @@ const LogicalPageResolver::LogicalPageMap& LogicalPageResolver::_mapFor(const do
         }
     }
 
-    for (const auto& [logicalId, physicalPage] : map.physicalPageByLogicalId)
-    {
-        (void)logicalId;
-        map.currentPhysicalPages.insert(physicalPage);
-    }
-
     _cachedMap = std::move(map);
     _cachedStorage = &storage;
     return _cachedMap;
@@ -145,11 +139,6 @@ std::optional<std::size_t> LogicalPageResolver::ResolvePhysicalPage(
         return std::nullopt;
     }
     return it->second;
-}
-
-std::set<std::size_t> LogicalPageResolver::CurrentPhysicalPages(const domain::IPageStorage& storage) const
-{
-    return _mapFor(storage).currentPhysicalPages;
 }
 
 }

@@ -11,6 +11,14 @@ constexpr std::uint8_t DataPageType = 0x40;
 constexpr std::uint8_t TableRootPageType = 0x30;
 constexpr std::size_t TableRootOwnerPageIdOffset = 24;
 constexpr std::uint32_t TableRootOwnerPageIdMask = 0xFFFFFu;
+
+constexpr std::size_t SpaceMapBaseOffset = 16;
+constexpr std::size_t SpaceMapStride = 96;
+constexpr std::size_t SpaceMapCountOffset = 0;
+constexpr std::size_t SpaceMapIndirectFlagOffset = 4;
+constexpr std::size_t SpaceMapSlotsOffset = 8;
+constexpr std::uint32_t SpaceMapIndirectModeInline = 0;
+constexpr std::size_t SystemCatalogRootLogicalPageId = 1027;
 constexpr std::uint8_t LvMapPageType = 0x90;
 constexpr std::size_t LobPageHeaderLength = 16;
 constexpr std::size_t SlotArrayBaseIndex = 1017;

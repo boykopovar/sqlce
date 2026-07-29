@@ -134,7 +134,10 @@ std::map<std::string, domain::TableDef> TableCatalogBuilder::BuildTables(const d
                 continue;
             }
             const TableObjectKey objectKey = ResolveTableObjectKey(storage, *_logicalPageResolver, row.tablePageId.value());
-            tablesByName.emplace(*row.objectName, domain::TableDef(*row.objectName, objectKey.objectId, objectKey.objectGeneration));
+            tablesByName.emplace(
+                *row.objectName,
+                domain::TableDef(*row.objectName, objectKey.objectId, objectKey.objectGeneration, row.tablePageId.value())
+            );
         }
         else if (row.kind == CatalogRowKind::Column)
         {

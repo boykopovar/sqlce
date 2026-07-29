@@ -16,14 +16,10 @@ public:
     [[nodiscard]] std::optional<std::size_t> ResolvePhysicalPage(
 const domain::IPageStorage& storage, std::uint32_t logicalPageId) const override;
 
-    [[nodiscard]] std::set<std::size_t> CurrentPhysicalPages(
-        const domain::IPageStorage& storage) const override;
-
 private:
     struct LogicalPageMap
     {
         std::unordered_map<std::uint32_t, std::size_t> physicalPageByLogicalId;
-        std::set<std::size_t> currentPhysicalPages;
     };
 
     const LogicalPageMap& _mapFor(const domain::IPageStorage& storage) const;

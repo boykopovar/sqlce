@@ -14,15 +14,15 @@ class CatalogPageScanner final : public ICatalogPageScanner
 public:
     explicit CatalogPageScanner(std::shared_ptr<ILogicalPageResolver> logicalPageResolver);
 
-    [[nodiscard]] std::set<std::uint8_t> FindCatalogObjectIds(const domain::IPageStorage& storage) const override;
     [[nodiscard]] std::vector<std::vector<std::uint8_t>> CollectCatalogRows(const domain::IPageStorage& storage) const override;
 
-    void AssignDataPages(
-        const domain::IPageStorage& storage,
-        const std::map<std::pair<std::uint8_t, std::uint8_t>, domain::TableDef*>& tableByObjectKey) const override;
+    void AssignDataPages(const domain::IPageStorage& storage, const std::vector<domain::TableDef*>& tables) const override;
 
 private:
     std::shared_ptr<ILogicalPageResolver> _logicalPageResolver;
+
+    [[nodiscard]] std::vector<std::size_t> _ResolveHeapPagesFromRoot(
+        const domain::IPageStorage& storage, std::uint32_t rootLogicalPageId) const;
 };
 
 }
