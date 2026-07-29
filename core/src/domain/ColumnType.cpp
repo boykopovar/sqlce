@@ -83,8 +83,10 @@ std::string_view NameOf(ColumnType type)
             return "int";
         case ColumnType::BigInt:
             return "bigint";
+        case ColumnType::NChar:
+            return "nchar";
         case ColumnType::NVarChar:
-            return "nvarchar/nchar";
+            return "nvarchar";
         case ColumnType::NText:
             return "ntext";
         case ColumnType::Binary:
@@ -99,12 +101,16 @@ std::string_view NameOf(ColumnType type)
             return "uniqueidentifier";
         case ColumnType::Bit:
             return "bit";
+        case ColumnType::Real:
+            return "real";
         case ColumnType::Float:
-            return "float/real";
+            return "float";
         case ColumnType::Money:
             return "money";
         case ColumnType::Numeric:
-            return "numeric/decimal";
+            return "numeric";
+        case ColumnType::RowVersion:
+            return "rowversion";
         default:
             return "unknown";
     }
