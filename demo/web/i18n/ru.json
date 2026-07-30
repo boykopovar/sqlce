@@ -21,7 +21,7 @@
   "file.formatVersion": "Формат SDF: {version}.",
   "status.opening": "Открытие {fileName}…",
   "status.done": "Готово. Найдено {count} {tableWord}.",
-  "status.doneWithAlgorithm": "Готово. Найдено {count} {tableWord}. Алгоритм: {algorithm}.",
+  "status.doneWithAlgorithm": "Готово. Найдено {count} {tableWord}. Алгоритм:\u00A0{algorithm}.",
   "status.passwordRequired": "База зашифрована паролем ({algorithm}). Введите пароль.",
   "status.checkingPassword": "Проверка пароля…",
   "status.readingTable": "Чтение таблицы {tableName}…",

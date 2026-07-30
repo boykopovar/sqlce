@@ -21,7 +21,7 @@
   "file.formatVersion": "SDF format: {version}.",
   "status.opening": "Opening {fileName}…",
   "status.done": "Done. Found {count} {tableWord}.",
-  "status.doneWithAlgorithm": "Done. Found {count} {tableWord}. Algorithm: {algorithm}.",
+  "status.doneWithAlgorithm": "Done. Found {count} {tableWord}. Algorithm:\u00A0{algorithm}.",
   "status.passwordRequired": "The database is password-protected ({algorithm}). Please enter the password.",
   "status.checkingPassword": "Checking password…",
   "status.readingTable": "Reading table {tableName}…",

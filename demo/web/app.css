@@ -384,6 +384,7 @@ a {
   align-items: stretch;
   gap: 10px;
   flex: 1 1 220px;
+  flex-wrap: nowrap;
 }
 
 .table-select-row > .panel-title,
@@ -391,11 +392,17 @@ a {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .table-select-row > .table-select,
 .row-limit-row > .table-select {
   flex: 1 1 auto;
+  min-width: 0;
+}
+
+.row-limit-row > .btn-icon {
+  flex: 0 0 auto;
 }
 
 .row-limit-row[hidden] {
