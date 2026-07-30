@@ -1,4 +1,5 @@
 function resetResultPanels() {
+  setPanelFullscreen(false);
   el.dataPanel.hidden = true;
   el.tableSelect.innerHTML = "";
   el.rowLimitRow.hidden = true;
@@ -45,6 +46,20 @@ async function selectTable(tableName) {
   } catch (error) {
     setStatus(String(error.message || error), true);
   }
+}
+
+function setPanelFullscreen(isFullscreen) {
+  el.dataPanel.classList.toggle("is-fullscreen", isFullscreen);
+  document.body.classList.toggle("has-fullscreen-panel", isFullscreen);
+  const iconHref = isFullscreen ? "#icon-collapse" : "#icon-expand";
+  el.fullscreenBtn.querySelector("use").setAttribute("href", iconHref);
+  const titleKey = isFullscreen ? "table.exitFullscreen" : "table.fullscreen";
+  el.fullscreenBtn.setAttribute("title", t(titleKey));
+  el.fullscreenBtn.setAttribute("data-i18n-title", titleKey);
+}
+
+function toggleFullscreen() {
+  setPanelFullscreen(!el.dataPanel.classList.contains("is-fullscreen"));
 }
 
 function handleRowLimitChange(value) {
@@ -156,4 +171,11 @@ async function handleUnlock() {
   el.unlockBtn.addEventListener("click", handleUnlock);
   el.exportBtn.addEventListener("click", exportActiveTableAsCsv);
   el.exportDecryptedBtn.addEventListener("click", exportDecryptedDatabase);
+  el.fullscreenBtn.addEventListener("click", toggleFullscreen);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && el.dataPanel.classList.contains("is-fullscreen")) {
+      setPanelFullscreen(false);
+    }
+  });
 })();

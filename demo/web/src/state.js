@@ -33,6 +33,7 @@ const el = {
   dataTbody: document.getElementById("dataTbody"),
   exportBtn: document.getElementById("exportBtn"),
   exportDecryptedBtn: document.getElementById("exportDecryptedBtn"),
+  fullscreenBtn: document.getElementById("fullscreenBtn"),
 };
 
 function resetState() {

@@ -15,6 +15,8 @@
   "table.export": "CSV",
   "table.expandColumn": "Показать значения этого столбца полностью",
   "table.exportDecrypted": "SDF \uD83D\uDD13",
+  "table.fullscreen": "Развернуть на весь экран",
+  "table.exitFullscreen": "Свернуть",
   "footer.wasm": "Работает на WebAssembly",
   "file.formatVersion": "Формат SDF: {version}.",
   "status.opening": "Открытие {fileName}…",
