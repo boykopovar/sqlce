@@ -350,7 +350,7 @@ class _WorkerRuntime:
         self._request_queue.put((request_id, method_name, args, kwargs))
         while True:
             try:
-                response_id, status, payload = self._response_queue.get(timeout=60)
+                response_id, status, payload = self._response_queue.get(timeout=20)
             except Exception as error:
                 if not self._process.is_alive():
                     exit_code = self._process.exitcode

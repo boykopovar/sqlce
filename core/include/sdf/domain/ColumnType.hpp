@@ -13,6 +13,7 @@ enum class ColumnType : std::uint16_t
     SmallInt = 1,
     Int = 3,
     BigInt = 5,
+    NChar = 7,
     NVarChar = 8,
     NText = 9,
     Binary = 10,
@@ -21,9 +22,11 @@ enum class ColumnType : std::uint16_t
     DateTime = 13,
     UniqueIdentifier = 14,
     Bit = 15,
+    Real = 16,
     Float = 17,
     Money = 18,
     Numeric = 19,
+    RowVersion = 20,
     Unknown = 0xFFFF
 };
 
@@ -40,6 +43,8 @@ std::uint16_t DeclaredSizeOfNumeric(std::uint8_t precision);
 std::size_t FixedSizeOf(ColumnType type, std::uint16_t declaredSize);
 
 std::string_view NameOf(ColumnType type);
+
+ColumnType ColumnTypeFromRawCode(std::uint16_t rawCode);
 
 }
 

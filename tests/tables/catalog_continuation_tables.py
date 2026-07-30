@@ -33,21 +33,14 @@ def _index_name_length(table_index: int) -> int:
 def _build_wide_table_spec(table_index: int) -> TableSpec:
     table_name = _padded_name("WCT", table_index, 0, _table_name_length(table_index))
 
-    columns = [ColumnSpec(name="Id", sql_type="int", type_name="int", declared_size=4)]
+    columns = [ColumnSpec(name="Id", sql_type="int")]
     key_column_names = ["Id"]
 
     for column_index in range(COLUMNS_PER_TABLE):
         column_name = _padded_name(
             "Col", table_index, column_index, _column_name_length(table_index, column_index)
         )
-        columns.append(
-            ColumnSpec(
-                name=column_name,
-                sql_type="nvarchar(80)",
-                type_name="nvarchar/nchar",
-                declared_size=160,
-            )
-        )
+        columns.append(ColumnSpec(name=column_name, sql_type="nvarchar(80)"))
 
     row_values = [table_index]
     for column_index in range(COLUMNS_PER_TABLE):

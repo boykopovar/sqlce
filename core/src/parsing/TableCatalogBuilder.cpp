@@ -17,41 +17,12 @@ namespace
 
 domain::ColumnType ToColumnType(std::uint16_t intType)
 {
-    switch (intType)
+    const bool isGap = intType == 2 || intType == 4 || intType == 6;
+    if (intType <= 20 && !isGap)
     {
-        case 0:
-            return domain::ColumnType::TinyInt;
-        case 1:
-            return domain::ColumnType::SmallInt;
-        case 3:
-            return domain::ColumnType::Int;
-        case 5:
-            return domain::ColumnType::BigInt;
-        case 8:
-            return domain::ColumnType::NVarChar;
-        case 9:
-            return domain::ColumnType::NText;
-        case 10:
-            return domain::ColumnType::Binary;
-        case 11:
-            return domain::ColumnType::VarBinary;
-        case 12:
-            return domain::ColumnType::Image;
-        case 13:
-            return domain::ColumnType::DateTime;
-        case 14:
-            return domain::ColumnType::UniqueIdentifier;
-        case 15:
-            return domain::ColumnType::Bit;
-        case 17:
-            return domain::ColumnType::Float;
-        case 18:
-            return domain::ColumnType::Money;
-        case 19:
-            return domain::ColumnType::Numeric;
-        default:
-            return domain::ColumnType::Unknown;
+        return static_cast<domain::ColumnType>(intType);
     }
+    return domain::ColumnType::Unknown;
 }
 
 struct PendingColumn

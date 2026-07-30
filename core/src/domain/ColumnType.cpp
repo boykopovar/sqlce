@@ -51,21 +51,21 @@ std::size_t FixedSizeOf(ColumnType type, std::uint16_t declaredSize)
         case ColumnType::SmallInt:
             return 2;
         case ColumnType::Int:
+        case ColumnType::Real:
             return 4;
         case ColumnType::BigInt:
-            return 8;
-        case ColumnType::Binary:
-            return declaredSize != 0 ? declaredSize : 1;
         case ColumnType::DateTime:
+        case ColumnType::Float:
+        case ColumnType::Money:
+        case ColumnType::RowVersion:
             return 8;
         case ColumnType::UniqueIdentifier:
             return 16;
-        case ColumnType::Float:
-            return 8;
-        case ColumnType::Money:
-            return 8;
         case ColumnType::Numeric:
             return 19;
+        case ColumnType::Binary:
+        case ColumnType::NChar:
+            return declaredSize != 0 ? declaredSize : 1;
         default:
             return declaredSize != 0 ? declaredSize : 4;
     }
@@ -83,8 +83,10 @@ std::string_view NameOf(ColumnType type)
             return "int";
         case ColumnType::BigInt:
             return "bigint";
+        case ColumnType::NChar:
+            return "nchar";
         case ColumnType::NVarChar:
-            return "nvarchar/nchar";
+            return "nvarchar";
         case ColumnType::NText:
             return "ntext";
         case ColumnType::Binary:
@@ -99,12 +101,16 @@ std::string_view NameOf(ColumnType type)
             return "uniqueidentifier";
         case ColumnType::Bit:
             return "bit";
+        case ColumnType::Real:
+            return "real";
         case ColumnType::Float:
-            return "float/real";
+            return "float";
         case ColumnType::Money:
             return "money";
         case ColumnType::Numeric:
-            return "numeric/decimal";
+            return "numeric";
+        case ColumnType::RowVersion:
+            return "rowversion";
         default:
             return "unknown";
     }

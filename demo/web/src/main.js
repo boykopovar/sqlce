@@ -1,4 +1,5 @@
 function resetResultPanels() {
+  setPanelFullscreen(false);
   el.dataPanel.hidden = true;
   el.tableSelect.innerHTML = "";
   el.rowLimitRow.hidden = true;
@@ -9,6 +10,7 @@ function resetResultPanels() {
   el.fileMeta.textContent = "";
   resetState();
   el.exportDecryptedBtn.hidden = true;
+  el.actionsRow.hidden = true;
 }
 
 function renderTableSelect() {
@@ -29,6 +31,7 @@ async function selectTable(tableName) {
   try {
     el.tableSelect.value = tableName;
     state.expandedColumns = new Set();
+    state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
     setStatus(t("status.readingTable", { tableName }), false);
     const rawSchemaJson = state.module.SqlceDatabase.tableSchemaJson(state.handle, tableName);
     const schema = parseDataResult(rawSchemaJson);
@@ -47,9 +50,43 @@ async function selectTable(tableName) {
   }
 }
 
+function setPanelFullscreen(isFullscreen) {
+  el.dataPanel.classList.toggle("is-fullscreen", isFullscreen);
+  document.body.classList.toggle("has-fullscreen-panel", isFullscreen);
+  const iconHref = isFullscreen ? "#icon-collapse" : "#icon-expand";
+  el.fullscreenBtn.querySelector("use").setAttribute("href", iconHref);
+  const titleKey = isFullscreen ? "table.exitFullscreen" : "table.fullscreen";
+  el.fullscreenBtn.setAttribute("title", t(titleKey));
+  el.fullscreenBtn.setAttribute("data-i18n-title", titleKey);
+  if (isFullscreen) {
+    state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
+  }
+  if (state.activeTable) {
+    renderTable(state.activeSchema, displayedRows(), state.activeTable);
+  }
+}
+
+function toggleFullscreen() {
+  setPanelFullscreen(!el.dataPanel.classList.contains("is-fullscreen"));
+}
+
+let fullscreenResizeTimer = null;
+
+function handleFullscreenResize() {
+  if (!el.dataPanel.classList.contains("is-fullscreen") || !state.activeTable) {
+    return;
+  }
+  window.clearTimeout(fullscreenResizeTimer);
+  fullscreenResizeTimer = window.setTimeout(() => {
+    state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
+    renderTable(state.activeSchema, displayedRows(), state.activeTable);
+  }, 150);
+}
+
 function handleRowLimitChange(value) {
   state.rowLimit = value === "all" ? "all" : Number(value);
   state.expandedColumns = new Set();
+  state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
   renderTable(state.activeSchema, displayedRows(), state.activeTable);
 }
 
@@ -75,6 +112,7 @@ async function handleFile(file) {
     state.handle = handle;
     await loadTableList();
     renderTableSelect();
+    el.actionsRow.hidden = state.tables.length === 0;
     setStatus(t("status.done", { count: state.tables.length, tableWord: pluralize(state.tables.length, "table") }), false);
   } catch (error) {
     if (String(error.message || "").toLowerCase().includes("password")) {
@@ -103,6 +141,7 @@ async function handleUnlock() {
     el.exportDecryptedBtn.hidden = false;
     await loadTableList();
     renderTableSelect();
+    el.actionsRow.hidden = state.tables.length === 0;
     const resolvedRawJson = state.module.SqlceDatabase.resolvedEncryptionModeJson(state.handle);
     const resolvedMode = parseDataResult(resolvedRawJson);
     setStatus(
@@ -154,6 +193,15 @@ async function handleUnlock() {
   });
 
   el.unlockBtn.addEventListener("click", handleUnlock);
-  el.exportBtn.addEventListener("click", exportActiveTableAsCsv);
+  el.exportBtn.addEventListener("click", exportAllTablesAsCsvZip);
   el.exportDecryptedBtn.addEventListener("click", exportDecryptedDatabase);
+  el.fullscreenBtn.addEventListener("click", toggleFullscreen);
+
+  window.addEventListener("resize", handleFullscreenResize);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && el.dataPanel.classList.contains("is-fullscreen")) {
+      setPanelFullscreen(false);
+    }
+  });
 })();

@@ -51,6 +51,14 @@ function applyStaticTranslations() {
     }
   });
 
+  document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+    const key = node.getAttribute("data-i18n-title");
+    const value = i18n.dict[key];
+    if (value !== undefined) {
+      node.setAttribute("title", value);
+    }
+  });
+
   const trustLine = document.getElementById("trustLine");
   if (trustLine) {
     const template = i18n.dict["trust.line"] || "";

@@ -257,7 +257,13 @@ PYBIND11_MODULE(_sqlce_native, module)
             [](const application::ColumnSchema& schema) { return std::string(schema.typeName); })
         .def_property_readonly(
             DeclaredSizeAttrName,
-            [](const application::ColumnSchema& schema) { return schema.declaredSize; })
+            [](const application::ColumnSchema& schema) -> std::optional<int> {
+                if (!schema.declaredSize.has_value())
+                {
+                    return std::nullopt;
+                }
+                return static_cast<int>(*schema.declaredSize);
+            })
         .def_property_readonly(
             PrecisionAttrName,
             [](const application::ColumnSchema& schema) { return OptionalByteToInt(schema.precision); })

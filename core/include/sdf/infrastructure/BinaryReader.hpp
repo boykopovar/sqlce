@@ -15,6 +15,7 @@ std::int32_t ReadInt32LE(std::span<const std::uint8_t> bytes, std::size_t offset
 std::uint64_t ReadUInt64LE(std::span<const std::uint8_t> bytes, std::size_t offset);
 std::int64_t ReadInt64LE(std::span<const std::uint8_t> bytes, std::size_t offset);
 double ReadDoubleLE(std::span<const std::uint8_t> bytes, std::size_t offset);
+float ReadFloatLE(std::span<const std::uint8_t> bytes, std::size_t offset);
 std::array<std::uint8_t, 16> ReadBytes16(std::span<const std::uint8_t> bytes, std::size_t offset);
 
 }

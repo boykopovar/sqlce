@@ -76,17 +76,73 @@ std::vector<ColumnSchema> SqlceDatabase::TableSchema(const std::string& tableNam
     std::vector<ColumnSchema> result;
     result.reserve(table.Columns().size());
 
+    std::uint16_t denseOrdinal = 0;
     for (const domain::ColumnDef& column : table.Columns())
     {
+        ++denseOrdinal;
+
         ColumnSchema schema;
-        schema.ordinal = column.Ordinal();
+        schema.ordinal = denseOrdinal;
         schema.name = column.Name();
         schema.typeName = domain::NameOf(column.Type());
-        schema.declaredSize = column.DeclaredSize();
-        if (column.Type() == domain::ColumnType::Numeric)
+        switch (column.Type())
         {
-            schema.precision = column.Precision();
-            schema.scale = column.Scale();
+            case domain::ColumnType::NVarChar:
+            case domain::ColumnType::NChar:
+                schema.declaredSize = static_cast<std::uint32_t>(column.DeclaredSize() / 2);
+                break;
+            case domain::ColumnType::Binary:
+            case domain::ColumnType::VarBinary:
+                schema.declaredSize = column.DeclaredSize();
+                break;
+            case domain::ColumnType::Image:
+                schema.declaredSize = 0x3FFFFFFF;
+                break;
+            case domain::ColumnType::NText:
+                schema.declaredSize = 0x1FFFFFFF;
+                break;
+            default:
+                break;
+        }
+
+        switch (column.Type())
+        {
+            case domain::ColumnType::Bit:
+                schema.precision = 1;
+                schema.scale = 0;
+                break;
+            case domain::ColumnType::TinyInt:
+                schema.precision = 3;
+                break;
+            case domain::ColumnType::SmallInt:
+                schema.precision = 5;
+                break;
+            case domain::ColumnType::Int:
+                schema.precision = 10;
+                break;
+            case domain::ColumnType::BigInt:
+                schema.precision = 19;
+                break;
+            case domain::ColumnType::Real:
+                schema.precision = 24;
+                break;
+            case domain::ColumnType::Float:
+                schema.precision = 53;
+                break;
+            case domain::ColumnType::Money:
+                schema.precision = 19;
+                schema.scale = 4;
+                break;
+            case domain::ColumnType::DateTime:
+                schema.precision = 23;
+                schema.scale = 3;
+                break;
+            case domain::ColumnType::Numeric:
+                schema.precision = column.Precision();
+                schema.scale = column.Scale();
+                break;
+            default:
+                break;
         }
         result.push_back(std::move(schema));
     }
