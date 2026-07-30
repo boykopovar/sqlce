@@ -97,12 +97,6 @@ function exportDecryptedDatabase() {
   }
 
   const blob = new Blob([result.data], { type: "application/octet-stream" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = (state.fileName || "db.sdf").replace(/\.sdf$/i, "") + "_decrypted.sdf";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  const fileName = (state.fileName || "db.sdf").replace(/\.sdf$/i, "") + "_decrypted.sdf";
+  downloadBlob(blob, fileName);
 }

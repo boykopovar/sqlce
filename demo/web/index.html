@@ -67,6 +67,11 @@
 
     <p class="status" id="status" aria-live="polite"></p>
     <p class="file-meta" id="fileMeta" hidden></p>
+
+    <div class="actions-row" id="actionsRow" hidden>
+      <button class="btn btn-outline" id="exportBtn" data-i18n="table.export">Скачать CSV ZIP</button>
+      <button class="btn btn-outline" id="exportDecryptedBtn" data-i18n="table.exportDecrypted" hidden>Скачать расшифрованное</button>
+    </div>
   </section>
 
   <p class="trust-line" id="trustLine"></p>
@@ -84,8 +89,6 @@
             <select class="table-select" id="rowLimitSelect"></select>
           </div>
         </div>
-        <button class="btn btn-outline" id="exportBtn" data-i18n="table.export">Скачать CSV</button>
-        <button class="btn btn-outline" id="exportDecryptedBtn" data-i18n="table.exportDecrypted" hidden>Скачать расшифрованное</button>
         <button class="btn btn-icon" id="fullscreenBtn" type="button" data-i18n-title="table.fullscreen" title="Развернуть на весь экран">
           <svg class="fullscreen-icon" width="16" height="16" aria-hidden="true">
             <use href="#icon-expand"></use>
@@ -120,6 +123,7 @@
 <script src="src/status.js"></script>
 <script src="src/sqlce_db.js"></script>
 <script src="src/table.js"></script>
+<script src="src/zip.js"></script>
 <script src="src/csv.js"></script>
 <script src="src/main.js"></script>
 </body>

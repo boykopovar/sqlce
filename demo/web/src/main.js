@@ -10,6 +10,7 @@ function resetResultPanels() {
   el.fileMeta.textContent = "";
   resetState();
   el.exportDecryptedBtn.hidden = true;
+  el.actionsRow.hidden = true;
 }
 
 function renderTableSelect() {
@@ -111,6 +112,7 @@ async function handleFile(file) {
     state.handle = handle;
     await loadTableList();
     renderTableSelect();
+    el.actionsRow.hidden = state.tables.length === 0;
     setStatus(t("status.done", { count: state.tables.length, tableWord: pluralize(state.tables.length, "table") }), false);
   } catch (error) {
     if (String(error.message || "").toLowerCase().includes("password")) {
@@ -139,6 +141,7 @@ async function handleUnlock() {
     el.exportDecryptedBtn.hidden = false;
     await loadTableList();
     renderTableSelect();
+    el.actionsRow.hidden = state.tables.length === 0;
     const resolvedRawJson = state.module.SqlceDatabase.resolvedEncryptionModeJson(state.handle);
     const resolvedMode = parseDataResult(resolvedRawJson);
     setStatus(
@@ -190,7 +193,7 @@ async function handleUnlock() {
   });
 
   el.unlockBtn.addEventListener("click", handleUnlock);
-  el.exportBtn.addEventListener("click", exportActiveTableAsCsv);
+  el.exportBtn.addEventListener("click", exportAllTablesAsCsvZip);
   el.exportDecryptedBtn.addEventListener("click", exportDecryptedDatabase);
   el.fullscreenBtn.addEventListener("click", toggleFullscreen);
 

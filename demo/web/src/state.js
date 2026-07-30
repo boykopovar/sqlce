@@ -29,6 +29,7 @@ const el = {
   unlockBtn: document.getElementById("unlockBtn"),
   status: document.getElementById("status"),
   fileMeta: document.getElementById("fileMeta"),
+  actionsRow: document.getElementById("actionsRow"),
   dataPanel: document.getElementById("dataPanel"),
   tableSelect: document.getElementById("tableSelect"),
   rowLimitRow: document.getElementById("rowLimitRow"),
