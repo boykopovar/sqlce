@@ -30,6 +30,7 @@ async function selectTable(tableName) {
   try {
     el.tableSelect.value = tableName;
     state.expandedColumns = new Set();
+    state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
     setStatus(t("status.readingTable", { tableName }), false);
     const rawSchemaJson = state.module.SqlceDatabase.tableSchemaJson(state.handle, tableName);
     const schema = parseDataResult(rawSchemaJson);
@@ -56,15 +57,35 @@ function setPanelFullscreen(isFullscreen) {
   const titleKey = isFullscreen ? "table.exitFullscreen" : "table.fullscreen";
   el.fullscreenBtn.setAttribute("title", t(titleKey));
   el.fullscreenBtn.setAttribute("data-i18n-title", titleKey);
+  if (isFullscreen) {
+    state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
+  }
+  if (state.activeTable) {
+    renderTable(state.activeSchema, displayedRows(), state.activeTable);
+  }
 }
 
 function toggleFullscreen() {
   setPanelFullscreen(!el.dataPanel.classList.contains("is-fullscreen"));
 }
 
+let fullscreenResizeTimer = null;
+
+function handleFullscreenResize() {
+  if (!el.dataPanel.classList.contains("is-fullscreen") || !state.activeTable) {
+    return;
+  }
+  window.clearTimeout(fullscreenResizeTimer);
+  fullscreenResizeTimer = window.setTimeout(() => {
+    state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
+    renderTable(state.activeSchema, displayedRows(), state.activeTable);
+  }, 150);
+}
+
 function handleRowLimitChange(value) {
   state.rowLimit = value === "all" ? "all" : Number(value);
   state.expandedColumns = new Set();
+  state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
   renderTable(state.activeSchema, displayedRows(), state.activeTable);
 }
 
@@ -172,6 +193,8 @@ async function handleUnlock() {
   el.exportBtn.addEventListener("click", exportActiveTableAsCsv);
   el.exportDecryptedBtn.addEventListener("click", exportDecryptedDatabase);
   el.fullscreenBtn.addEventListener("click", toggleFullscreen);
+
+  window.addEventListener("resize", handleFullscreenResize);
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && el.dataPanel.classList.contains("is-fullscreen")) {
