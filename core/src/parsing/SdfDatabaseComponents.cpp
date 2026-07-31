@@ -62,6 +62,20 @@ domain::FormatVersion ReadSdfFormatVersion(const std::string& path)
     return SdfPageCipher::ReadFormatVersion(firstPage);
 }
 
+bool VerifySdfPassword(const std::string& path, const std::string& password, domain::EncryptionMode mode)
+{
+    const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
+    const SdfPageCipher cipher(firstPage, password);
+    return cipher.VerifyPassword(mode);
+}
+
+bool VerifySdfPassword(const std::string& path, const std::string& password)
+{
+    const std::vector<std::uint8_t> firstPage = infrastructure::ReadFirstPageRaw(path);
+    const SdfPageCipher cipher(firstPage, password);
+    return cipher.VerifyPassword();
+}
+
 SdfDatabaseComponents OpenSdfFile(const std::string& path, const std::string& password)
 {
     OpenedStorage opened = OpenStorage(path, password);

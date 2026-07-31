@@ -221,6 +221,16 @@ domain::EncryptionMode SqlceDatabase::ResolvedEncryptionMode() const
     return _resolvedEncryptionMode;
 }
 
+bool SqlceDatabase::VerifyPassword(const std::string& path, const std::string& password, domain::EncryptionMode mode)
+{
+    return parsing::VerifySdfPassword(path, password, mode);
+}
+
+bool SqlceDatabase::VerifyPassword(const std::string& path, const std::string& password)
+{
+    return parsing::VerifySdfPassword(path, password);
+}
+
 domain::FormatVersion SqlceDatabase::GetFormatVersion() const
 {
     return _formatVersion;

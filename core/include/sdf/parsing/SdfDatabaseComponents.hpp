@@ -35,6 +35,10 @@ domain::EncryptionMode ReadSdfEncryptionMode(const std::string& path);
 
 domain::FormatVersion ReadSdfFormatVersion(const std::string& path);
 
+bool VerifySdfPassword(const std::string& path, const std::string& password, domain::EncryptionMode mode);
+
+bool VerifySdfPassword(const std::string& path, const std::string& password);
+
 }
 
 #endif

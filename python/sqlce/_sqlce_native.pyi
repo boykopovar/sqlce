@@ -108,3 +108,9 @@ class SqlceDatabase:
 
     def export_decrypted(self) -> bytes: ...
 
+    @staticmethod
+    def verify_password(path: str, password: str) -> bool: ...
+
+    @staticmethod
+    def verify_password_with_mode(path: str, password: str, mode: EncryptionMode) -> bool: ...
+

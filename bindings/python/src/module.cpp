@@ -56,6 +56,11 @@ constexpr char GetFormatVersionStaticName[] = "get_format_version_from_file";
 constexpr char GetFormatVersionStaticDoc[] = "Return the format version of a .sdf file without opening it.";
 constexpr char ExportDecryptedName[] = "export_decrypted";
 constexpr char ExportDecryptedDoc[] = "Return the raw bytes of the database file with encryption removed.";
+constexpr char VerifyPasswordName[] = "verify_password";
+constexpr char VerifyPasswordDoc[] = "Check whether the password matches a .sdf file, trying all known encryption modes.";
+constexpr char VerifyPasswordWithModeName[] = "verify_password_with_mode";
+constexpr char VerifyPasswordWithModeDoc[] = "Check whether the password matches a .sdf file under a specific encryption mode.";
+constexpr char ModeArgName[] = "mode";
 
 constexpr char EncryptionModeClassName[] = "EncryptionMode";
 constexpr char EncryptionModeDoc[] = "Encryption mode of a .sdf database file.";
@@ -315,7 +320,21 @@ PYBIND11_MODULE(_sqlce_native, module)
             py::overload_cast<const std::string&>(&application::SqlceDatabase::GetFormatVersion),
             py::arg(PathArgName),
             GetFormatVersionStaticDoc)
-        .def(ExportDecryptedName, &ExportDecryptedAsBytes, ExportDecryptedDoc);
+        .def(ExportDecryptedName, &ExportDecryptedAsBytes, ExportDecryptedDoc)
+        .def_static(
+            VerifyPasswordName,
+            py::overload_cast<const std::string&, const std::string&>(&application::SqlceDatabase::VerifyPassword),
+            py::arg(PathArgName),
+            py::arg(PasswordArgName),
+            VerifyPasswordDoc)
+        .def_static(
+            VerifyPasswordWithModeName,
+            py::overload_cast<const std::string&, const std::string&, domain::EncryptionMode>(
+                &application::SqlceDatabase::VerifyPassword),
+            py::arg(PathArgName),
+            py::arg(PasswordArgName),
+            py::arg(ModeArgName),
+            VerifyPasswordWithModeDoc);
 }
 
 }

@@ -38,6 +38,8 @@ public:
     [[nodiscard]] domain::EncryptionMode GetEncryptionMode() const;
     [[nodiscard]] static domain::EncryptionMode GetEncryptionMode(const std::string& path);
     [[nodiscard]] domain::EncryptionMode ResolvedEncryptionMode() const;
+    [[nodiscard]] static bool VerifyPassword(const std::string& path, const std::string& password, domain::EncryptionMode mode);
+    [[nodiscard]] static bool VerifyPassword(const std::string& path, const std::string& password);
     [[nodiscard]] domain::FormatVersion GetFormatVersion() const;
     [[nodiscard]] static domain::FormatVersion GetFormatVersion(const std::string& path);
 

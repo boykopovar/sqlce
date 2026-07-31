@@ -24,6 +24,7 @@ public:
     static domain::FormatVersion ReadFormatVersion(std::span<const std::uint8_t> page0);
 
     [[nodiscard]] bool VerifyPassword() const override;
+    [[nodiscard]] bool VerifyPassword(domain::EncryptionMode algorithm) const;
     [[nodiscard]] std::vector<std::uint8_t> DecryptPage(std::size_t pageNumber, std::span<const std::uint8_t> page) const override;
     [[nodiscard]] domain::EncryptionMode ResolvedEncryptionMode() const override;
 

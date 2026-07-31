@@ -188,6 +188,23 @@ bool SdfPageCipher::VerifyPassword() const
     return ResolveAlgorithm();
 }
 
+bool SdfPageCipher::VerifyPassword(domain::EncryptionMode algorithm) const
+{
+    if (_algorithmResolved && _algorithm == algorithm)
+    {
+        return true;
+    }
+
+    if (VerifyWith(algorithm))
+    {
+        _algorithm = algorithm;
+        _algorithmResolved = true;
+        return true;
+    }
+
+    return false;
+}
+
 domain::EncryptionMode SdfPageCipher::ResolvedEncryptionMode() const
 {
     if (!ResolveAlgorithm())

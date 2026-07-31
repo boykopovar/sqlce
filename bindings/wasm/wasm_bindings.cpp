@@ -245,6 +245,41 @@ public:
         }
     }
 
+    static std::string verifyPassword(const std::string& path, const std::string& password)
+    {
+        try
+        {
+            const bool matched = application::SqlceDatabase::VerifyPassword(path, password);
+            std::string json;
+            json += "{\"ok\":true,\"data\":";
+            json += matched ? "true" : "false";
+            json += "}";
+            return json;
+        }
+        catch (const std::exception& error)
+        {
+            return ErrorResultJson(error.what());
+        }
+    }
+
+    static std::string verifyPasswordWithMode(const std::string& path, const std::string& password, std::uint32_t mode)
+    {
+        try
+        {
+            const bool matched = application::SqlceDatabase::VerifyPassword(
+                path, password, static_cast<domain::EncryptionMode>(mode));
+            std::string json;
+            json += "{\"ok\":true,\"data\":";
+            json += matched ? "true" : "false";
+            json += "}";
+            return json;
+        }
+        catch (const std::exception& error)
+        {
+            return ErrorResultJson(error.what());
+        }
+    }
+
     emscripten::val exportDecrypted() const
     {
         const std::vector<std::uint8_t> bytes = _database->ExportDecrypted();
@@ -357,6 +392,16 @@ public:
         return SqlceDatabaseWasm::formatVersionOfFile(path);
     }
 
+    static std::string verifyPassword(const std::string& path, const std::string& password)
+    {
+        return SqlceDatabaseWasm::verifyPassword(path, password);
+    }
+
+    static std::string verifyPasswordWithMode(const std::string& path, const std::string& password, std::uint32_t mode)
+    {
+        return SqlceDatabaseWasm::verifyPasswordWithMode(path, password, mode);
+    }
+
     static emscripten::val exportDecrypted(const std::string& handleKey)
     {
         auto& registry = SqlceDatabaseWasm::registry();
@@ -430,6 +475,8 @@ EMSCRIPTEN_BINDINGS(sqlce)
         .class_function("resolvedEncryptionModeJson", &sdf::wasm::SqlceDatabaseHandle::resolvedEncryptionModeJson)
         .class_function("formatVersionJson", &sdf::wasm::SqlceDatabaseHandle::formatVersionJson)
         .class_function("formatVersionOfFile", &sdf::wasm::SqlceDatabaseHandle::formatVersionOfFile)
+        .class_function("verifyPassword", &sdf::wasm::SqlceDatabaseHandle::verifyPassword)
+        .class_function("verifyPasswordWithMode", &sdf::wasm::SqlceDatabaseHandle::verifyPasswordWithMode)
         .class_function("exportDecrypted", &sdf::wasm::SqlceDatabaseHandle::exportDecrypted)
         .class_function("close", &sdf::wasm::SqlceDatabaseHandle::close);
 }
