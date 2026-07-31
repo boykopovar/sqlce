@@ -103,6 +103,10 @@ def table_schema_via_runtime(connection: RemoteConnection, table_name: str) -> S
     return runtime_call(connection._version, "table_schema", connection._handle_id, table_name)
 
 
+def row_count_via_runtime(connection: RemoteConnection, table_name: str) -> int:
+    return runtime_call(connection._version, "row_count", connection._handle_id, table_name)
+
+
 def execute_non_query(connection: RemoteConnection, command_text: str) -> None:
     runtime_call(connection._version, "execute_non_query", connection._handle_id, command_text)
 

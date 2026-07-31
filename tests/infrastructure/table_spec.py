@@ -340,18 +340,10 @@ def assert_table_matches_runtime(connection, native_db, table_name: str) -> None
     native_columns = native_db.table_schema(table_name)
     runtime_columns = runtime_columns_for(connection, table_name)
     assert_schemas_equivalent(native_columns, runtime_columns)
+    assert_row_count_matches(connection, native_db, table_name)
 
 
 def assert_table_matches(connection, native_db, spec: TableSpec) -> None:
-    """Compare native_db (reads the raw .sdf file) against `spec` and against
-    `connection` (a live SQL CE connection used for the runtime-side schema
-    comparison).
-
-    `connection` must not be the same connection that was used to write the
-    data: SQL CE only guarantees writes are durable on disk once the writing
-    connection is closed, so `native_db` must be opened only after that
-    connection is closed. Open a fresh connection here if you need one.
-    """
     tables = native_db.list_tables()
     assert spec.name in tables
 
@@ -364,3 +356,31 @@ def assert_table_matches(connection, native_db, spec: TableSpec) -> None:
 
     for actual_row, expected_row in zip(actual_rows, expected_rows):
         assert actual_row == expected_row
+
+    native_row_count = native_db.row_count(spec.name)
+    assert native_row_count == len(expected_rows), (
+        f"native row_count mismatch for {spec.name!r}: "
+        f"native={native_row_count}, expected={len(expected_rows)}"
+    )
+
+
+def assert_row_count_matches(connection, native_db, table_name: str, expected_row_count: Optional[int] = None) -> None:
+    from tests.infrastructure.sdf_factory import row_count_via_runtime
+
+    native_row_count = native_db.row_count(table_name)
+    runtime_row_count = row_count_via_runtime(connection, table_name)
+
+    assert native_row_count == runtime_row_count, (
+        f"row count mismatch for {table_name!r}: "
+        f"native={native_row_count}, runtime={runtime_row_count}"
+    )
+
+    if expected_row_count is not None:
+        assert native_row_count == expected_row_count, (
+            f"native row_count mismatch for {table_name!r}: "
+            f"native={native_row_count}, expected={expected_row_count}"
+        )
+        assert runtime_row_count == expected_row_count, (
+            f"runtime row count mismatch for {table_name!r}: "
+            f"runtime={runtime_row_count}, expected={expected_row_count}"
+        )

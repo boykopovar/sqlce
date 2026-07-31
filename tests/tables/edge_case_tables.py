@@ -211,7 +211,7 @@ MANY_BIT_COLUMNS_TABLE_SPEC = TableSpec(
 )
 
 _WIDE_ROW_COL_CHAR_COUNT = 1000
-_WIDE_ROW_FILL_UNIT = "Привет мир проверка длинной строки "
+_WIDE_ROW_FILL_UNIT = "Как сам??? Проверка длинной строки "
 
 
 def _wide_row_fill(char_count: int) -> str:

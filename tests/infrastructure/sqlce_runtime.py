@@ -39,6 +39,7 @@ class _Dispatcher:
             "compact_database": self._compact_database,
             "list_tables": self._list_tables,
             "table_schema": self._table_schema,
+            "row_count": self._row_count,
         }
 
     def dispatch(self, method_name: str, *args: Any, **kwargs: Any) -> Any:
@@ -285,6 +286,11 @@ class _Dispatcher:
         ]
         columns.sort(key=lambda column: column["ordinal"])
         return columns
+
+    def _row_count(self, handle_id: int, table_name: str) -> int:
+        connection = self._handles[handle_id]
+        rows = self._run_query(connection, f"SELECT COUNT(*) AS ROW_COUNT FROM {table_name}")
+        return int(rows[0]["ROW_COUNT"])
 
     def _execute_batch(self, handle_id: int, operations: Sequence[tuple]) -> None:
         sqlserverce = self._load()
