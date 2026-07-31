@@ -27,6 +27,13 @@ function renderTableSelect() {
   }
 }
 
+function fetchRows(tableName, limit) {
+  const rawDataJson = limit === "all"
+      ? state.module.SqlceDatabase.tableDataJson(state.handle, tableName)
+      : state.module.SqlceDatabase.tableDataLimitedJson(state.handle, tableName, limit);
+  return parseDataResult(rawDataJson);
+}
+
 async function selectTable(tableName) {
   try {
     el.tableSelect.value = tableName;
@@ -36,15 +43,17 @@ async function selectTable(tableName) {
     const rawSchemaJson = state.module.SqlceDatabase.tableSchemaJson(state.handle, tableName);
     const schema = parseDataResult(rawSchemaJson);
 
-    const rawDataJson = state.module.SqlceDatabase.tableDataJson(state.handle, tableName);
-    const rows = parseDataResult(rawDataJson);
+    const rawRowCountJson = state.module.SqlceDatabase.rowCountJson(state.handle, tableName);
+    const totalRows = parseDataResult(rawRowCountJson);
+
+    renderRowLimitSelect(totalRows);
+    const rows = fetchRows(tableName, state.rowLimit);
 
     state.activeTable = tableName;
     state.activeSchema = schema;
     state.activeRows = rows;
-    renderRowLimitSelect(rows.length);
-    renderTable(schema, displayedRows(), tableName);
-    setStatus(t("status.tableRows", { tableName, count: rows.length, rowWord: pluralize(rows.length, "row") }), false);
+    renderTable(schema, state.activeRows, tableName);
+    setStatus(t("status.tableRows", { tableName, count: totalRows, rowWord: pluralize(totalRows, "row") }), false);
   } catch (error) {
     setStatus(String(error.message || error), true);
   }
@@ -62,7 +71,7 @@ function setPanelFullscreen(isFullscreen) {
     state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
   }
   if (state.activeTable) {
-    renderTable(state.activeSchema, displayedRows(), state.activeTable);
+    renderTable(state.activeSchema, state.activeRows, state.activeTable);
   }
 }
 
@@ -79,15 +88,20 @@ function handleFullscreenResize() {
   window.clearTimeout(fullscreenResizeTimer);
   fullscreenResizeTimer = window.setTimeout(() => {
     state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
-    renderTable(state.activeSchema, displayedRows(), state.activeTable);
+    renderTable(state.activeSchema, state.activeRows, state.activeTable);
   }, 150);
 }
 
 function handleRowLimitChange(value) {
-  state.rowLimit = value === "all" ? "all" : Number(value);
-  state.expandedColumns = new Set();
-  state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
-  renderTable(state.activeSchema, displayedRows(), state.activeTable);
+  try {
+    state.rowLimit = value === "all" ? "all" : Number(value);
+    state.expandedColumns = new Set();
+    state.fullscreenTruncateLength = CELL_TRUNCATE_LENGTH;
+    state.activeRows = fetchRows(state.activeTable, state.rowLimit);
+    renderTable(state.activeSchema, state.activeRows, state.activeTable);
+  } catch (error) {
+    setStatus(String(error.message || error), true);
+  }
 }
 
 async function handleFile(file) {

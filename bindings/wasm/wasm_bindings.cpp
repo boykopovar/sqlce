@@ -7,6 +7,7 @@
 
 #include "sdf/application/ColumnSchema.hpp"
 #include "sdf/application/SqlceDatabase.hpp"
+#include "sdf/application/TableRowRange.hpp"
 #include "sdf/domain/ColumnValue.hpp"
 #include "sdf/domain/EncryptionMode.hpp"
 #include "sdf/domain/FormatVersion.hpp"
@@ -94,6 +95,29 @@ std::string OkResultJson(const std::string& handleKey)
     return json;
 }
 
+void AppendRowJson(std::string& json, const domain::Row& row)
+{
+    json.push_back('{');
+    bool firstColumn = true;
+    for (const auto& columnNameAndValue : row.Values())
+    {
+        const std::string& columnName = columnNameAndValue.first;
+        const domain::ColumnValue& value = columnNameAndValue.second;
+        if (!firstColumn)
+        {
+            json.push_back(',');
+        }
+        firstColumn = false;
+        AppendEscapedJsonString(json, columnName);
+        json += ":{\"isNull\":";
+        json += value.IsNull() ? "true" : "false";
+        json += ",\"value\":";
+        AppendEscapedJsonString(json, value.ToDisplayString());
+        json += "}";
+    }
+    json.push_back('}');
+}
+
 }
 
 class SqlceDatabaseWasm
@@ -172,25 +196,30 @@ public:
                 json.push_back(',');
             }
             firstRow = false;
-            json.push_back('{');
-            bool firstColumn = true;
-            for (const auto& columnNameAndValue : row.Values())
+            AppendRowJson(json, row);
+        }
+        json.push_back(']');
+        return json;
+    }
+
+    std::string tableDataLimitedJson(const std::string& tableName, std::uint32_t maxRows) const
+    {
+        std::string json;
+        json.push_back('[');
+        if (maxRows > 0)
+        {
+            const application::TableRowRange range = _database->IterateTable(tableName);
+            std::uint32_t collected = 0;
+            bool firstRow = true;
+            for (auto it = range.begin(); it != range.end() && collected < maxRows; ++it, ++collected)
             {
-                const std::string& columnName = columnNameAndValue.first;
-                const domain::ColumnValue& value = columnNameAndValue.second;
-                if (!firstColumn)
+                if (!firstRow)
                 {
                     json.push_back(',');
                 }
-                firstColumn = false;
-                AppendEscapedJsonString(json, columnName);
-                json += ":{\"isNull\":";
-                json += value.IsNull() ? "true" : "false";
-                json += ",\"value\":";
-                AppendEscapedJsonString(json, value.ToDisplayString());
-                json += "}";
+                firstRow = false;
+                AppendRowJson(json, *it);
             }
-            json.push_back('}');
         }
         json.push_back(']');
         return json;
@@ -372,6 +401,11 @@ public:
         return withInstance(handleKey, [&tableName](const SqlceDatabaseWasm& db) { return db.tableDataJson(tableName); });
     }
 
+    static std::string tableDataLimitedJson(const std::string& handleKey, const std::string& tableName, std::uint32_t maxRows)
+    {
+        return withInstance(handleKey, [&tableName, maxRows](const SqlceDatabaseWasm& db) { return db.tableDataLimitedJson(tableName, maxRows); });
+    }
+
     static std::string rowCountJson(const std::string& handleKey, const std::string& tableName)
     {
         return withInstance(handleKey, [&tableName](const SqlceDatabaseWasm& db) { return std::to_string(db.rowCount(tableName)); });
@@ -480,6 +514,7 @@ EMSCRIPTEN_BINDINGS(sqlce)
         .class_function("listTablesJson", &sdf::wasm::SqlceDatabaseHandle::listTablesJson)
         .class_function("tableSchemaJson", &sdf::wasm::SqlceDatabaseHandle::tableSchemaJson)
         .class_function("tableDataJson", &sdf::wasm::SqlceDatabaseHandle::tableDataJson)
+        .class_function("tableDataLimitedJson", &sdf::wasm::SqlceDatabaseHandle::tableDataLimitedJson)
         .class_function("rowCountJson", &sdf::wasm::SqlceDatabaseHandle::rowCountJson)
         .class_function("encryptionModeJson", &sdf::wasm::SqlceDatabaseHandle::encryptionModeJson)
         .class_function("encryptionModeOfFile", &sdf::wasm::SqlceDatabaseHandle::encryptionModeOfFile)

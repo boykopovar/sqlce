@@ -30,13 +30,6 @@ function renderRowLimitSelect(totalRows) {
   state.rowLimit = DEFAULT_ROW_LIMIT;
 }
 
-function displayedRows() {
-  if (state.rowLimit === "all" || state.activeRows.length <= state.rowLimit) {
-    return state.activeRows;
-  }
-  return state.activeRows.slice(0, state.rowLimit);
-}
-
 function currentTruncateLength() {
   if (!el.dataPanel.classList.contains("is-fullscreen")) {
     return CELL_TRUNCATE_LENGTH;
@@ -64,7 +57,7 @@ function growTruncateLengthToFitWidth() {
     }
     length = nextLength;
     state.fullscreenTruncateLength = length;
-    renderTable(state.activeSchema, displayedRows(), state.activeTable, { skipFit: true });
+    renderTable(state.activeSchema, state.activeRows, state.activeTable, { skipFit: true });
     iterations += 1;
     if (!tableHasSpareWidth()) {
       break;
@@ -73,7 +66,7 @@ function growTruncateLengthToFitWidth() {
   if (!tableHasSpareWidth() && length > CELL_TRUNCATE_MIN_LENGTH) {
     length -= CELL_TRUNCATE_GROW_STEP;
     state.fullscreenTruncateLength = Math.max(CELL_TRUNCATE_MIN_LENGTH, length);
-    renderTable(state.activeSchema, displayedRows(), state.activeTable, { skipFit: true });
+    renderTable(state.activeSchema, state.activeRows, state.activeTable, { skipFit: true });
   }
 }
 
@@ -100,7 +93,7 @@ function columnsNeedingTruncation(columnNames, rows, truncateLength) {
 
 function expandColumn(columnName) {
   state.expandedColumns.add(columnName);
-  renderTable(state.activeSchema, displayedRows(), state.activeTable);
+  renderTable(state.activeSchema, state.activeRows, state.activeTable);
 }
 
 function buildCellContent(td, columnName, text, isTruncatable, truncateLength) {
