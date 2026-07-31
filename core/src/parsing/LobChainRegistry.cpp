@@ -9,41 +9,14 @@
 namespace sdf::parsing
 {
 
-namespace
+LobChainRegistry::LobChainRegistry(const domain::IPageStorage& storage, std::shared_ptr<ILogicalPageResolver> logicalPageResolver)
+    : _storage(&storage), _logicalPageResolver(std::move(logicalPageResolver))
 {
-
-std::uint32_t LogicalPageIdOf(std::span<const std::uint8_t> pageBytes)
-{
-    return infrastructure::ReadUInt32LE(pageBytes, LogicalPageIdOffset) & LogicalPageIdMask;
-}
-
-}
-
-LobChainRegistry::LobChainRegistry(const domain::IPageStorage& storage) : _storage(&storage)
-{
-    const std::size_t pageCount = storage.PageCount();
-    for (std::size_t pageNumber = 0; pageNumber < pageCount; ++pageNumber)
-    {
-        const std::span<const std::uint8_t> pageBytes = storage.PageBytes(pageNumber);
-        const std::uint32_t logicalId = LogicalPageIdOf(pageBytes);
-        const std::uint8_t generation = pageBytes[OwnerObjectGenerationOffset];
-
-        const auto it = _pageByLogicalId.find(logicalId);
-        if (it == _pageByLogicalId.end() || generation >= it->second.generation)
-        {
-            _pageByLogicalId[logicalId] = PageEntry{pageNumber, pageBytes[PageTypeOffset], generation};
-        }
-    }
 }
 
 std::optional<std::size_t> LobChainRegistry::PhysicalPageOf(std::uint32_t logicalId) const
 {
-    const auto it = _pageByLogicalId.find(logicalId);
-    if (it == _pageByLogicalId.end())
-    {
-        return std::nullopt;
-    }
-    return it->second.pageNumber;
+    return _logicalPageResolver->ResolvePhysicalPage(*_storage, logicalId);
 }
 
 std::vector<std::uint32_t> LobChainRegistry::ReadPackedSlots(
