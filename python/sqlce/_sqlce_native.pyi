@@ -94,6 +94,8 @@ class SqlceDatabase:
 
     def iterate_table(self, table_name: str) -> Iterator[Row]: ...
 
+    def row_count(self, table_name: str) -> int: ...
+
     def get_encryption_mode(self) -> EncryptionMode: ...
 
     @staticmethod
@@ -113,4 +115,3 @@ class SqlceDatabase:
 
     @staticmethod
     def verify_password_with_mode(path: str, password: str, mode: EncryptionMode) -> bool: ...
-

@@ -42,6 +42,8 @@ constexpr char ReadTableDoc[] = "Return every row of a table as a list of column
 constexpr char IterateTableName[] = "iterate_table";
 constexpr char IterateTableDoc[]
     = "Lazily iterate over the rows of a table, decoding one row at a time without materializing the whole table.";
+constexpr char RowCountName[] = "row_count";
+constexpr char RowCountDoc[] = "Return the number of rows in a table.";
 constexpr char TableNameArgName[] = "table_name";
 constexpr char GetEncryptionModeName[] = "get_encryption_mode";
 constexpr char GetEncryptionModeDoc[] = "Return the encryption mode the database file was opened with.";
@@ -298,6 +300,7 @@ PYBIND11_MODULE(_sqlce_native, module)
             py::arg(TableNameArgName),
             IterateTableDoc,
             py::keep_alive<0, 1>())
+        .def(RowCountName, &application::SqlceDatabase::RowCount, py::arg(TableNameArgName), RowCountDoc)
         .def(
             GetEncryptionModeName,
             py::overload_cast<>(&application::SqlceDatabase::GetEncryptionMode, py::const_),

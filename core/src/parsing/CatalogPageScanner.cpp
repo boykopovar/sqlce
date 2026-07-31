@@ -182,6 +182,30 @@ void CatalogPageScanner::AssignDataPages(
     }
 }
 
+std::optional<std::uint32_t> CatalogPageScanner::RowCount(const domain::IPageStorage& storage, std::uint32_t rootLogicalPageId) const
+{
+    const std::optional<std::size_t> rootPhysicalPage
+        = _logicalPageResolver->ResolvePhysicalPage(storage, rootLogicalPageId);
+    if (!rootPhysicalPage.has_value())
+    {
+        return std::nullopt;
+    }
+
+    const PageView rootPage(storage.PageBytes(*rootPhysicalPage));
+    if (rootPage.PageType() != TableRootPageType)
+    {
+        return std::nullopt;
+    }
+
+    const std::span<const std::uint8_t> rootPageBytes = rootPage.Bytes();
+    if (TableRootCardinalityArrayOffset + sizeof(std::uint32_t) > rootPageBytes.size())
+    {
+        return std::nullopt;
+    }
+
+    return infrastructure::ReadUInt32LE(rootPageBytes, TableRootCardinalityArrayOffset);
+}
+
 std::vector<std::vector<std::uint8_t>> CatalogPageScanner::CollectCatalogRows(
     const domain::IPageStorage& storage) const
 {

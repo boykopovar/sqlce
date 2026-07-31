@@ -1,6 +1,7 @@
 #include "sdf/application/SqlceDatabase.hpp"
 
 #include <algorithm>
+#include <optional>
 #include <span>
 #include <stdexcept>
 
@@ -160,6 +161,20 @@ std::vector<domain::Row> SqlceDatabase::ReadTable(const std::string& tableName) 
 {
     const TableRowRange range = IterateTable(tableName);
     return std::vector<domain::Row>(range.begin(), range.end());
+}
+
+std::uint32_t SqlceDatabase::RowCount(const std::string& tableName) const
+{
+    const domain::TableDef& table = RequireTable(tableName);
+
+    const std::optional<std::uint32_t> cachedCount = _pageScanner->RowCount(*_storage, table.RootLogicalPageId());
+    if (cachedCount.has_value())
+    {
+        return *cachedCount;
+    }
+
+    const TableRowRange range = IterateTable(tableName);
+    return static_cast<std::uint32_t>(std::distance(range.begin(), range.end()));
 }
 
 std::vector<std::uint8_t> SqlceDatabase::ExportDecrypted() const

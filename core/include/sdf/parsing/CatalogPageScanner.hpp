@@ -2,6 +2,7 @@
 #define SDF_PARSING_CATALOG_PAGE_SCANNER_HPP
 
 #include <memory>
+#include <optional>
 
 #include "sdf/parsing/interfaces/ICatalogPageScanner.hpp"
 #include "sdf/parsing/interfaces/ILogicalPageResolver.hpp"
@@ -17,6 +18,8 @@ public:
     [[nodiscard]] std::vector<std::vector<std::uint8_t>> CollectCatalogRows(const domain::IPageStorage& storage) const override;
 
     void AssignDataPages(const domain::IPageStorage& storage, const std::vector<domain::TableDef*>& tables) const override;
+
+    [[nodiscard]] std::optional<std::uint32_t> RowCount(const domain::IPageStorage& storage, std::uint32_t rootLogicalPageId) const override;
 
 private:
     std::shared_ptr<ILogicalPageResolver> _logicalPageResolver;

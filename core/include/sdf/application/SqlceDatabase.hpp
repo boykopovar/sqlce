@@ -34,6 +34,7 @@ public:
     [[nodiscard]] std::vector<ColumnSchema> TableSchema(const std::string& tableName) const;
     [[nodiscard]] TableRowRange IterateTable(const std::string& tableName) const;
     [[nodiscard]] std::vector<domain::Row> ReadTable(const std::string& tableName) const;
+    [[nodiscard]] std::uint32_t RowCount(const std::string& tableName) const;
     [[nodiscard]] std::vector<std::uint8_t> ExportDecrypted() const;
     [[nodiscard]] domain::EncryptionMode GetEncryptionMode() const;
     [[nodiscard]] static domain::EncryptionMode GetEncryptionMode(const std::string& path);

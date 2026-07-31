@@ -196,6 +196,11 @@ public:
         return json;
     }
 
+    std::uint32_t rowCount(const std::string& tableName) const
+    {
+        return _database->RowCount(tableName);
+    }
+
     std::uint32_t encryptionMode() const
     {
         return static_cast<std::uint32_t>(_database->GetEncryptionMode());
@@ -367,6 +372,11 @@ public:
         return withInstance(handleKey, [&tableName](const SqlceDatabaseWasm& db) { return db.tableDataJson(tableName); });
     }
 
+    static std::string rowCountJson(const std::string& handleKey, const std::string& tableName)
+    {
+        return withInstance(handleKey, [&tableName](const SqlceDatabaseWasm& db) { return std::to_string(db.rowCount(tableName)); });
+    }
+
     static std::string encryptionModeJson(const std::string& handleKey)
     {
         return withInstance(handleKey, [](const SqlceDatabaseWasm& db) { return std::to_string(db.encryptionMode()); });
@@ -470,6 +480,7 @@ EMSCRIPTEN_BINDINGS(sqlce)
         .class_function("listTablesJson", &sdf::wasm::SqlceDatabaseHandle::listTablesJson)
         .class_function("tableSchemaJson", &sdf::wasm::SqlceDatabaseHandle::tableSchemaJson)
         .class_function("tableDataJson", &sdf::wasm::SqlceDatabaseHandle::tableDataJson)
+        .class_function("rowCountJson", &sdf::wasm::SqlceDatabaseHandle::rowCountJson)
         .class_function("encryptionModeJson", &sdf::wasm::SqlceDatabaseHandle::encryptionModeJson)
         .class_function("encryptionModeOfFile", &sdf::wasm::SqlceDatabaseHandle::encryptionModeOfFile)
         .class_function("resolvedEncryptionModeJson", &sdf::wasm::SqlceDatabaseHandle::resolvedEncryptionModeJson)
