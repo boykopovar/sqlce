@@ -2,6 +2,7 @@
 
 #include <optional>
 
+#include "sdf/domain/InvalidSdfException.hpp"
 #include "sdf/domain/PageSize.hpp"
 #include "sdf/parsing/SdfFormat.hpp"
 
@@ -22,6 +23,10 @@ std::uint32_t ReadU32(const std::span<const std::uint8_t> bytes, const std::size
 
 PageView::PageView(std::span<const std::uint8_t> bytes) : _bytes(bytes)
 {
+    if (bytes.size() != domain::PageSize)
+    {
+        throw domain::InvalidSdfException("page length is not 4096 bytes");
+    }
 }
 
 std::uint8_t PageView::PageType() const
@@ -46,7 +51,13 @@ bool PageView::IsDataPage() const
 
 std::size_t PageView::SlotCount() const
 {
-    return ReadU32(_bytes, SlotCountFieldOffset) & SlotCountFieldMask;
+    const std::size_t count = ReadU32(_bytes, SlotCountFieldOffset) & SlotCountFieldMask;
+    // Validate before subtracting slot indices from SlotArrayBaseIndex.
+    if (count > SlotArrayBaseIndex + 1)
+    {
+        throw domain::InvalidSdfException("slot count exceeds page directory bounds");
+    }
+    return count;
 }
 
 std::span<const std::uint8_t> PageView::Bytes() const
@@ -68,9 +79,9 @@ std::vector<RowSlice> CollectRows(
     {
         const std::size_t slotPosition = SlotArrayBaseIndex - slotIndex;
         const std::size_t slotOffset = SlotEntryLength * slotPosition;
-        if (slotOffset + RowHeaderLength > domain::PageSize)
+        if (slotOffset > bytes.size() || RowHeaderLength > bytes.size() - slotOffset)
         {
-            continue;
+            throw domain::InvalidSdfException("slot entry outside page");
         }
 
         const std::uint8_t flags = bytes[slotOffset + SlotEntryFlagsOffset];
@@ -91,8 +102,7 @@ std::vector<RowSlice> CollectRows(
         const std::size_t recordLength = *lengthResult;
 
         const std::size_t start = computeBase(recordOffset);
-        const std::size_t end = start + recordLength;
-        if (end > domain::PageSize || start > end)
+        if (start > bytes.size() || recordLength > bytes.size() - start)
         {
             continue;
         }
@@ -135,9 +145,9 @@ std::vector<ContinuedRowSlice> PageView::RowsWithContinuation() const
     {
         const std::size_t slotPosition = SlotArrayBaseIndex - slotIndex;
         const std::size_t slotOffset = SlotEntryLength * slotPosition;
-        if (slotOffset + RowHeaderLength > domain::PageSize)
+        if (slotOffset > _bytes.size() || RowHeaderLength > _bytes.size() - slotOffset)
         {
-            continue;
+            throw domain::InvalidSdfException("slot entry outside page");
         }
 
         const std::uint8_t flags = _bytes[slotOffset + SlotEntryFlagsOffset];
@@ -160,8 +170,7 @@ std::vector<ContinuedRowSlice> PageView::RowsWithContinuation() const
         }
 
         const std::size_t start = recordOffset + RowHeaderLength;
-        const std::size_t end = start + recordLength;
-        if (end > domain::PageSize || start > end)
+        if (start > _bytes.size() || recordLength > _bytes.size() - start)
         {
             continue;
         }
