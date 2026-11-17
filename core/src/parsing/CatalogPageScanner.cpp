@@ -72,7 +72,8 @@ std::vector<std::uint32_t> DecodeIndirectSpaceMapLogicalPageIds(
         }
 
         const std::span<const std::uint8_t> bitmapPageBytes = storage.PageBytes(*bitmapPhysicalPage);
-        if (bitmapPageBytes.size() <= BitmapPageLastSetOffset + 1 || bitmapPageBytes[PageTypeOffset] != BitmapPageType)
+        if (bitmapPageBytes.size() <= BitmapPageLastSetOffset + 1
+            || (bitmapPageBytes[PageTypeOffset] & PageTypeMask) != BitmapPageType)
         {
             continue;
         }
