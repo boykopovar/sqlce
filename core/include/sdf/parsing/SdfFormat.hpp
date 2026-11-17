@@ -35,6 +35,7 @@ constexpr std::size_t RowHeaderLength = 28;
 constexpr std::size_t RowContinuationDwordOffset = 24;
 
 constexpr std::size_t PageTypeOffset = 6;
+constexpr std::uint8_t PageTypeMask = 0xF0u;
 constexpr std::size_t OwnerObjectIdOffset = 16;
 constexpr std::size_t OwnerObjectGenerationOffset = 17;
 constexpr std::uint8_t SystemCatalogObjectId = 3;

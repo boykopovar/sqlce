@@ -46,7 +46,7 @@ std::uint8_t PageView::OwnerObjectGeneration() const
 
 bool PageView::IsDataPage() const
 {
-    return PageType() == DataPageType;
+    return (PageType() & PageTypeMask) == DataPageType;
 }
 
 std::size_t PageView::SlotCount() const
