@@ -97,7 +97,11 @@ public:
 
     [[nodiscard]] std::vector<std::uint8_t> ReadChunk(std::size_t chunkIndex) const override
     {
-        const std::span<const std::uint8_t> pageBytes = _storage->PageBytes(_pageNumbers[chunkIndex]);
+        const std::span<const std::uint8_t> pageBytes = _storage->PageBytes(_pageNumbers.at(chunkIndex));
+        if (pageBytes.size() != domain::PageSize)
+        {
+            throw domain::InvalidSdfException("LOB page length is not 4096 bytes");
+        }
         const std::span<const std::uint8_t> payload = pageBytes.subspan(LobPageHeaderLength);
         const std::size_t consumedBefore = chunkIndex * (domain::PageSize - LobPageHeaderLength);
         const std::size_t remaining = _totalLength > consumedBefore ? _totalLength - consumedBefore : 0;
@@ -117,13 +121,20 @@ std::shared_ptr<domain::ILazyLobSource> LobChainRegistry::ResolveLob(
 {
     if (totalLength <= LvInlineThreshold)
     {
-        const std::size_t take = std::min(inlineTail.size(), totalLength);
-        const std::span<const std::uint8_t> taken = inlineTail.first(take);
+        if (inlineTail.size() < totalLength)
+        {
+            throw domain::InvalidSdfException("inline LOB is shorter than declared length");
+        }
+        const std::span<const std::uint8_t> taken = inlineTail.first(totalLength);
         return std::make_shared<InlineLobSource>(std::vector<std::uint8_t>(taken.begin(), taken.end()));
     }
 
     constexpr std::size_t bytesPerPage = domain::PageSize - LobPageHeaderLength;
-    const std::size_t pagesNeeded = (totalLength + bytesPerPage - 1) / bytesPerPage;
+    const std::size_t pagesNeeded = totalLength / bytesPerPage + (totalLength % bytesPerPage != 0);
+    if (pagesNeeded > _storage->PageCount())
+    {
+        throw domain::InvalidSdfException("LOB declared length exceeds database page capacity");
+    }
 
     std::vector<std::uint32_t> logicalIds;
 

@@ -2,17 +2,34 @@
 
 #include <cstring>
 
+#include "sdf/domain/InvalidSdfException.hpp"
+
 namespace sdf::infrastructure
 {
 
+namespace
+{
+
+void RequireBytes(std::span<const std::uint8_t> bytes, std::size_t offset, std::size_t count)
+{
+    if (offset > bytes.size() || count > bytes.size() - offset)
+    {
+        throw domain::InvalidSdfException("binary field extends beyond its buffer");
+    }
+}
+
+}
+
 std::uint16_t ReadUInt16LE(std::span<const std::uint8_t> bytes, std::size_t offset)
 {
+    RequireBytes(bytes, offset, 2);
     return static_cast<std::uint16_t>(
         static_cast<std::uint16_t>(bytes[offset]) | static_cast<std::uint16_t>(bytes[offset + 1] << 8));
 }
 
 std::uint32_t ReadUInt32LE(std::span<const std::uint8_t> bytes, std::size_t offset)
 {
+    RequireBytes(bytes, offset, 4);
     return static_cast<std::uint32_t>(bytes[offset]) | (static_cast<std::uint32_t>(bytes[offset + 1]) << 8)
         | (static_cast<std::uint32_t>(bytes[offset + 2]) << 16)
         | (static_cast<std::uint32_t>(bytes[offset + 3]) << 24);
@@ -25,6 +42,7 @@ std::int32_t ReadInt32LE(std::span<const std::uint8_t> bytes, std::size_t offset
 
 std::uint64_t ReadUInt64LE(std::span<const std::uint8_t> bytes, std::size_t offset)
 {
+    RequireBytes(bytes, offset, 8);
     std::uint64_t result = 0;
     for (std::size_t i = 0; i < 8; ++i)
     {
@@ -58,6 +76,7 @@ float ReadFloatLE(std::span<const std::uint8_t> bytes, std::size_t offset)
 
 std::array<std::uint8_t, 16> ReadBytes16(std::span<const std::uint8_t> bytes, std::size_t offset)
 {
+    RequireBytes(bytes, offset, 16);
     std::array<std::uint8_t, 16> result{};
     for (std::size_t i = 0; i < 16; ++i)
     {
