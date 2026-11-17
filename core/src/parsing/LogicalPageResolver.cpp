@@ -100,7 +100,7 @@ const LogicalPageResolver::LogicalPageMap& LogicalPageResolver::_mapFor(const do
         decodeMapBRange(mapBSlotZero, MapBRangeFirstLogicalId);
 
         std::uint32_t mapBRangeStart = MapBRangeFirstLogicalId + static_cast<std::uint32_t>(MapBRangeLogicalIdSpan);
-        for (std::size_t mapASlotIndex = 2;; ++mapASlotIndex)
+        for (std::size_t mapASlotIndex = 1;; ++mapASlotIndex)
         {
             const std::size_t wordIndex = (LvBitsPerSlot * mapASlotIndex) / (LvSlotsPerWord * LvBitsPerSlot);
             const std::size_t wordByteOffset = MapAPageDataOffset + wordIndex * LvWordBytes;
